@@ -31,6 +31,9 @@ line-length = 88
 target-version = "py312"
 extend-exclude = ["notebooks"]
 
+[tool.ruff.lint.per-file-ignores]
+"reports/scripts/[0-9][0-9]_*.py" = ["N999"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
