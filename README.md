@@ -1,4 +1,8 @@
-# Fleet dbt Warehouse
+<p align="center">
+  <img src="assets/logo/logo_1.png" alt="Fleet dbt Warehouse logo" width="120">
+</p>
+
+<h1 align="center">Fleet DBT Warehouse</h1>
 
 A daily analytics warehouse for fleet operations. MySQL `fleet_registry` and
 MongoDB `fleet_operations` are landed in Postgres `bronze`, transformed by dbt
