@@ -91,6 +91,9 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
   test runs; marts models target the `marts` schema.
 - Databricks connections use tuned retry settings and the configured merge
   character budget.
+- Deploy digest resolution prints registry errors and falls back to `docker pull`
+  when `docker buildx imagetools inspect` cannot resolve a pushed `sha-<commit>`
+  image.
 
 ### Removed
 

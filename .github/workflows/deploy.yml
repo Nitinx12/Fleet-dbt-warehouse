@@ -58,7 +58,13 @@ jobs:
           fi
           repository="$(printf '%s' "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')"
           tag="ghcr.io/${repository}:sha-${sha}"
-          digest="$(docker buildx imagetools inspect "$tag" | awk '/Digest:/ {print $2; exit}')"
+          if ! inspect_output="$(docker buildx imagetools inspect --format '{{.Manifest.Digest}}' "$tag" 2>&1)"; then
+            printf '%s\n' "$inspect_output" >&2
+            printf 'imagetools could not resolve %s; falling back to docker pull\n' "$tag" >&2
+            docker pull "$tag"
+            inspect_output="$(docker inspect --format '{{index .RepoDigests 0}}' "$tag" | cut -d'@' -f2)"
+          fi
+          digest="$(printf '%s\n' "$inspect_output" | awk '/^sha256:/ {print $1; exit}')"
           if [ -z "$digest" ]; then
             printf 'could not resolve digest for %s\n' "$tag" >&2
             exit 1
