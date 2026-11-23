@@ -36,6 +36,9 @@ all current work is listed under `Unreleased`.
   the daily task graph, audit linkage and troubleshooting.
 - `docs/DBT.md` and `docs/TESTING.md` guides covering the dbt project and the
   full current test/check inventory.
+- Reproducible `reports/` analytics package: read-only Postgres `gold` SQL
+  scripts, shared plotting/db helpers, generated PNGs, findings JSON and
+  `reports/INSIGHT.md`; Makefile targets `report` and `report-clean`.
 - Folder-based pytest organization under `tests/unit/`, `tests/integration/` and
   `tests/smoke/`, with folder-applied markers and a throwaway Postgres fixture
   that applies `sql/scripts/01..07`.

@@ -1,0 +1,95 @@
+{
+  "script": "05_safety",
+  "incidents": 170,
+  "total_claim_amount": 2653171.8200000003,
+  "preventable_incidents": 64,
+  "preventable_share": 0.3764705882352941,
+  "worst_experience_band": {
+    "experience_band": "10-19 years",
+    "claim_cost": 1207644.92,
+    "incidents": 74,
+    "preventable_share": 0.33783783783783783
+  },
+  "worst_tenure_band": {
+    "tenure_band": "6-10 years",
+    "claim_cost": 1167469.87,
+    "incidents": 73
+  },
+  "experience_rows": [
+    {
+      "experience_band": "1-4 years",
+      "incidents": 16,
+      "preventable_incidents": 7,
+      "claim_cost": 251284.05,
+      "avg_claim": 15705.253125,
+      "preventable_share": 0.4375
+    },
+    {
+      "experience_band": "5-9 years",
+      "incidents": 29,
+      "preventable_incidents": 13,
+      "claim_cost": 499636.91,
+      "avg_claim": 17228.85896551724,
+      "preventable_share": 0.4482758620689655
+    },
+    {
+      "experience_band": "10-19 years",
+      "incidents": 74,
+      "preventable_incidents": 25,
+      "claim_cost": 1207644.92,
+      "avg_claim": 16319.525945945945,
+      "preventable_share": 0.33783783783783783
+    },
+    {
+      "experience_band": "20+ years",
+      "incidents": 33,
+      "preventable_incidents": 13,
+      "claim_cost": 416082.83,
+      "avg_claim": 12608.570606060606,
+      "preventable_share": 0.3939393939393939
+    },
+    {
+      "experience_band": "Unknown",
+      "incidents": 18,
+      "preventable_incidents": 6,
+      "claim_cost": 278523.11,
+      "avg_claim": 15473.50611111111,
+      "preventable_share": 0.3333333333333333
+    }
+  ],
+  "tenure_rows": [
+    {
+      "tenure_band": "3-5 years",
+      "incidents": 36,
+      "preventable_incidents": 11,
+      "claim_cost": 436155.86,
+      "avg_claim": 12115.440555555555,
+      "preventable_share": 0.3055555555555556
+    },
+    {
+      "tenure_band": "6-10 years",
+      "incidents": 73,
+      "preventable_incidents": 27,
+      "claim_cost": 1167469.87,
+      "avg_claim": 15992.737945205481,
+      "preventable_share": 0.3698630136986301
+    },
+    {
+      "tenure_band": "10+ years",
+      "incidents": 60,
+      "preventable_incidents": 25,
+      "claim_cost": 1049546.09,
+      "avg_claim": 17492.434833333336,
+      "preventable_share": 0.4166666666666667
+    },
+    {
+      "tenure_band": "Unknown",
+      "incidents": 1,
+      "preventable_incidents": 1,
+      "claim_cost": 0.0,
+      "avg_claim": 0.0,
+      "preventable_share": 1.0
+    }
+  ],
+  "consistent_checks": "N/A - fct_safety_incidents has no *_consistent columns; null preventable_flag treated as not preventable for share and reported via counts"
+}

@@ -1,0 +1,142 @@
+{
+  "script": "06_seasonality",
+  "peak_month": {
+    "month_name": "October",
+    "revenue": 22405461.0,
+    "loads": 7339
+  },
+  "low_month": {
+    "month_name": "February",
+    "revenue": 20163263.0,
+    "loads": 6582
+  },
+  "peak_weekday": {
+    "day_name": "Tuesday",
+    "revenue": 38464806.89,
+    "loads": 12544
+  },
+  "low_weekday": {
+    "day_name": "Sunday",
+    "revenue": 36906049.19,
+    "loads": 12043
+  },
+  "month_rows": [
+    {
+      "month_number": 1,
+      "month_name": "January",
+      "loads": 7304,
+      "revenue": 22380644.35
+    },
+    {
+      "month_number": 2,
+      "month_name": "February",
+      "loads": 6582,
+      "revenue": 20163263.0
+    },
+    {
+      "month_number": 3,
+      "month_name": "March",
+      "loads": 7213,
+      "revenue": 22364541.75
+    },
+    {
+      "month_number": 4,
+      "month_name": "April",
+      "loads": 7036,
+      "revenue": 21568821.09
+    },
+    {
+      "month_number": 5,
+      "month_name": "May",
+      "loads": 7218,
+      "revenue": 22331443.5
+    },
+    {
+      "month_number": 6,
+      "month_name": "June",
+      "loads": 7106,
+      "revenue": 22093111.17
+    },
+    {
+      "month_number": 7,
+      "month_name": "July",
+      "loads": 7248,
+      "revenue": 22267253.36
+    },
+    {
+      "month_number": 8,
+      "month_name": "August",
+      "loads": 7266,
+      "revenue": 22260927.64
+    },
+    {
+      "month_number": 9,
+      "month_name": "September",
+      "loads": 6970,
+      "revenue": 21272895.4
+    },
+    {
+      "month_number": 10,
+      "month_name": "October",
+      "loads": 7339,
+      "revenue": 22405461.0
+    },
+    {
+      "month_number": 11,
+      "month_name": "November",
+      "loads": 7081,
+      "revenue": 21591465.76
+    },
+    {
+      "month_number": 12,
+      "month_name": "December",
+      "loads": 7047,
+      "revenue": 21825972.27
+    }
+  ],
+  "weekday_rows": [
+    {
+      "day_of_week_number": 1,
+      "day_name": "Monday",
+      "loads": 12278,
+      "revenue": 37859719.4
+    },
+    {
+      "day_of_week_number": 2,
+      "day_name": "Tuesday",
+      "loads": 12544,
+      "revenue": 38464806.89
+    },
+    {
+      "day_of_week_number": 3,
+      "day_name": "Wednesday",
+      "loads": 12011,
+      "revenue": 37051757.88
+    },
+    {
+      "day_of_week_number": 4,
+      "day_name": "Thursday",
+      "loads": 12296,
+      "revenue": 37784185.7
+    },
+    {
+      "day_of_week_number": 5,
+      "day_name": "Friday",
+      "loads": 12152,
+      "revenue": 37402517.64
+    },
+    {
+      "day_of_week_number": 6,
+      "day_name": "Saturday",
+      "loads": 12086,
+      "revenue": 37056763.59
+    },
+    {
+      "day_of_week_number": 7,
+      "day_name": "Sunday",
+      "loads": 12043,
+      "revenue": 36906049.19
+    }
+  ],
+  "consistent_checks": "N/A - fct_loads has no *_consistent columns; all rows included"
+}

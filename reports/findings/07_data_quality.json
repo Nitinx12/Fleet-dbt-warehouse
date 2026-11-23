@@ -1,0 +1,52 @@
+{
+  "script": "07_data_quality",
+  "checks": [
+    {
+      "table": "fct_trips",
+      "check": "is_mpg_consistent",
+      "rows": 85410,
+      "pass_rows": 85410,
+      "fail_rows": 0,
+      "unknown_rows": 0,
+      "fail_share": 0.0,
+      "unknown_share": 0.0
+    },
+    {
+      "table": "fct_fuel_purchases",
+      "check": "is_total_cost_consistent",
+      "rows": 196442,
+      "pass_rows": 196442,
+      "fail_rows": 0,
+      "unknown_rows": 0,
+      "fail_share": 0.0,
+      "unknown_share": 0.0
+    },
+    {
+      "table": "fct_maintenance",
+      "check": "is_total_cost_consistent",
+      "rows": 2920,
+      "pass_rows": 2920,
+      "fail_rows": 0,
+      "unknown_rows": 0,
+      "fail_share": 0.0,
+      "unknown_share": 0.0
+    },
+    {
+      "table": "dim_drivers",
+      "check": "is_employment_consistent",
+      "rows": 151,
+      "pass_rows": 150,
+      "fail_rows": 0,
+      "unknown_rows": 1,
+      "fail_share": 0.0,
+      "unknown_share": 0.006622516556291391
+    }
+  ],
+  "worst_check": {
+    "check": "is_employment_consistent",
+    "table": "dim_drivers",
+    "fail_share": 0.0,
+    "unknown_share": 0.006622516556291391
+  },
+  "consistent_checks": "This script reports *_consistent flags; downstream scripts filter to passing rows where applicable."
+}
