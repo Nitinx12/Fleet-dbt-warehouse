@@ -1,0 +1,34 @@
+{
+  "script": "01_revenue_concentration",
+  "top_customer": "First Group",
+  "top_customer_revenue": 9136680.18,
+  "top1_revenue_share": 0.03480298001151558,
+  "top10_revenue_share": 0.1983382850084902,
+  "top_lane": "Philadelphia, PA to Seattle, WA",
+  "top_lane_revenue": 10069054.22,
+  "top_lane_share_of_total_revenue": 0.038354532045525386,
+  "booking_cancel_rates": [
+    {
+      "booking_type": "Dedicated",
+      "loads": 42337,
+      "cancelled_loads": 0,
+      "cancel_rate": 0.0,
+      "revenue": 130236635.41
+    },
+    {
+      "booking_type": "Spot",
+      "loads": 21528,
+      "cancelled_loads": 0,
+      "cancel_rate": 0.0,
+      "revenue": 66321705.72
+    },
+    {
+      "booking_type": "Contract",
+      "loads": 21545,
+      "cancelled_loads": 0,
+      "cancel_rate": 0.0,
+      "revenue": 65967459.16
+    }
+  ],
+  "consistent_checks": "N/A - fct_loads has no *_consistent columns; all rows included"
+}

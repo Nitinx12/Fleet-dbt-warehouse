@@ -347,6 +347,16 @@ deploy: check-tools ## Deploy IMAGE_REF by digest; requires CONFIRM=yes.
 deploy-smoke: check-tools ## Run read-only post-deploy smoke checks.
 	$(Q)bash scripts/deploy.sh smoke
 
+## Reports
+.PHONY: report report-clean
+report: check-venv ## Build the analytics report into reports/img and reports/findings.
+	$(Q)printf '%s\n' "==> Building analytics report"
+	$(Q)"$(UV)" run --no-sync python -m reports.scripts.build_all
+
+report-clean: ## Remove generated report images and findings.
+	$(Q)printf '%s\n' "==> Cleaning report artifacts"
+	$(Q)rm -f -- reports/img/*.png reports/findings/*.json
+
 ## Clean
 .PHONY: clean distclean
 clean: ## Remove Python, dbt and generated output artifacts.

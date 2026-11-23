@@ -1,0 +1,27 @@
+{
+  "script": "02_delivery_service",
+  "detention_cost_per_hour_usd": 75.0,
+  "events": 170820,
+  "known_on_time_events": 170820,
+  "unknown_on_time_rate": 0.0,
+  "overall_on_time_rate": 0.556697108066971,
+  "total_estimated_detention_cost": 19545578.25,
+  "worst_facility": {
+    "facility_name": "Atlanta Distribution Center",
+    "on_time_rate": 0.5341671751067725,
+    "events": 3278,
+    "detention_cost": 379248.75
+  },
+  "best_facility": {
+    "facility_name": "Houston Distribution Center",
+    "on_time_rate": 0.5827996340347666,
+    "events": 3279
+  },
+  "top_detention_customer": {
+    "customer_name": "First Group",
+    "detention_cost": 689352.0,
+    "events": 6002,
+    "on_time_rate": 0.5579806731089637
+  },
+  "consistent_checks": "N/A - fct_delivery_events has no *_consistent columns; null on_time_flag excluded from rate denominators and reported"
+}

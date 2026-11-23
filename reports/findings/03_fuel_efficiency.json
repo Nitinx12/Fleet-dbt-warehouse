@@ -1,0 +1,56 @@
+{
+  "script": "03_fuel_efficiency",
+  "trip_rows": 85410,
+  "consistent_trips": 85410,
+  "inconsistent_trips": 0,
+  "unknown_consistency_trips": 0,
+  "best_age_band_mpg": {
+    "age_band": "11+ years",
+    "mpg": 6.448102187137028,
+    "idle_share": 0.33159411536260325
+  },
+  "worst_age_band_mpg": {
+    "age_band": "3-5 years",
+    "mpg": 6.421085494174929,
+    "idle_share": 0.33597382388419783
+  },
+  "mpg_gap_pct_best_vs_worst": 0.00418986737151795,
+  "highest_fuel_price_state": {
+    "state": "NE",
+    "avg_price_per_gallon": 3.9090973085347245,
+    "purchases": 7770
+  },
+  "age_band_rows": [
+    {
+      "age_band": "11+ years",
+      "trips": 53672,
+      "miles": 76598861.0,
+      "gallons": 11879287.7,
+      "mpg": 6.448102187137028,
+      "idle_share": 0.33159411536260325,
+      "consistent_trips": 53672,
+      "inconsistent_trips": 0
+    },
+    {
+      "age_band": "3-5 years",
+      "trips": 895,
+      "miles": 1252565.0,
+      "gallons": 195070.6,
+      "mpg": 6.421085494174929,
+      "idle_share": 0.33597382388419783,
+      "consistent_trips": 895,
+      "inconsistent_trips": 0
+    },
+    {
+      "age_band": "6-10 years",
+      "trips": 29171,
+      "miles": 41884760.0,
+      "gallons": 6495958.6,
+      "mpg": 6.447818186526004,
+      "idle_share": 0.3313028614288393,
+      "consistent_trips": 29171,
+      "inconsistent_trips": 0
+    }
+  ],
+  "consistent_checks": "Filtered to fct_trips.is_mpg_consistent=true and fct_fuel_purchases.is_total_cost_consistent=true; inconsistent/unknown rows excluded from aggregates and counted in findings"
+}

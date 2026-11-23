@@ -1,0 +1,59 @@
+{
+  "script": "04_fleet_maintenance",
+  "rows": 2920,
+  "consistent_rows": 2920,
+  "inconsistent_rows": 0,
+  "unknown_rows": 0,
+  "replacement_cost_threshold_usd_per_truck": 15000.0,
+  "replacement_downtime_threshold_hours_per_truck": 80.0,
+  "baseline_age_band": "3-5 years",
+  "baseline_cost_per_truck": 70708.48,
+  "oldest_age_band": "11+ years",
+  "oldest_cost_per_truck": 46984.82923076923,
+  "oldest_downtime_per_truck": 597.5384615384615,
+  "oldest_to_baseline_cost_ratio": 0.6644864835274247,
+  "replacement_flagged_age_bands": [
+    "3-5 years",
+    "6-10 years",
+    "11+ years"
+  ],
+  "age_band_rows": [
+    {
+      "age_band": "3-5 years",
+      "trucks": 1,
+      "maintenance_events": 32,
+      "total_cost": 70708.48,
+      "avg_event_cost": 2209.64,
+      "total_downtime_hours": 787.9,
+      "avg_downtime_hours": 24.621875,
+      "cost_per_truck": 70708.48,
+      "downtime_per_truck": 787.9,
+      "replacement_flag": true
+    },
+    {
+      "age_band": "6-10 years",
+      "trucks": 41,
+      "maintenance_events": 1017,
+      "total_cost": 1995048.12,
+      "avg_event_cost": 1961.699233038348,
+      "total_downtime_hours": 24834.6,
+      "avg_downtime_hours": 24.419469026548672,
+      "cost_per_truck": 48659.71024390244,
+      "downtime_per_truck": 605.7219512195122,
+      "replacement_flag": true
+    },
+    {
+      "age_band": "11+ years",
+      "trucks": 78,
+      "maintenance_events": 1871,
+      "total_cost": 3664816.68,
+      "avg_event_cost": 1958.747557455906,
+      "total_downtime_hours": 46608.0,
+      "avg_downtime_hours": 24.910742918225548,
+      "cost_per_truck": 46984.82923076923,
+      "downtime_per_truck": 597.5384615384615,
+      "replacement_flag": true
+    }
+  ],
+  "consistent_checks": "Filtered to fct_maintenance.is_total_cost_consistent=true; inconsistent/unknown rows excluded from aggregates and counted in findings"
+}
