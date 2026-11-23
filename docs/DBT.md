@@ -1,5 +1,11 @@
 # dbt guide
 
+**Purpose:** Explain how dbt sources, layers, macros, variables, and commands are structured in this warehouse.
+
+**Audience:** Analytics engineers and reviewers changing models, tests, or contracts.
+
+[Back to README](../README.md) · [Architecture](ARCHITECTURE.md)
+
 dbt owns every transformation in this warehouse. Python and dlt-style ingestion
 only land data in Postgres `bronze`; dbt reads `bronze` and writes `silver`,
 `gold` and `marts`. The synced Databricks `gold` copy is read-only outside the
@@ -14,7 +20,7 @@ publish job.
 | `dbt/packages.yml` | `dbt_utils` dependency; lockfile is `dbt/package-lock.yml`. |
 | `dbt/models/bronze/sources.yml` | The only dbt source: `bronze` with 12 landed tables. |
 | `dbt/models/silver/` | 12 staging models and `schema.yml`. |
-| `dbt/models/gold/` | 7 SCD1 dimensions, `dim_date`, 6 incremental facts and `schema.yml`. |
+| `dbt/models/gold/` | 7 SCD1 dimensions (including `dim_date`), 6 incremental facts and `schema.yml`. |
 | `dbt/models/marts/` | 6 BI marts, one reconciliation table model and `schema_marts.yml`. |
 | `dbt/macros/` | Cleaning, schema, incremental, gold and mart helper macros. |
 | `dbt/tests/generic/silver/` | 11 project-specific generic tests. |

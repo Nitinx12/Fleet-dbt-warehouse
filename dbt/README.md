@@ -1,5 +1,11 @@
 # dbt project
 
+**Purpose:** Summarise the dbt project layout, rules, and local commands.
+
+**Audience:** Analytics engineers and reviewers changing models or tests.
+
+[Root README](../README.md) · [dbt guide](../docs/DBT.md)
+
 dbt owns all transformations: Postgres `bronze` (read-only) → `silver` → `gold` → `marts`. Airflow orchestrates; approved non-PII marts are synced to Databricks.
 
 ## Layout
@@ -11,7 +17,7 @@ dbt owns all transformations: Postgres `bronze` (read-only) → `silver` → `go
 | `packages.yml` | `dbt_utils`; lockfile is `package-lock.yml`. |
 | `models/bronze/sources.yml` | Only source: 12 landed bronze tables. |
 | `models/silver/` | 12 staging models + `schema.yml`. |
-| `models/gold/` | 8 dimensions, 6 facts + `schema.yml`. |
+| `models/gold/` | 7 SCD1 dimensions (including `dim_date`) and 6 incremental facts + `schema.yml`. |
 | `models/marts/` | 6 BI marts, reconciliation model + `schema_marts.yml`. |
 | `macros/` | Cleaning, incremental, schema, gold and mart helpers. |
 | `tests/generic/silver/` | 11 custom generic tests. |
@@ -44,4 +50,4 @@ make dbt-docs ENV=dev
 
 `dev` writes to `DBT_DEV_SCHEMA` in `fleet_warehouse`; `ci` prefixes schemas with `DBT_SCHEMA_PREFIX` in `fleet_dev`. `prod` requires `ENV=prod CONFIRM=yes` and explicit approval. Full refresh/backfills require `CONFIRM=yes`.
 
-See `docs/DBT.md` for macros, variables, gotchas and the CI fixture flow.
+See the [dbt guide](../docs/DBT.md) for macros, variables, gotchas and the CI fixture flow.

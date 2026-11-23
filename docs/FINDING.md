@@ -1,5 +1,14 @@
 # EDA Findings
 
+**Purpose:** Record exploratory findings from the raw extracts that motivated the warehouse design.
+
+**Audience:** Analysts and engineers comparing raw data behaviour with implemented dbt models.
+
+[Root README](../README.md)
+
+> **Scope:**
+ exploratory analysis of the raw MySQL/Mongo extracts, not the implemented dbt mart inventory. See `dbt/models/marts/schema_marts.yml` for the current marts.
+
 > **Notebooks:** [`notebooks/mysql_eda.ipynb`](../notebooks/mysql_eda.ipynb) · [`notebooks/mongo_eda.ipynb`](../notebooks/mongo_eda.ipynb)
 > **Data:** `data/mysql/` (9 tables) · `data/mongo/` (3 collections)
 > **Last run:** 2026-11-16 · both notebooks executed clean (0 errors)
@@ -107,7 +116,7 @@
 
 - Event mix is exactly 50/50 Pickup/Delivery.
 - Day-of-week and hour-of-day charts show dispatch rhythm; monthly volume tracks the load curve.
-- **Implication:** delivery-side on-time (44.6%) is the KPI that will dominate `mart_driver_performance` and `mart_customer_service_levels`; detention is heavy and right-skewed (max 239 min).
+- **Implication:** delivery-side on-time (44.6%) is the KPI that will dominate `mart_delivery_performance_daily`, `mart_customer_service_monthly` and `mart_driver_scorecard_monthly`; detention is heavy and right-skewed (max 239 min).
 
 ### 4.2 Maintenance
 | Metric | Value |
@@ -118,7 +127,7 @@
 | Cost range | $61 – $4,427 |
 
 - Types: Inspection, Repair, Preventive, Engine, Tire, Transmission, Brake — all present in similar counts.
-- Labor vs total-cost scatter and per-type boxplots in notebook feed `mart_maintenance_cost_per_mile`.
+- Labor vs total-cost scatter and per-type boxplots in notebook feed `mart_truck_cost_monthly` (maintenance cost and operating cost per mile).
 - Monthly cost series available for trend.
 
 ### 4.3 Safety incidents
@@ -132,7 +141,7 @@
 
 - Types: DOT Violation 39 · Equipment Damage 35 · Accident 35 · Customer Complaint 34 · Moving Violation 27.
 - **Preventable claims average $14.1k vs $16.5k non-preventable** — severity does not track preventability here; volume of preventable events is the lever.
-- Small n → use counts and rates per million miles (as the mart does), not raw percentages alone.
+- Small n → use counts and rates per million miles (as `mart_driver_scorecard_monthly` does), not raw percentages alone.
 
 ### 4.4 Cross-store
 - 100% FK coverage events → loads/trips (see quality section).
@@ -146,11 +155,11 @@
 |---|---|---|
 | Staging | Mongo strings cast cleanly today; keep `rej_*` for drift | `stg_mongo__*`, `rej_*` |
 | On-time KPI | Delivery-only 44.6% vs all-events 55.7% — **define grain carefully** | Semantic layer / metric contract |
-| Detention | Heavy tail (>120 min = 36%) | `fct_delivery_events`, customer mart |
-| Fuel cost | $95.6M vs $262.5M revenue → **fuel ≈ 36% of revenue** | `mart_lane_profitability` |
-| Idle | ~54% of trip duration | Fuel-efficiency mart, driver performance |
-| Fleet utilisation | 23% of trucks not Active | `mart_fleet_utilization` |
-| Safety | Small n; prefer per-mile rates | `mart_safety_metrics` |
+| Detention | Heavy tail (>120 min = 36%) | `fct_delivery_events`, `mart_delivery_performance_daily`, `mart_customer_service_monthly` |
+| Fuel cost | $95.6M vs $262.5M revenue → **fuel ≈ 36% of revenue** | `mart_truck_cost_monthly`; lane profitability is not implemented as a mart yet |
+| Idle | ~54% of trip duration | `mart_equipment_utilization_daily`, `mart_driver_scorecard_monthly` |
+| Fleet utilisation | 23% of trucks not Active | `mart_equipment_utilization_daily` |
+| Safety | Small n; prefer per-mile rates | `mart_driver_scorecard_monthly` |
 | Synthetic tells | Constant MPG, all-Completed statuses, single `loaded_at` | Rely on simulator for CDC demos; don't overfit KPI tests to variance |
 | Contracts | Column shapes match `DATABASE_SCHEMA.txt`; 0 cast fails | Source contracts can baseline from these files |
 

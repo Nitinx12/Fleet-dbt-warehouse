@@ -11,48 +11,63 @@ from reports.helpers.plotting import currency, pct, save_fig, set_theme
 SCRIPT = "02_delivery_service"
 DETENTION_COST_PER_HOUR = 75.0
 
+SUMMARY_SQL = """
+select count(*) as events,
+       count(*) filter (where e.on_time_flag is not null) as known_on_time_events,
+       coalesce(avg(case when e.on_time_flag is null then 1.0 else 0.0 end), 0) as unknown_on_time_rate,
+       avg(case when e.on_time_flag is null then null when e.on_time_flag then 1.0 else 0.0 end) as overall_on_time_rate,
+       coalesce(sum(coalesce(e.detention_hours, 0) * :cost_per_hour), 0) as total_estimated_detention_cost
+from gold.fct_delivery_events e
+where e.event_type in ('PICKUP', 'DELIVERY')
+"""
+
+GROUP_SQL = """
+select {dimension},
+       count(*) as events,
+       avg(case when e.on_time_flag then 1.0 else 0.0 end) as on_time_rate,
+       sum(coalesce(e.detention_hours, 0) * :cost_per_hour) as detention_cost
+from gold.fct_delivery_events e
+left join gold.{lookup} on {join_key} = e.{key}
+ where e.event_type in ('PICKUP', 'DELIVERY')
+   and e.on_time_flag is not null
+ group by {dimension}
+having count(*) >= 100
+"""
+
 
 def main() -> None:
     """Build delivery service charts and findings."""
     set_theme()
-    base = query_df(
-        """
-        select e.event_id,
-               e.on_time_flag,
-               e.detention_hours,
-               e.detention_minutes,
-               coalesce(e.detention_hours, 0) * :cost_per_hour as detention_cost,
-               f.facility_name,
-               c.customer_name
-        from gold.fct_delivery_events e
-        left join gold.dim_facilities f on f.facility_key = e.facility_key
-        left join gold.dim_customers c on c.customer_key = e.customer_key
-        where e.event_type in ('PICKUP', 'DELIVERY')
-        """,
-        {"cost_per_hour": DETENTION_COST_PER_HOUR},
+    params = {"cost_per_hour": DETENTION_COST_PER_HOUR}
+    summary = query_df(SUMMARY_SQL, params)
+    facility = query_df(
+        GROUP_SQL.format(
+            dimension="f.facility_name",
+            lookup="dim_facilities f",
+            join_key="f.facility_key",
+            key="facility_key",
+        ),
+        params,
     )
-    if base.empty:
+    customer = query_df(
+        GROUP_SQL.format(
+            dimension="c.customer_name",
+            lookup="dim_customers c",
+            join_key="c.customer_key",
+            key="customer_key",
+        ),
+        params,
+    )
+    if summary.empty or facility.empty or customer.empty:
         raise SystemExit("02_delivery_service: no rows returned")
 
-    base["on_time_flag"] = base["on_time_flag"].astype("boolean")
-    known = base[base["on_time_flag"].notna()].copy()
-    overall_on_time = float(known["on_time_flag"].mean())
-    unknown_rate = float(base["on_time_flag"].isna().mean())
-    total_detention_cost = float(base["detention_cost"].fillna(0).sum())
-
-    facility = (
-        known.groupby("facility_name", dropna=False)
-        .agg(
-            events=("event_id", "count"),
-            on_time_rate=("on_time_flag", "mean"),
-            detention_cost=("detention_cost", "sum"),
-        )
-        .reset_index()
-    )
-    facility["detention_cost"] = facility["detention_cost"].astype(float)
-    facility = facility[facility["events"] >= 100].sort_values("on_time_rate")
+    for frame in (facility, customer):
+        frame["detention_cost"] = frame["detention_cost"].astype(float)
+    facility = facility.sort_values("on_time_rate")
+    customer = customer.sort_values("detention_cost", ascending=False)
     worst_facility = facility.iloc[0]
     best_facility = facility.iloc[-1]
+    top_detention_customer = customer.iloc[0]
 
     fig, ax = plt.subplots()
     plot_fac = facility.head(10).sort_values("on_time_rate", ascending=False)
@@ -66,21 +81,6 @@ def main() -> None:
     ax.set_ylabel("Facility")
     ax.xaxis.set_major_formatter(lambda x, _: f"{x * 100:.0f}%")
     save_fig(fig, SCRIPT, "on_time_by_facility")
-
-    customer = (
-        known.groupby("customer_name", dropna=False)
-        .agg(
-            events=("event_id", "count"),
-            on_time_rate=("on_time_flag", "mean"),
-            detention_cost=("detention_cost", "sum"),
-        )
-        .reset_index()
-    )
-    customer["detention_cost"] = customer["detention_cost"].astype(float)
-    customer = customer[customer["events"] >= 100].sort_values(
-        "detention_cost", ascending=False
-    )
-    top_detention_customer = customer.iloc[0]
 
     fig, ax = plt.subplots()
     sns.barplot(
@@ -98,14 +98,19 @@ def main() -> None:
     ax.xaxis.set_major_formatter(lambda x, _: f"${x / 1000:.0f}K")
     save_fig(fig, SCRIPT, "detention_cost_by_customer")
 
+    row = summary.iloc[0]
+    events = int(row["events"])
+    known_events = int(row["known_on_time_events"])
+    unknown_rate = float(row["unknown_on_time_rate"])
+    overall_on_time = float(row["overall_on_time_rate"])
     findings = {
         "script": SCRIPT,
         "detention_cost_per_hour_usd": DETENTION_COST_PER_HOUR,
-        "events": len(base),
-        "known_on_time_events": len(known),
+        "events": events,
+        "known_on_time_events": known_events,
         "unknown_on_time_rate": unknown_rate,
         "overall_on_time_rate": overall_on_time,
-        "total_estimated_detention_cost": total_detention_cost,
+        "total_estimated_detention_cost": float(row["total_estimated_detention_cost"]),
         "worst_facility": {
             "facility_name": worst_facility["facility_name"],
             "on_time_rate": float(worst_facility["on_time_rate"]),

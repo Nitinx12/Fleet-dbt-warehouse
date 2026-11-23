@@ -1,5 +1,11 @@
 # Source contracts
 
+**Purpose:** Define the source-to-bronze contract format and the current alignment check.
+
+**Audience:** Engineers changing source contracts, ingestion, or bronze sources.
+
+[Root README](../README.md)
+
 Versioned agreements at the **source → bronze** boundary. One YAML per table/collection, plus a JSON sample of real rows.
 
 | Path | Purpose |
@@ -10,7 +16,7 @@ Versioned agreements at the **source → bronze** boundary. One YAML per table/c
 
 ## Format
 
-See [ARCHITECTURE.md §11.2](../../ARCHITECTURE.md#112-source-contract-format).
+See [ARCHITECTURE.md](../ARCHITECTURE.md) for the source-contract boundary.
 
 - **MySQL** — `type` is the landed type in Postgres `bronze.mysql__*`.
 - **Mongo** — every raw value is a string; `staged_type` + `cast` describe what staging produces (`try_cast`, `flag`).
@@ -18,11 +24,10 @@ See [ARCHITECTURE.md §11.2](../../ARCHITECTURE.md#112-source-contract-format).
 ## Commands
 
 ```bash
-make contracts-build    # regenerate from data/{mysql,mongo}/*.csv
-make contracts-check    # fail on drift (columns, baseline, sample alignment)
+make contracts-check    # fail on index / source name / landing table name drift
 ```
 
-`contracts-check` runs in pre-push (JSON samples) and should run in CI before any ingestion change.
+`contracts-check` validates `sources_index.json` against the contract files, the `source` value in each YAML, and the bronze landing table names declared in `dbt/models/bronze/sources.yml`. It does not check columns, row-count baselines or JSON samples. The pre-push hook checks that contract JSON parses; CI runs `contracts-check` before ingestion changes.
 
 ## Changing a contract
 

@@ -1,7 +1,7 @@
 {
   "script": "05_safety",
   "incidents": 170,
-  "total_claim_amount": 2653171.8200000003,
+  "total_claim_amount": 2653171.82,
   "preventable_incidents": 64,
   "preventable_share": 0.3764705882352941,
   "worst_experience_band": {
@@ -37,7 +37,7 @@
       "incidents": 74,
       "preventable_incidents": 25,
       "claim_cost": 1207644.92,
-      "avg_claim": 16319.525945945945,
+      "avg_claim": 16319.525945945947,
       "preventable_share": 0.33783783783783783
     },
     {
@@ -53,7 +53,7 @@
       "incidents": 18,
       "preventable_incidents": 6,
       "claim_cost": 278523.11,
-      "avg_claim": 15473.50611111111,
+      "avg_claim": 15473.506111111112,
       "preventable_share": 0.3333333333333333
     }
   ],
@@ -63,7 +63,7 @@
       "incidents": 36,
       "preventable_incidents": 11,
       "claim_cost": 436155.86,
-      "avg_claim": 12115.440555555555,
+      "avg_claim": 12115.440555555557,
       "preventable_share": 0.3055555555555556
     },
     {
@@ -71,7 +71,7 @@
       "incidents": 73,
       "preventable_incidents": 27,
       "claim_cost": 1167469.87,
-      "avg_claim": 15992.737945205481,
+      "avg_claim": 15992.73794520548,
       "preventable_share": 0.3698630136986301
     },
     {
@@ -79,7 +79,7 @@
       "incidents": 60,
       "preventable_incidents": 25,
       "claim_cost": 1049546.09,
-      "avg_claim": 17492.434833333336,
+      "avg_claim": 17492.434833333333,
       "preventable_share": 0.4166666666666667
     },
     {

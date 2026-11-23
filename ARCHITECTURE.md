@@ -1,5 +1,11 @@
 # Architecture — fleet dbt warehouse
 
+**Purpose:** Define the authoritative design, ownership, and failure model of the daily warehouse.
+
+**Audience:** Engineers, reviewers, and operators changing the pipeline or its contracts.
+
+[Root README](README.md)
+
 Blueprint of the daily fleet warehouse: what each component is, why it exists, how data and control flow through it, and what is owned by whom. `DEPLOYMENT.md` describes how this design is built, shipped and run.
 
 ---

@@ -10,80 +10,57 @@ from reports.helpers.db import query_df, write_findings
 from reports.helpers.plotting import currency, pct, save_fig, set_theme
 
 SCRIPT = "05_safety"
+SUMMARY_SQL = """
+select count(*) as incidents,
+       coalesce(sum(coalesce(i.claim_amount, 0)), 0) as total_claim_amount,
+       sum(case when coalesce(i.preventable_flag, false) then 1 else 0 end) as preventable_incidents,
+       avg(case when coalesce(i.preventable_flag, false) then 1.0 else 0.0 end) as preventable_share
+from gold.fct_safety_incidents i
+join gold.dim_drivers d on d.driver_key = i.driver_key
+"""
+BAND_SQL = """
+select d.{band} as {band},
+       count(*) as incidents,
+       sum(case when coalesce(i.preventable_flag, false) then 1 else 0 end) as preventable_incidents,
+       sum(coalesce(i.claim_amount, 0)) as claim_cost,
+       avg(coalesce(i.claim_amount, 0)) as avg_claim,
+       avg(case when coalesce(i.preventable_flag, false) then 1.0 else 0.0 end) as preventable_share
+from gold.fct_safety_incidents i
+join gold.dim_drivers d on d.driver_key = i.driver_key
+group by d.{band}
+"""
+EXP_ORDER = ["<1 year", "1-4 years", "5-9 years", "10-19 years", "20+ years", "Unknown"]
+TEN_ORDER = ["<1 year", "1-2 years", "3-5 years", "6-10 years", "10+ years", "Unknown"]
 
 
-def _agg(df: pd.DataFrame, group_col: str) -> pd.DataFrame:
-    out = (
-        df.groupby(group_col, dropna=False)
-        .agg(
-            incidents=("incident_id", "count"),
-            preventable_incidents=(
-                "preventable_flag",
-                lambda s: int(s.fillna(False).astype(bool).sum()),
-            ),
-            claim_cost=("claim_amount", "sum"),
-            avg_claim=("claim_amount", "mean"),
-        )
-        .reset_index()
-    )
-    out["claim_cost"] = out["claim_cost"].astype(float)
-    out["avg_claim"] = out["avg_claim"].astype(float)
-    out["preventable_share"] = out["preventable_incidents"] / out["incidents"]
+def _ordered(df: pd.DataFrame, column: str, order: list[str]) -> pd.DataFrame:
+    """Order a SQL-aggregated band table without changing its values."""
+    out = df.copy()
+    for name in ("claim_cost", "avg_claim", "preventable_share"):
+        out[name] = out[name].astype(float)
+    out[column] = pd.Categorical(out[column], categories=order, ordered=True)
+    out = out.sort_values(column)
+    out[column] = out[column].astype(str)
     return out
 
 
 def main() -> None:
     """Build safety charts and findings."""
     set_theme()
-    df = query_df(
-        """
-        select i.incident_id,
-               i.preventable_flag,
-               i.claim_amount,
-               d.experience_band,
-               d.tenure_band
-        from gold.fct_safety_incidents i
-        join gold.dim_drivers d on d.driver_key = i.driver_key
-        """
-    )
-    if df.empty:
+    summary = query_df(SUMMARY_SQL)
+    exp = query_df(BAND_SQL.format(band="experience_band"))
+    ten = query_df(BAND_SQL.format(band="tenure_band"))
+    if summary.empty or exp.empty or ten.empty:
         raise SystemExit("05_safety: no rows returned")
 
-    df["claim_amount"] = df["claim_amount"].fillna(0).astype(float)
-    preventable_share = float(df["preventable_flag"].fillna(False).astype(bool).mean())
-    total_claim = float(df["claim_amount"].sum())
-
-    exp = _agg(df, "experience_band")
-    ten = _agg(df, "tenure_band")
-    exp_order = [
-        "<1 year",
-        "1-4 years",
-        "5-9 years",
-        "10-19 years",
-        "20+ years",
-        "Unknown",
-    ]
-    ten_order = [
-        "<1 year",
-        "1-2 years",
-        "3-5 years",
-        "6-10 years",
-        "10+ years",
-        "Unknown",
-    ]
-    exp["experience_band"] = pd.Categorical(
-        exp["experience_band"], categories=exp_order, ordered=True
-    )
-    ten["tenure_band"] = pd.Categorical(
-        ten["tenure_band"], categories=ten_order, ordered=True
-    )
-    exp = exp.sort_values("experience_band")
-    ten = ten.sort_values("tenure_band")
-    exp["experience_band"] = exp["experience_band"].astype(str)
-    ten["tenure_band"] = ten["tenure_band"].astype(str)
-
+    exp = _ordered(exp, "experience_band", EXP_ORDER)
+    ten = _ordered(ten, "tenure_band", TEN_ORDER)
     worst_exp = exp.loc[exp["claim_cost"].idxmax()]
     worst_ten = ten.loc[ten["claim_cost"].idxmax()]
+
+    row = summary.iloc[0]
+    preventable_share = float(row["preventable_share"])
+    total_claim = float(row["total_claim_amount"])
 
     fig, ax = plt.subplots()
     sns.barplot(data=exp, x="experience_band", y="claim_cost", ax=ax, color="#C44E52")
@@ -121,11 +98,9 @@ def main() -> None:
 
     findings = {
         "script": SCRIPT,
-        "incidents": len(df),
+        "incidents": int(row["incidents"]),
         "total_claim_amount": total_claim,
-        "preventable_incidents": int(
-            df["preventable_flag"].fillna(False).astype(bool).sum()
-        ),
+        "preventable_incidents": int(row["preventable_incidents"]),
         "preventable_share": preventable_share,
         "worst_experience_band": {
             "experience_band": str(worst_exp["experience_band"]),
@@ -144,7 +119,7 @@ def main() -> None:
     }
     write_findings(SCRIPT, findings)
     print(
-        f"incidents={len(df)} total_claim={currency(total_claim)} preventable_share={pct(preventable_share)}"
+        f"incidents={int(row['incidents'])} total_claim={currency(total_claim)} preventable_share={pct(preventable_share)}"
     )
     print(
         f"worst_experience={worst_exp['experience_band']} claim={currency(float(worst_exp['claim_cost']))}"

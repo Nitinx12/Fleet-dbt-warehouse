@@ -1,12 +1,18 @@
 # Changelog
 
+**Purpose:** Record notable changes and breaking-contract decisions for each release.
+
+**Audience:** Maintainers, reviewers, and operators upgrading the warehouse.
+
+[Root README](README.md)
+
 All notable changes to Fleet-dbt-warehouse are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Versions match `pyproject.toml`; releases are cut by pushing a `vX.Y.Z` tag that
-the `release` workflow verifies before publishing. No tag has been cut yet, so
-all current work is listed under `Unreleased`.
+Versions match `pyproject.toml`; no release tag has been cut, and no `release.yml`
+or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
+`Unreleased`.
 
 ## [Unreleased]
 
@@ -18,7 +24,7 @@ all current work is listed under `Unreleased`.
   ingestion and dbt runner scripts so CLI and DAG runs share one audit trail.
 - Gold layer: 13 models (7 SCD1 dimensions, `dim_date` and 6 incremental facts),
   `gold_helpers` macros, column descriptions and silver-style tests.
-- Silver layer: seven models, `schema.yml` tests and three generic tests.
+- Silver layer: 12 models, `schema.yml` tests and three generic tests.
 - Databricks publishing for approved non-PII Postgres marts, with schema
   validation, parallel workers, bounded literal `INSERT` batches, swap recovery
   tables and audit reconciliation.
@@ -54,6 +60,13 @@ all current work is listed under `Unreleased`.
   and `scripts/deploy.sh`; a `ci` dbt target with prefixed layer schemas.
 - `make db-init-audit` to bootstrap audit/control tables in a CI database without
   applying the production-named `01_init_schema.sql`.
+- `make demo` target for a zero-credential fixture build: contracts check,
+  audit/control bootstrap, 12 sample payloads and a full dbt build in `ci_demo_*`
+  schemas on `fleet_dev`.
+- Report scripts aggregate entirely in Postgres SQL and use pandas only for
+  plotting and layout, with `make report` regenerating charts and findings JSON.
+- Focused documentation corrections in `contracts/README.md`, `dbt/README.md`,
+  `docs/FINDING.md`, `reports/INSIGHT.md`, `ARCHITECTURE.md` and `DEPLOYMENT.md`.
 
 ### Changed
 

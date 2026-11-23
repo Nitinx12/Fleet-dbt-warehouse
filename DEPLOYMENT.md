@@ -1,5 +1,11 @@
 # Deployment — fleet dbt warehouse
 
+**Purpose:** Define the authoritative build, promotion, runtime, and rollback model for the warehouse.
+
+**Audience:** Engineers and operators installing, deploying, or recovering the pipeline.
+
+[Root README](README.md)
+
 How this project is built, shipped, promoted and run. `ARCHITECTURE.md` explains the design and layer ownership; this document is the operational blueprint.
 
 ---
@@ -78,7 +84,7 @@ Fixture loading is double-guarded: `FIXTURE_LOAD=1` and `PG_DBNAME` must be `fle
 | Job | Trigger | Environment | Key inputs | Command |
 |---|---|---|---|---|
 | `resolve-image` | `workflow_run` CI success on `main`, or `workflow_dispatch` | — | `release_sha` (dispatch) or `workflow_run.head_sha`; must be exactly 40 lowercase hex chars | `docker buildx imagetools inspect ghcr.io/<repo>:sha-<sha>` → digest |
-| `deploy-staging` | `workflow_run` only | `staging` | `STAGING_SSH_PRIVATE_KEY`, `STAGING_DEPLOY_HOST`, `STAGING_DEPLOY_USER`, `STAGING_DEPLOY_PATH` | `make deploy CONFIRM=yes` |
+| `deploy-staging` | `workflow_run` only | `staging` | `STAGING_SSH_KEY`, `STAGING_DEPLOY_HOST`, `STAGING_DEPLOY_USER`, `STAGING_DEPLOY_PATH` | `make deploy CONFIRM=yes` |
 | `smoke-staging` | after staging deploy | `staging` | same `STAGING_*` secrets | `make deploy-smoke` |
 | `deploy-production` | `workflow_dispatch` only | `production` | `PRODUCTION_*` secrets | `make deploy CONFIRM=yes` |
 | `smoke-production` | after production deploy | `production` | same `PRODUCTION_*` secrets | `make deploy-smoke` |
@@ -206,8 +212,8 @@ GitHub secrets by environment:
 | Secret set | Used by | Purpose |
 |---|---|---|
 | `GITHUB_TOKEN` (automatic) | `ci.yml`, `deploy.yml` | GHCR login only; least-privilege scopes. |
-| `STAGING_SSH_PRIVATE_KEY`, `STAGING_DEPLOY_HOST`, `STAGING_DEPLOY_USER`, `STAGING_DEPLOY_PATH` | `deploy-staging`, `smoke-staging` | SSH into staging host. |
-| `PRODUCTION_SSH_PRIVATE_KEY`, `PRODUCTION_DEPLOY_HOST`, `PRODUCTION_DEPLOY_USER`, `PRODUCTION_DEPLOY_PATH` | `deploy-production`, `smoke-production` | SSH into production host. |
+| `STAGING_SSH_KEY`, `STAGING_DEPLOY_HOST`, `STAGING_DEPLOY_USER`, `STAGING_DEPLOY_PATH` | `deploy-staging`, `smoke-staging` | SSH into staging host. |
+| `PRODUCTION_SSH_KEY`, `PRODUCTION_DEPLOY_HOST`, `PRODUCTION_DEPLOY_USER`, `PRODUCTION_DEPLOY_PATH` | `deploy-production`, `smoke-production` | SSH into production host. |
 | `.env` on each host | Compose | Runtime credentials; never stored in the image or repository. |
 
 `utils/engine.py` fails fast on missing required connection variables; `make env-check` exercises that import. Airflow preflight reports only variable *names*, never values.

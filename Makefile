@@ -90,6 +90,26 @@ help: ## Show this help and available configuration.
 		} \
 		END { while ((group = next_group()) != "") { printed_group[group] = 1; print_group(group); } printf "\\nConfiguration: ENV=dev|ci|prod (default dev), SELECT=<dbt selector>, EXCLUDE=<resource type>, CONFIRM=yes, V=1, AIRFLOW_DAG_ID=fleet_daily_load, AIRFLOW_RUN_ID=<run id>\\n"; }' "$(firstword $(MAKEFILE_LIST))"
 
+## Demo
+.PHONY: demo
+DEMO_DB ?= fleet_dev
+DEMO_SCHEMA_PREFIX ?= ci_demo_
+demo: check-tools install ## Build a zero-credential fixture demo in fleet_dev.
+	$(Q)printf '%s\n' "==> Fixture demo: bronze in $(DEMO_DB), dbt schemas $(DEMO_SCHEMA_PREFIX)*"
+	$(Q)env \
+		PG_HOST=localhost PG_PORT=5432 PG_USER=postgres PG_PASSWORD=postgres \
+		PG_DBNAME="$(DEMO_DB)" DB_NAME="$(DEMO_DB)" \
+		MONGO_URI=mongodb://localhost:27017/fleet_operations MONGO_DB_NAME=fleet_operations \
+		MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USER=root MYSQL_PASSWORD=postgres \
+		MYSQL_DATABASE=fleet_registry MYSQL_SERVER_TZ=UTC MYSQL_SSL_MODE=PREFERRED \
+		DATABRICKS_HOST=https://example.databricks.com \
+		DATABRICKS_HTTP_PATH=/sql/1.0/warehouses/example \
+		DATABRICKS_SCHEMA=marts DATABRICKS_TOKEN=placeholder \
+		SMTP_HOST=localhost SMTP_PORT=25 ALERT_EMAIL_FROM=ci@example.com ALERT_EMAIL_TO=ci@example.com \
+		DBT_TARGET=ci DBT_SCHEMA_PREFIX="$(DEMO_SCHEMA_PREFIX)" FIXTURE_LOAD=1 \
+		$(MAKE) -e ENV=ci CONFIRM=yes EXCLUDE=unit_test \
+		env-check contracts-check db-init-audit load-fixtures dbt-deps dbt-build
+
 ## Setup
 .PHONY: check-tools install setup
 check-tools: ## Verify the base command-line tools are available.

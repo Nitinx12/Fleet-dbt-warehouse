@@ -1,5 +1,11 @@
 # Testing guide
 
+**Purpose:** List the current tests, checks, gates, and known coverage gaps in the repository.
+
+**Audience:** Engineers adding code, reviewing a PR, or running the local quality gates.
+
+[Back to README](../README.md) · [Deployment](DEPLOYMENT.md)
+
 This is the current inventory of tests and checks in the repository. Use
 `make help` for the authoritative target list. Run local checks against the
 development database only; never run smoke or test commands against production
