@@ -179,59 +179,12 @@ runs. The `fleet_daily_load` DAG follows:
 ```mermaid
 flowchart LR
     preflight --> start_batch
-
-    subgraph mysql_tier["MySQL ingestion tier"]
-        direction TB
-        mysql_customers["ingest_mysql.customers"]
-        mysql_drivers["ingest_mysql.drivers"]
-        mysql_facilities["ingest_mysql.facilities"]
-        mysql_fuel["ingest_mysql.fuel_purchases"]
-        mysql_loads["ingest_mysql.loads"]
-        mysql_routes["ingest_mysql.routes"]
-        mysql_trailers["ingest_mysql.trailers"]
-        mysql_trucks["ingest_mysql.trucks"]
-        mysql_trips["ingest_mysql.trips"]
-    end
-
-    subgraph mongo_tier["Mongo ingestion tier"]
-        direction TB
-        mongo_delivery["ingest_mongo.delivery_events"]
-        mongo_maintenance["ingest_mongo.maintenance_records"]
-        mongo_safety["ingest_mongo.safety_incidents"]
-    end
-
-    start_batch --> mysql_customers
-    start_batch --> mysql_drivers
-    start_batch --> mysql_facilities
-    start_batch --> mysql_fuel
-    start_batch --> mysql_loads
-    start_batch --> mysql_routes
-    start_batch --> mysql_trailers
-    start_batch --> mysql_trucks
-    start_batch --> mysql_trips
-
-    start_batch --> mongo_delivery
-    start_batch --> mongo_maintenance
-    start_batch --> mongo_safety
-
-    mysql_customers --> ingest_done
-    mysql_drivers --> ingest_done
-    mysql_facilities --> ingest_done
-    mysql_fuel --> ingest_done
-    mysql_loads --> ingest_done
-    mysql_routes --> ingest_done
-    mysql_trailers --> ingest_done
-    mysql_trucks --> ingest_done
-    mysql_trips --> ingest_done
-
-    mongo_delivery --> ingest_done
-    mongo_maintenance --> ingest_done
-    mongo_safety --> ingest_done
-
-    ingest_done --> silver_run --> silver_test
-    silver_test --> gold_dims_run --> gold_facts_run --> gold_test
-    gold_test --> marts_run --> marts_test
-    marts_test --> publish_marts --> notify_summary
+    start_batch --> mysql["MySQL ingest<br/>(9 tables)"] & mongo["Mongo ingest<br/>(3 collections)"]
+    mysql & mongo --> ingest_done
+    ingest_done --> silver["silver<br/>run → test"]
+    silver --> gold["gold<br/>dims → facts → test"]
+    gold --> marts["marts<br/>run → test"]
+    marts --> publish_marts --> notify_summary
 ```
 
 Each task passes the DAG id and run id to the scripts so warehouse batches tie
