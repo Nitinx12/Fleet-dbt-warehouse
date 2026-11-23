@@ -4,11 +4,7 @@
 
 <h1 align="center">Fleet DBT Warehouse</h1>
 
-A daily analytics warehouse for fleet operations. MySQL `fleet_registry` and
-MongoDB `fleet_operations` are landed in Postgres `bronze`, transformed by dbt
-into `silver`, `gold` and `marts`, and approved non-PII marts are synced to
-Databricks for BI. Airflow orchestrates the run; Python only moves data; dbt
-owns every transformation.
+A daily analytics warehouse for logistics operations that uses watermark-based micro-batch processing to ingest data from MySQL `fleet_registry` and MongoDB `fleet_operations` into PostgreSQL `bronze`. dbt transforms the data through `silver`, `gold`, and `marts`, with approved non-PII marts published to Databricks for BI. Airflow orchestrates daily workflows, Makefile provides a unified entry point, Python handles data movement, and dbt owns all transformations.
 
 ## At a glance
 
@@ -116,92 +112,38 @@ flowchart LR
 ## Repository map
 
 ```text
-.
-├── AGENTS.md                  # rules and permissions for agents
+├── AGENTS.md / CLAUDE.md      # agent rules and Claude-specific notes
 ├── CHANGELOG.md               # Keep a Changelog release history
-├── CLAUDE.md                  # Claude-specific repository notes
-├── LICENSE
 ├── Makefile                   # single entry point; run make help
-├── pyproject.toml             # Python dependencies and pytest/Ruff config
-├── uv.lock                    # locked dependency graph
+├── pyproject.toml / uv.lock   # dependencies, pytest and Ruff config
 ├── .env.example               # every config knob, placeholders only
 ├── .githooks/                 # commit-msg and pre-push guards
 │
-├── contracts/                 # source-of-truth schemas for every landing table
-│   ├── sources/               #   12 YAML contracts (mysql__*, mongo__*)
-│   ├── samples/               #   12 sample JSON payloads
-│   └── sources_index.json     #   contract index used by contracts-check
-│
+├── contracts/                 # source-of-truth schemas for landing tables (12 YAML + samples)
 ├── scripts/                   # runnable pipeline steps
 │   ├── ingestion.py           #   MySQL + MongoDB → bronze, watermarks, audit
 │   ├── run_dbt.py             #   dbt runner + audit artifact loader
 │   ├── publish_marts.py       #   approved Postgres marts → Databricks
 │   └── run_notebooks.py       #   reproducible notebook runner
+├── utils/                     # shared plumbing: config, connections, audit, logger
 │
-├── utils/                     # shared plumbing imported by every script
-│   ├── engine.py              #   .env loading and config knobs
-│   ├── connection.py          #   PG / MySQL / Mongo / Databricks connections
-│   ├── audit.py               #   task, error, DQ and reconciliation audit rows
-│   ├── dbt_audit.py           #   dbt artifacts → audit.dbt_* tables
-│   └── logger.py              #   quiet file logger
-│
-├── dbt/                       # dbt project (transformation owner)
-│   ├── dbt_project.yml        #   schemas, vars and model defaults
-│   ├── profiles.yml           #   Postgres targets (dev/prod)
-│   ├── packages.yml           #   dbt package dependencies
-│   ├── models/
-│   │   ├── bronze/sources.yml #   source declarations (bronze.*)
-│   │   ├── silver/            #   12 staging models + schema.yml
-│   │   ├── gold/              #   13 dims/facts + schema.yml
-│   │   └── marts/             #   6 BI marts + reconcile model + schema.yml
+├── dbt/                       # transformation layer
+│   ├── models/                #   bronze sources, silver (12), gold (13), marts (6)
 │   ├── macros/                #   cleaning, incremental, gold and mart helpers
-│   └── tests/generic/silver/  #   11 project-specific generic tests
+│   └── tests/generic/silver/  #   project-specific generic tests
 │
 ├── sql/
 │   ├── scripts/               #   bootstrap 01..07 applied by make db-init
-│   │   ├── 01_init_schema.sql
-│   │   ├── 02_audit_tables.sql
-│   │   ├── 03_control_pipeline_registry.sql
-│   │   ├── 04_control_batch_tracking.sql
-│   │   ├── 05_control_watermarks.sql
-│   │   ├── 06_audit_relationships.sql
-│   │   └── 07_pipeline_event_triggers.sql
-│   └── metadata/              #   read-only inspection queries 01..10
+│   └── metadata/              #   read-only inspection queries
 │
-├── airflow/                   # orchestration stack
-│   ├── README.md              #   setup, DAG graph and operations
-│   ├── Dockerfile
-│   ├── compose.yml
-│   ├── compose.dev.yml
-│   ├── requirments-airflow.txt
-│   ├── requirments-dev.txt
-│   ├── dags/
-│   │   ├── fleet_dbt_daliy.py #   daily ingest → dbt → publish
-│   │   ├── fleet_report_weekly.py
-│   │   └── fleet_watchdog.py
-│   ├── helpers/
-│   │   ├── scripts/           #   preflight, commands, callbacks, notify, audit
-│   │   └── template/          #   text/HTML summary and failure templates
-│   ├── scripts/               #   image entrypoint, init and healthcheck
-│   └── tests/                 #   Airflow/DAG unit tests
+├── airflow/                   # orchestration stack (Dockerfile, compose, README)
+│   ├── dags/                  #   fleet_dbt_daliy, fleet_report_weekly, fleet_watchdog
+│   ├── helpers/               #   preflight, callbacks, notify, templates
+│   └── tests/                 #   DAG unit tests
 │
-├── docs/                      # guides and design notes
-│   ├── DBT.md
-│   ├── FINDING.md
-│   └── TESTING.md
-│
-├── tests/                     # root pytest suite, markers follow the folder
-│   ├── conftest.py
-│   ├── unit/                  #   no network, no DB, no Docker
-│   ├── integration/           #   throwaway Postgres built from sql/scripts/01..07
-│   └── smoke/                 #   post-build and post-deploy liveness
-│
-├── helpers/                   # shell utilities
-│   ├── check_health.sh
-│   ├── db_backup.sh
-│   ├── monitor_logs.sh
-│   └── protect_env.sh
-│
+├── docs/                      # DBT.md, FINDING.md, TESTING.md
+├── tests/                     # unit / integration / smoke
+├── helpers/                   # shell utilities (health, backup, logs, env protection)
 └── notebooks/                 # EDA notebooks
 ```
 
