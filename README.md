@@ -8,6 +8,8 @@
 A daily analytics warehouse for logistics operations that uses watermark-based micro-batch processing to ingest data from MySQL `fleet_registry` and MongoDB `fleet_operations` into PostgreSQL `bronze`. dbt transforms the data through `silver`, `gold`, and `marts`, with approved non-PII marts published to Databricks for BI. Airflow orchestrates daily workflows, Makefile provides a unified entry point, Python handles data movement, and dbt owns all transformations.
 </p>
 
+---
+
 ## Tech stack
 
 <p align="center">
@@ -151,6 +153,7 @@ Source: `gold.fct_delivery_events` joined to `gold.dim_facilities` and `gold.dim
 
 Details: [architecture](docs/ARCHITECTURE.md) · [deployment](docs/DEPLOYMENT.md) · [dbt guide](docs/DBT.md).
 
+---
 
 ## Key design decisions
 
@@ -161,6 +164,8 @@ Details: [architecture](docs/ARCHITECTURE.md) · [deployment](docs/DEPLOYMENT.md
 | One writer per layer | Multiple services patching shared schemas | Replay and incident triage stay deterministic; cross-layer convenience writes are deliberately blocked. |
 | Current-state SCD1 dimensions | SCD2 history on every dimension | Simpler, faster BI; historical attribution is not possible until snapshots are added. |
 | Five-mart publication allowlist | Publish every `serve: true` model | Keeps PII and unreviewed models out of Databricks; new BI grains require a reviewed PR. |
+
+---
 
 ## Mart Layer
 
@@ -175,6 +180,8 @@ Details: [architecture](docs/ARCHITECTURE.md) · [deployment](docs/DEPLOYMENT.md
 
 `assert_marts_reconcile_to_facts` is a seventh model in `marts/`: a table that returns rows only when a mart no longer adds back to its source fact. It is not one of the six BI marts.
 
+---
+
 ## Data quality and testing
 
 | Gate | What it covers | Current count | Command |
@@ -188,6 +195,8 @@ Details: [architecture](docs/ARCHITECTURE.md) · [deployment](docs/DEPLOYMENT.md
 | Secret scan | Full-history Gitleaks | 1 workflow | `.github/workflows/leaks.yml` |
 
 The 35 `warn` tests are gold/mart `relationships` checks; silver relationships are error-severity. There are no dbt unit tests, snapshots, or enforced model contracts yet. Full inventory and gaps: [TESTING.md](docs/TESTING.md).
+
+---
 
 ## Daily run
 
@@ -224,6 +233,8 @@ flowchart TD
 ```
 
 `fleet_daily_load` uses `0 2 * * *` in `Asia/Kolkata`, `catchup=False`, `max_active_runs=1`, a 6-hour DAG timeout, and one active `control.batch` per pipeline. Ingestion tasks retry twice with exponential backoff; dbt tasks do not retry automatically. See [Airflow README](airflow/README.md).
+
+---
 
 ## Repository map
 
@@ -262,6 +273,7 @@ flowchart TD
 ├── helpers/                   # shell utilities (health, backup, logs, env protection)
 └── notebooks/                 # EDA notebooks
 ```
+---
 
 ## Makefile Commands
 
@@ -311,6 +323,7 @@ make clean                   # remove caches and generated output
 
 See [deployment](DEPLOYMENT.md) for first-time setup, the manual daily run, and the CI-equivalent fixture build.
 
+---
 
 ## Author, contact, license
 
