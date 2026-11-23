@@ -90,7 +90,7 @@ jobs:
           DEPLOY_USER: ${{ secrets.STAGING_DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.STAGING_DEPLOY_PATH }}
           IMAGE_REF: ${{ needs.resolve-image.outputs.image }}
-        run: make deploy CONFIRM=yes
+        run: bash scripts/deploy.sh deploy
 
   smoke-staging:
     name: Smoke staging
@@ -110,7 +110,7 @@ jobs:
           DEPLOY_HOST: ${{ secrets.STAGING_DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.STAGING_DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.STAGING_DEPLOY_PATH }}
-        run: make deploy-smoke
+        run: bash scripts/deploy.sh smoke
 
   deploy-production:
     name: Deploy production
@@ -130,7 +130,7 @@ jobs:
           DEPLOY_USER: ${{ secrets.PRODUCTION_DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH }}
           IMAGE_REF: ${{ needs.resolve-image.outputs.image }}
-        run: make deploy CONFIRM=yes
+        run: bash scripts/deploy.sh deploy
 
   smoke-production:
     name: Smoke production
@@ -150,4 +150,4 @@ jobs:
           DEPLOY_HOST: ${{ secrets.PRODUCTION_DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.PRODUCTION_DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH }}
-        run: make deploy-smoke
+        run: bash scripts/deploy.sh smoke
