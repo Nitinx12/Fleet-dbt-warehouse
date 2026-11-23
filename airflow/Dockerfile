@@ -11,8 +11,12 @@ LABEL org.opencontainers.image.title="fleet-dbt-warehouse" \
       org.opencontainers.image.revision="${GIT_SHA}"
 
 USER root
-RUN mkdir -p /opt/venv /opt/fleet \
-    && chown airflow:root /opt/venv /opt/fleet
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends make \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m venv /opt/venv \
+    && mkdir -p /opt/fleet \
+    && chown -R airflow:root /opt/venv /opt/fleet
 USER airflow
 WORKDIR /opt/fleet
 
@@ -24,11 +28,11 @@ ENV PATH="/home/airflow/.local/bin:/opt/venv/bin:${PATH}" \
     UV_NO_CACHE=1
 
 COPY --chown=airflow:root airflow/requirments-airflow.txt /tmp/requirments-airflow.txt
-RUN pip install --no-cache-dir --user \
+RUN PIP_USER=0 pip install --no-cache-dir \
       --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt" \
       "apache-airflow==${AIRFLOW_VERSION}" \
       -r /tmp/requirments-airflow.txt \
-    && pip install --no-cache-dir --user "uv==${UV_VERSION}"
+    && PIP_USER=0 pip install --no-cache-dir "uv==${UV_VERSION}"
 
 COPY --chown=airflow:root pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project

@@ -1,16 +1,39 @@
+x-dev-env: &dev-env
+  PG_HOST: host.docker.internal
+  MYSQL_HOST: host.docker.internal
+  MONGO_URI: "mongodb://host.docker.internal:27017/${MONGO_DB_NAME:-fleet_operations}"
+
+x-dev-extra-hosts: &dev-extra-hosts
+  - "host.docker.internal:host-gateway"
+
 services:
   airflow-api-server:
+    environment:
+      <<: *dev-env
+    extra_hosts: *dev-extra-hosts
     volumes:
       - ../:/opt/fleet
   airflow-scheduler:
+    environment:
+      <<: *dev-env
+    extra_hosts: *dev-extra-hosts
     volumes:
       - ../:/opt/fleet
   airflow-dag-processor:
+    environment:
+      <<: *dev-env
+    extra_hosts: *dev-extra-hosts
     volumes:
       - ../:/opt/fleet
   airflow-worker:
+    environment:
+      <<: *dev-env
+    extra_hosts: *dev-extra-hosts
     volumes:
       - ../:/opt/fleet
   airflow-init:
+    environment:
+      <<: *dev-env
+    extra_hosts: *dev-extra-hosts
     volumes:
       - ../:/opt/fleet

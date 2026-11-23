@@ -12,7 +12,11 @@ x-airflow-common: &airflow-common
     - ../.env
   environment: &airflow-env
     AIRFLOW_HOME: /opt/airflow
+    AIRFLOW__API_AUTH__JWT_SECRET: "${AIRFLOW__CORE__FERNET_KEY}"
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__CORE__DAGS_FOLDER: /opt/fleet/airflow/dags
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    DBT_TARGET: "${DBT_TARGET:-dev}"
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD:?Set AIRFLOW_DB_PASSWORD in .env}@airflow-metadata/airflow
     AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:${AIRFLOW_DB_PASSWORD:?Set AIRFLOW_DB_PASSWORD in .env}@airflow-metadata/airflow
@@ -66,7 +70,7 @@ services:
       redis:
         condition: service_healthy
     entrypoint: ["/bin/bash", "-c"]
-    command: "exec /opt/fleet/airflow/scripts/init.sh"
+    command: ["exec /opt/fleet/airflow/scripts/init.sh"]
     restart: "no"
 
   airflow-api-server:

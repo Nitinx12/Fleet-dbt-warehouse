@@ -15,7 +15,9 @@ load_dotenv(ROOT / ".env")
 # run as a script, so the repo root is not on sys.path yet
 sys.path.insert(0, str(ROOT))
 
-DBT = ROOT / ".venv" / "Scripts" / "dbt.exe"
+DBT_DIR = "Scripts" if sys.platform == "win32" else "bin"
+DBT_NAME = "dbt.exe" if sys.platform == "win32" else "dbt"
+DBT = ROOT / ".venv" / DBT_DIR / DBT_NAME
 if not DBT.exists():
     DBT = "dbt"
 
