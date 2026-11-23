@@ -35,6 +35,10 @@ DBT_SELECT = $(if $(strip $(SELECT)),--select "$(SELECT)",)
 DBT_EXCLUDE = $(if $(strip $(EXCLUDE)),--exclude-resource-type "$(EXCLUDE)",)
 DBT = "$(UV)" run --no-sync python scripts/run_dbt.py
 PSQL_DB = PGPASSWORD="$(PG_PASSWORD)" "$(PSQL)" -h "$(PG_HOST)" -p "$(PG_PORT)" -U "$(DB_USER)"
+AIRFLOW_COMPOSE = docker compose --env-file .env -f airflow/compose.yml -f airflow/compose.dev.yml
+AIRFLOW_DAG_ID ?= fleet_daily_load
+AIRFLOW_RUN_ID ?=
+AIRFLOW_RUN_ID_ARG = $(if $(strip $(AIRFLOW_RUN_ID)),--run-id "$(AIRFLOW_RUN_ID)",)
 
 ifeq ($(V),1)
 Q :=
@@ -62,6 +66,10 @@ define confirm_destructive
 if [ "$(CONFIRM)" != "yes" ]; then printf '%s\n' "make: *** refusing destructive operation; rerun with CONFIRM=yes." >&2; exit 1; fi
 endef
 
+define require_airflow_run_id
+test -n "$(AIRFLOW_RUN_ID)" || { printf '%s\n' "make: *** AIRFLOW_RUN_ID is required." >&2; exit 1; }
+endef
+
 ## Help
 .PHONY: help
 help: ## Show this help and available configuration.
@@ -80,7 +88,7 @@ help: ## Show this help and available configuration.
 			for (i = 1; i <= count; i++) for (j = i + 1; j <= count; j++) if (targets[ordered[j]] < targets[ordered[i]]) { temp = ordered[i]; ordered[i] = ordered[j]; ordered[j] = temp; } \
 			if (count) { printf "\\n%s:\\n", name; for (i = 1; i <= count; i++) { key = ordered[i]; printf "  %-20s %s\\n", targets[key], descriptions[key]; } } \
 		} \
-		END { while ((group = next_group()) != "") { printed_group[group] = 1; print_group(group); } printf "\\nConfiguration: ENV=dev|ci|prod (default dev), SELECT=<dbt selector>, EXCLUDE=<resource type>, CONFIRM=yes, V=1\\n"; }' "$(firstword $(MAKEFILE_LIST))"
+		END { while ((group = next_group()) != "") { printed_group[group] = 1; print_group(group); } printf "\\nConfiguration: ENV=dev|ci|prod (default dev), SELECT=<dbt selector>, EXCLUDE=<resource type>, CONFIRM=yes, V=1, AIRFLOW_DAG_ID=fleet_daily_load, AIRFLOW_RUN_ID=<run id>\\n"; }' "$(firstword $(MAKEFILE_LIST))"
 
 ## Setup
 .PHONY: check-tools install setup
@@ -151,7 +159,7 @@ contracts-check: check-version ## Validate the source-contract index and dbt bro
 	$(Q)"$(UV)" run --no-sync python -c "import json; from pathlib import Path; from scripts.ingestion import read_contract; root=Path('.'); index=json.loads((root/'contracts/sources_index.json').read_text(encoding='utf-8')); indexed={item['file']: item['source'] for item in index['contracts']}; paths={path.name for path in (root/'contracts/sources').glob('*.yml')}; contracts={path.name: read_contract(path) for path in (root/'contracts/sources').glob('*.yml')}; dbt_tables={line.strip().removeprefix('- name: ').strip() for line in (root/'dbt/models/bronze/sources.yml').read_text(encoding='utf-8').splitlines() if line.strip().startswith('- name:')}; dbt_tables.discard('bronze'); contract_tables={str(contract['landing_table']).split('.', 1)[1] for contract in contracts.values()}; assert paths == set(indexed), 'contract index files differ from contracts/sources'; assert {name: contract['source'] for name, contract in contracts.items()} == indexed, 'contract index sources differ from contract YAML'; assert contract_tables == dbt_tables, 'dbt bronze source tables differ from contract landing tables'; print(f'contracts OK: {len(contracts)} sources')"
 
 ## Airflow
-.PHONY: airflow-test airflow-up airflow-down
+.PHONY: airflow-test airflow-up airflow-down airflow-dag-list airflow-dag-imports airflow-dag-runs airflow-dag-status airflow-dag-clear airflow-dag-trigger
 airflow-test: check-version ## Run Airflow orchestration tests.
 	$(Q)PYTHONPATH=airflow "$(UV)" run --no-sync pytest \
 		airflow/tests/test_dag_integrity.py airflow/tests/test_daily_dag_structure.py \
@@ -162,10 +170,33 @@ airflow-test: check-version ## Run Airflow orchestration tests.
 		airflow/tests/test_callbacks.py airflow/tests/test_summary.py airflow/tests/test_watchdog.py
 
 airflow-up: ## Start the local Airflow stack.
-	$(Q)docker compose --env-file .env -f airflow/compose.yml -f airflow/compose.dev.yml up -d --build
+	$(Q)$(AIRFLOW_COMPOSE) up -d --build
 
 airflow-down: ## Stop the local Airflow stack.
-	$(Q)docker compose --env-file .env -f airflow/compose.yml -f airflow/compose.dev.yml down
+	$(Q)$(AIRFLOW_COMPOSE) down
+
+airflow-dag-list: ## List Airflow DAGs.
+	$(Q)$(AIRFLOW_COMPOSE) exec -T airflow-worker airflow dags list
+
+airflow-dag-imports: ## List Airflow DAG import errors.
+	$(Q)$(AIRFLOW_COMPOSE) exec -T airflow-worker airflow dags list-import-errors
+
+airflow-dag-runs: ## List DAG runs for AIRFLOW_DAG_ID.
+	$(Q)$(AIRFLOW_COMPOSE) exec -T airflow-worker airflow dags list-runs "$(AIRFLOW_DAG_ID)" -o json
+
+airflow-dag-status: ## Show DAG run and task states for AIRFLOW_RUN_ID.
+	$(Q)$(call require_airflow_run_id)
+	$(Q)$(AIRFLOW_COMPOSE) exec -T airflow-worker airflow dags state "$(AIRFLOW_DAG_ID)" "$(AIRFLOW_RUN_ID)"
+	$(Q)$(AIRFLOW_COMPOSE) exec -T airflow-worker airflow tasks states-for-dag-run "$(AIRFLOW_DAG_ID)" "$(AIRFLOW_RUN_ID)"
+
+airflow-dag-clear: ## Clear one DAG run; requires AIRFLOW_RUN_ID and CONFIRM=yes.
+	$(Q)$(call require_airflow_run_id)
+	$(Q)$(call confirm_destructive)
+	$(Q)$(AIRFLOW_COMPOSE) exec -T airflow-worker airflow dags clear "$(AIRFLOW_DAG_ID)" --run-id "$(AIRFLOW_RUN_ID)" --yes
+
+airflow-dag-trigger: ## Trigger a DAG run; requires CONFIRM=yes.
+	$(Q)$(call confirm_destructive)
+	$(Q)$(AIRFLOW_COMPOSE) exec -T airflow-worker airflow dags trigger "$(AIRFLOW_DAG_ID)" $(AIRFLOW_RUN_ID_ARG) -o json
 
 ## Notebooks
 .PHONY: notebooks
