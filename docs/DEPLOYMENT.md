@@ -44,7 +44,7 @@ flowchart TD
     PROD -. unhealthy .-> ROLL
 ```
 
-`.github/workflows/ci.yml` has seven jobs: `lint`, `unit-tests`, `contracts`, `dbt-parse`, `airflow-test`, `integration`, and `image-build`. `.github/workflows/leaks.yml` runs Gitleaks on PRs, pushes to `main`, a weekly schedule, and manual dispatch. `.github/workflows/deploy.yml` resolves a 40-character commit SHA to a GHCR digest and never deploys `latest`.
+`.github/workflows/ci.yml` has nine jobs: `lint`, `unit-tests`, `contracts`, `dbt-parse`, `airflow-test`, `stream-tests`, `integration`, `image-build`, and `stream-image-build`. `.github/workflows/leaks.yml` runs Gitleaks on PRs, pushes to `main`, a weekly schedule, and manual dispatch. `.github/workflows/deploy.yml` resolves a 40-character commit SHA to a GHCR digest and never deploys `latest`.
 
 ## Local setup and verification
 

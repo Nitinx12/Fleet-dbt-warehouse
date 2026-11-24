@@ -198,7 +198,7 @@ Details: [architecture](docs/ARCHITECTURE.md) · [deployment](docs/DEPLOYMENT.md
 | Python tests | Ingestion, fixtures, publishing, audit, connections, Makefile guards | 73 collected | `make py-test` |
 | Airflow tests | DAG structure, tiers, callbacks, redaction, command builders | 33 collected | `PYTHONPATH=airflow uv run --no-sync pytest airflow/tests` |
 | Contracts | Index ↔ YAML ↔ dbt bronze source names | 12 sources | `make contracts-check` |
-| CI | Lint, unit tests, contracts, dbt parse, Airflow, integration, image smoke | 7 jobs | `.github/workflows/ci.yml` |
+| CI | Lint, unit tests, contracts, dbt parse, Airflow, stream tests, integration, image smoke | 9 jobs | `.github/workflows/ci.yml` |
 | Secret scan | Full-history Gitleaks | 1 workflow | `.github/workflows/leaks.yml` |
 
 The 35 `warn` tests are gold/mart `relationships` checks; silver relationships are error-severity. There are no dbt unit tests, snapshots, or enforced model contracts yet. Full inventory and gaps: [TESTING.md](docs/TESTING.md).

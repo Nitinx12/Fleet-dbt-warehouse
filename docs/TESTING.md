@@ -95,7 +95,7 @@ Airflow Task SDK installed in the Airflow image, not in the local venv.
 | `test_airflow_helpers.py` | Credential/URL redaction, argv builders and identifier validation. |
 | `test_audit_reader.py` | Audit readers are SELECT-only; ingestion gate reports missing tasks. |
 | `test_callbacks.py` | Failure callbacks and batch finalisation before notification. |
-| `test_commads.py` | dbt argv construction and shell-free publish command. |
+| `test_commads.py` | dbt argv construction, shell-free publish and stream launcher argv. |
 | `test_dag_integrity.py` | DAG module import and DAG metadata when Airflow SDK is available. |
 | `test_daily_dag_structure.py` | Daily task IDs, pools, retries, contract gating and stage order. |
 | `test_finalize_audit.py` | Finalizer calls only `control.finish_batch`; rerun start-batch shape. |
@@ -106,7 +106,7 @@ Airflow Task SDK installed in the Airflow image, not in the local venv.
 | `test_run_dbt.py` | Shared-runner argv stripping and batch id propagation. |
 | `test_summary.py` | Bounded name lists and failure context from aggregate readers. |
 | `test_templates.py` | Text and HTML summary/failure templates. |
-| `test_watchdog.py` | Watchdog remains a documented phase-two skeleton. |
+| `test_watchdog.py` | Watchdog probes stream health without opening or closing a batch. |
 
 ## dbt tests — `dbt/`
 
@@ -170,11 +170,13 @@ secrets. None of these helpers is wired into `make verify` yet.
 ## GitHub Actions
 
 `ci.yml` runs on pull requests and pushes to `main`. PR and push runs perform
-lint, unit tests, contract checks, `dbt parse`, Airflow tests, integration tests
-against a throwaway Postgres service, audit/control bootstrap, and a dbt fixture
-build in `ci_pr_<n>_*` schemas. The image build job waits for all checks, builds
-the Airflow image with `GIT_SHA`, runs the in-image smoke script and pushes
-`ghcr.io/<owner>/<repo>:sha-<commit>` only on `main`.
+lint, unit tests, contract checks, `dbt parse`, Airflow tests, broker-free stream
+tests, integration tests against a throwaway Postgres service, audit/control
+bootstrap, and a dbt fixture build in `ci_pr_<n>_*` schemas. The image jobs build
+the Airflow image with `GIT_SHA` and the stream image with the same commit tag
+plus a `-stream` suffix, run in-image smoke checks and push
+`ghcr.io/<owner>/<repo>:sha-<commit>` and `...:sha-<commit>-stream` only on
+`main`.
 
 `leaks.yml` runs Gitleaks over the full history on pull requests, pushes to
 `main`, a weekly schedule and manual dispatch. It downloads a checksum-verified

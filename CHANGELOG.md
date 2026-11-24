@@ -32,6 +32,8 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
 - Airflow stream observability: watchdog lag/freshness probes, redacted breach
   alerts, an observational `reconcile_stream` task that records drift without
   failing the daily batch, thin launchers and the Airflow image's Kafka client.
+- CI gates for the speed layer: a broker-free `stream-tests` job and a pinned
+  `sha-<commit>-stream` image build with an in-image import smoke check.
 - Airflow orchestration stack: Docker image, compose files, DAGs, helpers,
   callbacks and operational docs under `airflow/`.
 - Airflow and alert environment settings, plus batch-context support in the

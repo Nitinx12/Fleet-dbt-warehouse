@@ -233,14 +233,16 @@ flowchart TD
 | Item | Value |
 |---|---|
 | Triggers | `pull_request` to `main`, `push` to `main`. |
-| Permissions | Top level `contents: read`; `image-build` adds `packages: write`. |
+| Permissions | Top level `contents: read`; `image-build` and `stream-image-build` add `packages: write`. |
 | Concurrency | `ci-<workflow>-<ref>`, cancels in-progress runs. |
 | Python | `setup-uv` with Python 3.12 and cache; `make install` runs `uv sync --frozen`. **TODO:** the image runs Python 3.13, so tests and production use different interpreters. Align both (see section 14). |
-| Jobs | `lint` (10m), `unit-tests` (10m), `contracts` (10m), `dbt-parse` (10m), `airflow-test` (10m), `integration` (25m), `image-build` (35m). |
+| Jobs | `lint` (10m), `unit-tests` (10m), `contracts` (10m), `dbt-parse` (10m), `airflow-test` (10m), `stream-tests` (15m), `integration` (25m), `image-build` (35m), `stream-image-build` (35m). |
 | Integration | Service `postgres:16`, `make py-integration`, `make CONFIRM=yes db-init-audit`, `make dbt-deps`, `make load-fixtures ENV=ci`, `make dbt-build ENV=ci EXCLUDE=unit_test`. |
+| Stream tests | `make stream-test` in an isolated `uv` environment with the locked `kafka` and `spark` groups; no broker is started. |
 | Image | Builds `airflow/Dockerfile` from repo root with `AIRFLOW_VERSION=3.3.2`, `PYTHON_VERSION=3.13`, `GIT_SHA`. |
+| Stream image | Builds `kafka/Dockerfile` from repo root and tags `sha-<commit>-stream`, reusing the commit SHA but not the Airflow tag. |
 | Registry | Login and push only when `github.event_name == 'push'`; PR builds are load-only. |
-| Smoke | `docker run --rm --entrypoint /opt/fleet/airflow/scripts/smoke.sh` with all runtime env forwarded. |
+| Smoke | `docker run --rm --entrypoint /opt/fleet/airflow/scripts/smoke.sh` with all runtime env forwarded; the stream image imports `fleet_stream` and `pyspark`. |
 | Actions | Every third-party action is pinned by commit SHA; no `pull_request_target`. |
 
 Fixture loading is double-guarded: `FIXTURE_LOAD=1` and `PG_DBNAME` must be `fleet_dev` or `fleet_it_*`. CI sets `DBT_SCHEMA_PREFIX=ci_pr_<n>_`, so dbt layer schemas are prefixed and never collide with production.
