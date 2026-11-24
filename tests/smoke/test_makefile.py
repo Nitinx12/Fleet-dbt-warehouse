@@ -49,7 +49,7 @@ def test_contracts_check_is_a_documented_read_only_target() -> None:
     dry_run = _make("--dry-run", "contracts-check")
 
     assert "contracts-check" in help_output
-    assert "scripts.ingestion import read_contract" in dry_run
+    assert "scripts/check_contracts.py" in dry_run
     assert "psql" not in dry_run
 
 

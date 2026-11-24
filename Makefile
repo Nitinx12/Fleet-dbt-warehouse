@@ -36,6 +36,7 @@ DBT_EXCLUDE = $(if $(strip $(EXCLUDE)),--exclude-resource-type "$(EXCLUDE)",)
 DBT = "$(UV)" run --no-sync python scripts/run_dbt.py
 PSQL_DB = PGPASSWORD="$(PG_PASSWORD)" "$(PSQL)" -h "$(PG_HOST)" -p "$(PG_PORT)" -U "$(DB_USER)"
 AIRFLOW_COMPOSE = docker compose --env-file .env -f airflow/compose.yml -f airflow/compose.dev.yml
+KAFKA_COMPOSE = docker compose --env-file .env -f kafka/compose.yml
 AIRFLOW_DAG_ID ?= fleet_daily_load
 AIRFLOW_RUN_ID ?=
 AIRFLOW_RUN_ID_ARG = $(if $(strip $(AIRFLOW_RUN_ID)),--run-id "$(AIRFLOW_RUN_ID)",)
@@ -175,8 +176,8 @@ ci: verify ## Run the checks supported by the tracked repository.
 
 ## Contracts
 .PHONY: contracts-check
-contracts-check: check-version ## Validate the source-contract index and dbt bronze source list.
-	$(Q)"$(UV)" run --no-sync python -c "import json; from pathlib import Path; from scripts.ingestion import read_contract; root=Path('.'); index=json.loads((root/'contracts/sources_index.json').read_text(encoding='utf-8')); indexed={item['file']: item['source'] for item in index['contracts']}; paths={path.name for path in (root/'contracts/sources').glob('*.yml')}; contracts={path.name: read_contract(path) for path in (root/'contracts/sources').glob('*.yml')}; dbt_tables={line.strip().removeprefix('- name: ').strip() for line in (root/'dbt/models/bronze/sources.yml').read_text(encoding='utf-8').splitlines() if line.strip().startswith('- name:')}; dbt_tables.discard('bronze'); contract_tables={str(contract['landing_table']).split('.', 1)[1] for contract in contracts.values()}; assert paths == set(indexed), 'contract index files differ from contracts/sources'; assert {name: contract['source'] for name, contract in contracts.items()} == indexed, 'contract index sources differ from contract YAML'; assert contract_tables == dbt_tables, 'dbt bronze source tables differ from contract landing tables'; print(f'contracts OK: {len(contracts)} sources')"
+contracts-check: check-version ## Validate source, stream and dbt contract alignment.
+	$(Q)"$(UV)" run --no-sync python scripts/check_contracts.py
 
 ## Airflow
 .PHONY: airflow-test airflow-up airflow-down airflow-dag-list airflow-dag-imports airflow-dag-runs airflow-dag-status airflow-dag-clear airflow-dag-trigger
@@ -218,6 +219,65 @@ airflow-dag-trigger: ## Trigger a DAG run; requires CONFIRM=yes.
 	$(Q)$(call confirm_destructive)
 	$(Q)$(AIRFLOW_COMPOSE) exec -T airflow-worker airflow dags trigger "$(AIRFLOW_DAG_ID)" $(AIRFLOW_RUN_ID_ARG) -o json
 
+## Streaming
+.PHONY: stream-up stream-down stream-status stream-produce stream-reset stream-test stream-test-integration stream-demo
+stream-up: check-tools ## Start the local Kafka stream stack and register topics.
+	$(Q)$(call require_environment)
+	$(Q)$(call confirm_production)
+	$(Q)$(call require_venv)
+	$(Q)$(call require_cmd,docker,Install Docker and Docker Compose.)
+	$(Q)printf '%s\n' "==> Starting streaming stack for ENV=$(ENV)"
+	$(Q)$(KAFKA_COMPOSE) up -d --build kafka kafka-init
+	$(Q)"$(UV)" run --no-sync python scripts/stream_admin.py topics
+	$(Q)"$(UV)" run --no-sync python scripts/stream_admin.py register
+	$(Q)$(KAFKA_COMPOSE) up -d --build stream-job
+
+stream-down: ## Stop the local Kafka stream stack without deleting checkpoints.
+	$(Q)$(call require_cmd,docker,Install Docker and Docker Compose.)
+	$(Q)$(KAFKA_COMPOSE) down
+
+stream-status: check-version ## Show stream registration and health.
+	$(Q)$(call require_environment)
+	$(Q)"$(UV)" run --no-sync python scripts/stream_admin.py status
+
+stream-produce: check-version ## Replay delivery events through the stream producer.
+	$(Q)$(call require_environment)
+	$(Q)$(call confirm_production)
+	$(Q)printf '%s\n' "==> Replaying delivery events from STREAM_SOURCE=$${STREAM_SOURCE:-fixture}"
+	$(Q)"$(UV)" run --no-sync python scripts/stream_producer.py
+
+stream-reset: check-version ## Clear a stream checkpoint; requires CONFIRM=yes.
+	$(Q)$(call require_environment)
+	$(Q)$(call confirm_destructive)
+	$(Q)$(call confirm_production)
+	$(Q)"$(UV)" run --no-sync python scripts/stream_admin.py reset
+
+stream-test: check-version ## Run Kafka-free streaming unit tests.
+	$(Q)PYTHONPATH=kafka "$(UV)" run --no-sync pytest kafka/tests/unit -m unit
+
+stream-test-integration: check-version ## Run streaming tests that need the local Kafka stack.
+	$(Q)PYTHONPATH=kafka "$(UV)" run --no-sync pytest kafka/tests/integration -m integration
+
+stream-demo: check-tools install ## Build a zero-credential fixture batch and drive the streaming speed layer.
+	$(Q)printf '%s\n' "==> Streaming fixture demo in $(DEMO_DB), stream schemas realtime and audit"
+	$(Q)env \
+		PG_HOST=localhost PG_PORT=5432 PG_USER=postgres PG_PASSWORD=postgres \
+		PG_DBNAME="$(DEMO_DB)" DB_NAME="$(DEMO_DB)" \
+		MONGO_URI=mongodb://localhost:27017/fleet_operations MONGO_DB_NAME=fleet_operations \
+		MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USER=root MYSQL_PASSWORD=postgres \
+		MYSQL_DATABASE=fleet_registry MYSQL_SERVER_TZ=UTC MYSQL_SSL_MODE=PREFERRED \
+		DATABRICKS_HOST=https://example.databricks.com \
+		DATABRICKS_HTTP_PATH=/sql/1.0/warehouses/example \
+		DATABRICKS_SCHEMA=marts DATABRICKS_TOKEN=placeholder \
+		SMTP_HOST=localhost SMTP_PORT=25 ALERT_EMAIL_FROM=ci@example.com ALERT_EMAIL_TO=ci@example.com \
+		DBT_TARGET=ci DBT_SCHEMA_PREFIX="$(DEMO_SCHEMA_PREFIX)" FIXTURE_LOAD=1 \
+		KAFKA_BOOTSTRAP_SERVERS=kafka:9092 KAFKA_TOPIC_PREFIX=ci. \
+		STREAM_SOURCE=fixture STREAM_CHECKPOINT_DIR=./.checkpoints/ci_delivery_events_v1 \
+		STREAM_REPLAY_SPEED=0 STREAM_LATE_FRACTION=0 STREAM_DUPLICATE_FRACTION=0 \
+		$(MAKE) -e ENV=ci CONFIRM=yes EXCLUDE=unit_test \
+		env-check contracts-check db-init-audit load-fixtures dbt-deps dbt-build \
+		stream-up stream-produce stream-status
+
 ## Notebooks
 .PHONY: notebooks
 notebooks: check-version ## Execute EDA notebooks into out/notebooks.
@@ -242,12 +302,13 @@ db-init: check-tools ## Create the warehouse database and apply SQL bootstrap sc
 	$(Q)$(PSQL_DB) -d "$(DB_NAME)" -v ON_ERROR_STOP=1 -f "sql/scripts/05_control_watermarks.sql"
 	$(Q)$(PSQL_DB) -d "$(DB_NAME)" -v ON_ERROR_STOP=1 -f "sql/scripts/06_audit_relationships.sql"
 	$(Q)$(PSQL_DB) -d "$(DB_NAME)" -v ON_ERROR_STOP=1 -f "sql/scripts/07_pipeline_event_triggers.sql"
+	$(Q)$(PSQL_DB) -d "$(DB_NAME)" -v ON_ERROR_STOP=1 -f "sql/scripts/08_streaming.sql"
 
 db-init-audit: check-tools ## Apply audit/control bootstrap scripts to DB_NAME for CI.
 	$(Q)$(call require_cmd,$(PSQL),Install the PostgreSQL client and put psql on PATH.)
 	$(Q)$(call confirm_destructive)
 	$(Q)$(PSQL_DB) -d "$(DB_NAME)" -v ON_ERROR_STOP=1 -c "CREATE SCHEMA IF NOT EXISTS audit; CREATE SCHEMA IF NOT EXISTS control;"
-	$(Q)for script in 02_audit_tables.sql 03_control_pipeline_registry.sql 04_control_batch_tracking.sql 05_control_watermarks.sql 06_audit_relationships.sql 07_pipeline_event_triggers.sql; do $(PSQL_DB) -d "$(DB_NAME)" -v ON_ERROR_STOP=1 -f "sql/scripts/$$script"; done
+	$(Q)for script in 02_audit_tables.sql 03_control_pipeline_registry.sql 04_control_batch_tracking.sql 05_control_watermarks.sql 06_audit_relationships.sql 07_pipeline_event_triggers.sql 08_streaming.sql; do $(PSQL_DB) -d "$(DB_NAME)" -v ON_ERROR_STOP=1 -f "sql/scripts/$$script"; done
 	$(Q)$(PSQL_DB) -d "$(DB_NAME)" -v ON_ERROR_STOP=1 -c "INSERT INTO control.pipeline (pipeline_name, airflow_dag_id, description, schedule_cron, owner) VALUES ('fleet_daily', 'fleet_daily_load', 'Daily fleet telemetry and operations load', '0 2 * * *', 'data-engineering') ON CONFLICT (pipeline_name) DO NOTHING"
 
 ingest: check-version ## Load MySQL and MongoDB sources into the bronze layer.

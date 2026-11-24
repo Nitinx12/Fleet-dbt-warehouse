@@ -1,0 +1,86 @@
+# Stream contract: fleet.delivery_events.v1
+contract_version: 1.0.0
+stream: fleet.delivery_events
+topic: fleet.delivery_events.v1
+dlq_topic: fleet.delivery_events.v1.dlq
+key:
+- event_id
+dedupe_key:
+- event_id
+- event_type
+event_time_field: event_time
+allowed_lateness_minutes: 10
+value_format: json
+owner: fleet-data-eng
+columns:
+- name: event_id
+  raw_type: string
+  staged_type: string
+  nullable: false
+- name: load_id
+  raw_type: string
+  staged_type: string
+  nullable: false
+- name: trip_id
+  raw_type: string
+  staged_type: string
+  nullable: false
+- name: stop_type
+  raw_type: string
+  staged_type: string
+  nullable: false
+  accepted_values:
+  - PICKUP
+  - DELIVERY
+- name: facility_id
+  raw_type: string
+  staged_type: string
+  nullable: false
+- name: scheduled_datetime
+  raw_type: string
+  staged_type: timestamp
+  nullable: false
+- name: actual_datetime
+  raw_type: string
+  staged_type: timestamp
+  nullable: false
+- name: detention_minutes
+  raw_type: string
+  staged_type: int
+  nullable: false
+  min: 0
+- name: on_time_flag
+  raw_type: string
+  staged_type: boolean
+  nullable: false
+- name: location_city
+  raw_type: string
+  staged_type: string
+  nullable: false
+- name: location_state
+  raw_type: string
+  staged_type: string
+  nullable: false
+- name: loaded_at
+  raw_type: string
+  staged_type: timestamp
+  nullable: false
+- name: event_type
+  raw_type: string
+  staged_type: string
+  nullable: false
+  accepted_values:
+  - ARRIVED
+  - DEPARTED
+- name: event_time
+  raw_type: string
+  staged_type: timestamp
+  nullable: false
+reconcile:
+  source_object: realtime.delivery_events_raw
+  target_object: gold.fct_delivery_events
+  raw_tolerance_pct: 0
+  window_tolerance_pct: 5
+  min_window_age_hours: 24
+  date_column: scheduled_datetime
+  facility_column: facility_id

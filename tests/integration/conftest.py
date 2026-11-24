@@ -78,7 +78,7 @@ def _apply_scripts(database: str) -> None:
     try:
         with connection.cursor() as cursor:
             cursor.execute("SET client_min_messages TO warning")
-            for path in sorted(_SQL_DIR.glob("[0-7][0-9]_*.sql")):
+            for path in sorted(_SQL_DIR.glob("[0-8][0-9]_*.sql")):
                 sql = path.read_text(encoding="utf-8")
                 if path.name.startswith("01_"):
                     sql = _init_sql(sql, database)

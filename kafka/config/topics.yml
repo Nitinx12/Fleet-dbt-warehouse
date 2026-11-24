@@ -1,0 +1,15 @@
+# Kafka topic infrastructure for the delivery event stream.
+version: 1
+topics:
+- name: fleet.delivery_events.v1
+  partitions: 3
+  replication_factor: 1
+  retention_ms: 604800000
+  cleanup_policy: delete
+  dlq: false
+- name: fleet.delivery_events.v1.dlq
+  partitions: 3
+  replication_factor: 1
+  retention_ms: 604800000
+  cleanup_policy: delete
+  dlq: true
