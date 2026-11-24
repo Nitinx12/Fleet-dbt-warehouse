@@ -33,6 +33,24 @@ and a Postgres host reachable from the stream container (`STREAM_PG_HOST`).
   topic prefix. Production streaming requires `STREAM_ALLOW_PROD=YES` and
   `CONFIRM=yes`.
 
+## Monitoring and reconciliation
+
+```bash
+make stream-monitor
+make stream-reconcile BATCH_ID=42
+```
+
+The watchdog probe records Kafka high-minus-low backlog and newest-event age in
+`audit.stream_health`; the message is labelled `topic-high-low` because Spark
+tracks consumed offsets in its checkpoint rather than a consumer group. Breaches
+of `KAFKA_LAG_THRESHOLD` or `STREAM_FRESHNESS_THRESHOLD_MINUTES` produce a
+`BREACH` message and a redacted Airflow alert.
+
+Reconciliation is observational. It writes `audit.reconciliation_results` with
+`target_layer=gold`, uses valid statuses `MATCH`, `WITHIN_TOLERANCE` and
+`MISMATCH`, and prefixes drift messages with `DRIFT`. A disabled stream writes
+one `STREAM_SKIPPED` warning instead; nothing here fails the daily DAG.
+
 ## Reset
 
 ```bash

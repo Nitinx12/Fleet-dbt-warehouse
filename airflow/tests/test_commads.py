@@ -15,6 +15,8 @@ from helpers.scripts.commads import (
     MART_RECONCILE_TEST,
     build_dbt_command,
     build_publish_command,
+    build_stream_monitor_command,
+    build_stream_reconcile_command,
 )
 
 
@@ -59,3 +61,29 @@ def test_publish_command_contains_no_shell_program() -> None:
     assert argv[:4] == ["uv", "run", "--no-sync", "python"]
     assert "publish_marts.py" in argv[4]
     assert all(";" not in item and "|" not in item for item in argv)
+
+
+@pytest.mark.unit
+def test_stream_monitor_command_is_a_thin_argv() -> None:
+    """The watchdog probe runs one script with no shell interpolation."""
+    argv = build_stream_monitor_command()
+
+    assert argv[:4] == ["uv", "run", "--no-sync", "python"]
+    assert "stream_monitor.py" in argv[4]
+    assert len(argv) == 5
+
+
+@pytest.mark.unit
+def test_stream_reconcile_command_carries_batch_linkage() -> None:
+    """Reconciliation is observational but keeps the same run identifiers."""
+    argv = build_stream_reconcile_command(9, "fleet_daily_load", "run-9")
+
+    assert "stream_reconcile.py" in argv[4]
+    assert argv[-6:] == [
+        "--batch-id",
+        "9",
+        "--airflow-dag-id",
+        "fleet_daily_load",
+        "--airflow-run-id",
+        "run-9",
+    ]

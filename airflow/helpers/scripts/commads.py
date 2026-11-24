@@ -108,6 +108,23 @@ def publish_argv(batch_id: int, dag_id: str, run_id: str) -> list[str]:
     ]
 
 
+def monitor_argv() -> list[str]:
+    """Return the argv for one watchdog stream probe."""
+    return _base("stream_monitor.py")
+
+
+def reconcile_argv(batch_id: int, dag_id: str, run_id: str) -> list[str]:
+    """Return the argv for one observational stream reconciliation."""
+    return _base("stream_reconcile.py") + [
+        "--batch-id",
+        str(batch_id),
+        "--airflow-dag-id",
+        dag_id,
+        "--airflow-run-id",
+        run_id,
+    ]
+
+
 def run_command(argv: Sequence[str], timeout: int = 3_600) -> None:
     """Run an argv list without a shell and surface only redacted diagnostics."""
     completed = subprocess.run(
@@ -128,3 +145,5 @@ def run_command(argv: Sequence[str], timeout: int = 3_600) -> None:
 build_ingest_command = ingest_argv
 build_dbt_command = dbt_argv
 build_publish_command = publish_argv
+build_stream_monitor_command = monitor_argv
+build_stream_reconcile_command = reconcile_argv

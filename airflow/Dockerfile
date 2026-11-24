@@ -21,7 +21,7 @@ USER airflow
 WORKDIR /opt/fleet
 
 ENV PATH="/home/airflow/.local/bin:/opt/venv/bin:${PATH}" \
-    PYTHONPATH="/opt/fleet:/opt/fleet/airflow:/home/airflow/.local/lib/python${PYTHON_VERSION}/site-packages:/opt/venv/lib/python${PYTHON_VERSION}/site-packages" \
+    PYTHONPATH="/opt/fleet:/opt/fleet/airflow:/opt/fleet/kafka:/home/airflow/.local/lib/python${PYTHON_VERSION}/site-packages:/opt/venv/lib/python${PYTHON_VERSION}/site-packages" \
     UV_PROJECT_ENVIRONMENT="/opt/venv" \
     UV_PYTHON="/usr/local/bin/python" \
     UV_PYTHON_DOWNLOADS=never \
@@ -35,7 +35,7 @@ RUN PIP_USER=0 pip install --no-cache-dir \
     && PIP_USER=0 pip install --no-cache-dir "uv==${UV_VERSION}"
 
 COPY --chown=airflow:root pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project
+RUN uv sync --frozen --no-dev --no-install-project --group kafka
 
 COPY --chown=airflow:root --chmod=755 airflow/scripts/ /opt/fleet/airflow/scripts/
 COPY --chown=airflow:root . /opt/fleet

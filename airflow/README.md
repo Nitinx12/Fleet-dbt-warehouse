@@ -39,12 +39,13 @@ This is the operational README: setup, commands, task flow, and troubleshooting.
 | Pipeline name in `control.pipeline` | `fleet_daily` |
 | Main DAG id | `fleet_daily_load` |
 | Weekly DAG id | `fleet_report_weekly` (deliberate skeleton) |
-| Watchdog DAG id | `fleet_watchdog` (deliberate phase-two skeleton) |
+| Watchdog DAG id | `fleet_watchdog` (15-minute stream health probe) |
 | DAGs at creation | paused (`AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true`) |
 
-> **Scope warning:** `fleet_report_weekly` and `fleet_watchdog` intentionally
-> raise `NotImplementedError`. Triggering them is expected to fail until their
-> payload and alert-de-duplication policies are approved. Leave them paused.
+> **Scope warning:** `fleet_report_weekly` still raises `NotImplementedError`
+> until its payload policy is approved. `fleet_watchdog` is observational: it
+> writes `audit.stream_health`, alerts on lag/freshness breaches and never
+> opens or closes `control.batch`.
 
 ---
 
@@ -132,7 +133,7 @@ airflow/
 ├── dags/
 │   ├── fleet_dbt_daliy.py          # fleet_daily_load: ingest -> dbt -> publish
 │   ├── fleet_report_weekly.py      # fleet_report_weekly (skeleton)
-│   └── fleet_watchdog.py           # fleet_watchdog (phase-two skeleton)
+│   └── fleet_watchdog.py           # fleet_watchdog (stream health probe)
 ├── helpers/
 │   ├── scripts/                    # shared code imported by the DAGs
 │   │   ├── prefilght.py            # env, connectivity and contract checks
@@ -248,7 +249,11 @@ flowchart TB
     MO --> ID
     ID --> SR[silver_run] --> ST[silver_test]
     ST --> GR[gold_dims_run] --> FR[gold_facts_run] --> GT[gold_test]
-    GT --> MR[marts_run] --> MT[marts_test] --> PM[publish_marts] --> NS[notify_summary]
+    GT --> MR[marts_run] --> MT[marts_test]
+    MT --> PM[publish_marts]
+    MT --> RS[reconcile_stream]
+    PM --> NS[notify_summary]
+    RS --> NS
 ```
 
 | Task id | What it runs | Notes |
@@ -266,7 +271,8 @@ flowchart TB
 | `marts_run` | `scripts/run_dbt.py run --select mart_*` | |
 | `marts_test` | `scripts/run_dbt.py test --select mart_* assert_marts_reconcile_to_facts` | Reconciles marts to facts |
 | `publish_marts` | `scripts/publish_marts.py` | 1 retry after 10 min, 90 min timeout; only the approved allow-list |
-| `notify_summary` | `finalize_batch(..., "SUCCEEDED")` + `send_run_summary()` | Closes the batch, then best-effort notification |
+| `reconcile_stream` | `scripts/stream_reconcile.py` | Observational stream-vs-gold audit rows; drift never fails the DAG |
+| `notify_summary` | `finalize_batch(..., "SUCCEEDED")` + `send_run_summary()` | Runs with `all_done` once both branches finish |
 
 DAG limits: `max_active_runs=1`, `catchup=False`, `dagrun_timeout=6h`,
 owner `fleet-data-eng`, tags `fleet` / `daily`.
@@ -365,6 +371,7 @@ intended. Production operations additionally require `ENV=prod CONFIRM=yes`.
 | `callbacks.py` | task/DAG callbacks | On failure, close the batch and send an alert; on success, send the digest |
 | `finalize_audit.py` | `start_batch`, `notify_summary`, callbacks | Open and close `control.batch`, resolve open errors |
 | `auidt_reader.py` | `ingest_done`, summaries | Read `control.batch` / `audit.task_run_log`, assert all sources landed |
+| `stream_health.py` | `fleet_watchdog` | Read the latest `audit.stream_health` watchdog row for breach alerts |
 | `summary.py` | notifications | Build the context dict for the Jinja templates |
 | `notify.py` | `notify_summary`, callbacks | Send via webhook and/or email |
 | `redact.py` | all log/notify paths | Strip tokens, passwords, PII salt and row values |
@@ -432,7 +439,9 @@ resolve; inside the containers the full path is set by the `Dockerfile`.
 | UI or API unhealthy | `AIRFLOW_BASE_URL`, `AIRFLOW_PORT`, and `logs airflow-api-server` |
 | Tasks fail to reach the warehouse | Use a container-reachable host, not `localhost`, in `.env` |
 | Contract or dbt test failure | Fix the contract/data logic; do not weaken the test or blindly retry |
-| Weekly/watchdog task fails immediately | Expected: both are deliberate skeletons that raise `NotImplementedError` |
+| Weekly task fails immediately | Expected: `fleet_report_weekly` is still a deliberate skeleton |
+| Watchdog reports no health | Check `control.stream` is `ENABLED` and Kafka is reachable |
+| Stream breach alert received | Inspect `audit.stream_health` and replay/reset the speed layer; gold remains authoritative |
 | Metadata needs a clean reset | `docker compose ... down -v` deletes `airflow-metadata` and all run history — destructive |
 
 ---

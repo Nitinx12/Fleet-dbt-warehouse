@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
 from datetime import timedelta
@@ -9,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import pendulum
-from airflow.sdk import DAG, TaskGroup, get_current_context, task
+from airflow.sdk import DAG, TaskGroup, TriggerRule, get_current_context, task
 
 DAG_DIRECTORY = Path(__file__).resolve().parent
 AIRFLOW_DIRECTORY = DAG_DIRECTORY.parent
@@ -26,9 +27,11 @@ from helpers.scripts.commads import (
     MARTS_SELECTORS,
     MARTS_TEST_SELECTORS,
     SILVER_SELECTORS,
+    CommandError,
     build_dbt_command,
     build_ingest_command,
     build_publish_command,
+    build_stream_reconcile_command,
     run_command,
 )
 from helpers.scripts.finalize_audit import finalize_batch, start_batch
@@ -79,6 +82,8 @@ INGEST_AUDIT_TASKS = frozenset(
     for tier in tiers
     for table in tier
 )
+RECONCILE_TIMEOUT = timedelta(minutes=30)
+log = logging.getLogger(__name__)
 
 
 def _runtime_ids() -> tuple[str, str, Any]:
@@ -168,7 +173,29 @@ def publish_marts(batch_id: int) -> None:
     )
 
 
-@task(task_id="notify_summary", retries=2, on_failure_callback=on_task_failure)
+@task(
+    task_id="reconcile_stream",
+    retries=0,
+    execution_timeout=RECONCILE_TIMEOUT,
+)
+def reconcile_stream(batch_id: int) -> None:
+    """Record stream-vs-gold drift without failing the authoritative batch."""
+    batch_id, dag_id, run_id, _ = _active_batch(batch_id)
+    try:
+        run_command(
+            build_stream_reconcile_command(batch_id, dag_id, run_id),
+            int(RECONCILE_TIMEOUT.total_seconds()),
+        )
+    except CommandError as error:
+        log.warning("stream reconciliation command failed: %s", error)
+
+
+@task(
+    task_id="notify_summary",
+    retries=2,
+    trigger_rule=TriggerRule.ALL_DONE,
+    on_failure_callback=on_task_failure,
+)
 def notify_summary(batch_id: int) -> None:
     """Close the batch successfully before best-effort notification delivery."""
     batch_id, dag_id, run_id, logical_date = _active_batch(batch_id)
@@ -185,7 +212,7 @@ with DAG(
     max_active_runs=1,
     dagrun_timeout=DAG_TIMEOUT,
     tags=["fleet", "daily"],
-    doc_md="""# Fleet daily load\n\nLands all source contracts, tests each dbt layer, then publishes approved marts.""",
+    doc_md="""# Fleet daily load\n\nLands all source contracts, tests each dbt layer, then publishes approved marts and observes stream drift.""",
     default_args={"owner": "fleet-data-eng"},
     on_failure_callback=on_dag_failure,
 ) as dag:
@@ -235,6 +262,7 @@ with DAG(
         "test", MARTS_TEST_SELECTORS, batch
     )
     published = publish_marts(batch)
+    reconciled = reconcile_stream(batch)
     notification = notify_summary(batch)
 
     (
@@ -246,6 +274,6 @@ with DAG(
         >> gold_test
         >> marts_run
         >> marts_test
-        >> published
-        >> notification
     )
+    marts_test >> [published, reconciled]
+    [published, reconciled] >> notification

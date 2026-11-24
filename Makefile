@@ -38,6 +38,7 @@ PSQL_DB = PGPASSWORD="$(PG_PASSWORD)" "$(PSQL)" -h "$(PG_HOST)" -p "$(PG_PORT)" 
 AIRFLOW_COMPOSE = docker compose --env-file .env -f airflow/compose.yml -f airflow/compose.dev.yml
 KAFKA_COMPOSE = docker compose --profile streaming --env-file .env -f kafka/compose.yml
 AIRFLOW_DAG_ID ?= fleet_daily_load
+BATCH_ID ?=
 AIRFLOW_RUN_ID ?=
 AIRFLOW_RUN_ID_ARG = $(if $(strip $(AIRFLOW_RUN_ID)),--run-id "$(AIRFLOW_RUN_ID)",)
 
@@ -220,7 +221,7 @@ airflow-dag-trigger: ## Trigger a DAG run; requires CONFIRM=yes.
 	$(Q)$(AIRFLOW_COMPOSE) exec -T airflow-worker airflow dags trigger "$(AIRFLOW_DAG_ID)" $(AIRFLOW_RUN_ID_ARG) -o json
 
 ## Streaming
-.PHONY: stream-up stream-down stream-status stream-produce stream-reset stream-test stream-test-integration stream-demo
+.PHONY: stream-up stream-down stream-status stream-monitor stream-reconcile stream-produce stream-reset stream-test stream-test-integration stream-demo
 stream-up: check-tools ## Start the local Kafka stream stack and register topics.
 	$(Q)$(call require_environment)
 	$(Q)$(call confirm_production)
@@ -238,6 +239,14 @@ stream-down: ## Stop the local Kafka stream stack without deleting checkpoints.
 stream-status: check-version ## Show stream registration and health.
 	$(Q)$(call require_environment)
 	$(Q)"$(UV)" run --no-sync python scripts/stream_admin.py status
+
+stream-monitor: check-version ## Probe Kafka lag and freshness once.
+	$(Q)$(call require_environment)
+	$(Q)"$(UV)" run --frozen --group kafka python scripts/stream_monitor.py
+
+stream-reconcile: check-version ## Compare realtime with gold for BATCH_ID.
+	$(Q)$(call require_environment)
+	$(Q)"$(UV)" run --frozen --group kafka python scripts/stream_reconcile.py --batch-id "$(BATCH_ID)" --airflow-dag-id "$(AIRFLOW_DAG_ID)" --airflow-run-id "$(AIRFLOW_RUN_ID)"
 
 stream-produce: check-version ## Replay delivery events through the stream producer.
 	$(Q)$(call require_environment)

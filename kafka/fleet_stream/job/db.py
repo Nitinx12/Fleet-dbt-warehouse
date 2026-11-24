@@ -67,6 +67,13 @@ def fetchone(sql: str, params: Sequence[Any] | Mapping[str, Any] = ()) -> tuple 
         return cursor.fetchone()
 
 
+def fetchall(sql: str, params: Sequence[Any] | Mapping[str, Any] = ()) -> list[tuple]:
+    """Execute one read-only statement and return all rows."""
+    with connection() as conn, conn.cursor() as cursor:
+        cursor.execute(sql, params)
+        return list(cursor.fetchall())
+
+
 def insert_many(
     table: str, columns: Sequence[str], rows: Sequence[Sequence[Any]]
 ) -> None:

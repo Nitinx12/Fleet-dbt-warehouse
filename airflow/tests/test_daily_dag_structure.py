@@ -39,6 +39,7 @@ def test_daily_dag_has_exact_stage_tasks_and_settings() -> None:
         "marts_run",
         "marts_test",
         "publish_marts",
+        "reconcile_stream",
         "notify_summary",
         "ingest_mysql.drivers",
         "ingest_mysql.trucks",
@@ -122,11 +123,17 @@ def test_daily_dag_preserves_contract_gating_and_stage_order() -> None:
         "gold_test",
         "marts_run",
         "marts_test",
-        "publish_marts",
-        "notify_summary",
     )
     for upstream, downstream in pairwise(stages):
         assert downstream in task(upstream).downstream_task_ids
+    assert task("publish_marts").upstream_task_ids == {"marts_test"}
+    assert task("reconcile_stream").upstream_task_ids == {"marts_test"}
+    assert task("notify_summary").upstream_task_ids == {
+        "publish_marts",
+        "reconcile_stream",
+    }
+    rule = task("notify_summary").trigger_rule
+    assert getattr(rule, "value", str(rule)) == "all_done"
     for name in (
         "silver_run",
         "silver_test",
@@ -135,5 +142,6 @@ def test_daily_dag_preserves_contract_gating_and_stage_order() -> None:
         "gold_test",
         "marts_run",
         "marts_test",
+        "reconcile_stream",
     ):
         assert task(name).retries == 0

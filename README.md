@@ -196,7 +196,7 @@ Details: [architecture](docs/ARCHITECTURE.md) · [deployment](docs/DEPLOYMENT.md
 | dbt tests | Keys, nulls, ranges, accepted values, scale, date order, flags, relationships | 383 (348 error, 35 warn) | `make dbt-test ENV=ci` |
 | dbt tests by layer | silver 134 · gold 198 · marts 51 | 383 | `make dbt-build ENV=ci` |
 | Python tests | Ingestion, fixtures, publishing, audit, connections, Makefile guards | 73 collected | `make py-test` |
-| Airflow tests | DAG structure, tiers, callbacks, redaction, command builders | 31 collected | `PYTHONPATH=airflow uv run --no-sync pytest airflow/tests` |
+| Airflow tests | DAG structure, tiers, callbacks, redaction, command builders | 33 collected | `PYTHONPATH=airflow uv run --no-sync pytest airflow/tests` |
 | Contracts | Index ↔ YAML ↔ dbt bronze source names | 12 sources | `make contracts-check` |
 | CI | Lint, unit tests, contracts, dbt parse, Airflow, integration, image smoke | 7 jobs | `.github/workflows/ci.yml` |
 | Secret scan | Full-history Gitleaks | 1 workflow | `.github/workflows/leaks.yml` |
@@ -332,6 +332,8 @@ make airflow-down            # stop local Airflow stack
 make stream-up               # start Kafka, topics, registry and supervised job
 make stream-produce          # replay fixture or live delivery_events
 make stream-status           # show registration and latest health evidence
+make stream-monitor          # probe Kafka lag and freshness once
+make stream-reconcile BATCH_ID=42 # compare realtime with gold observationally
 make stream-demo             # zero-credential fixture replay into fleet_dev
 make stream-reset CONFIRM=yes # drop checkpoints and truncate realtime only
 
