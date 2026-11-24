@@ -56,7 +56,7 @@ extend-select = ["TID251"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = [".", ".streamlit"]
 markers = [
     "unit: fast, isolated, no I/O",
     "integration: needs a real service",

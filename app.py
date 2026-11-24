@@ -2,6 +2,8 @@
 
 import base64
 import re
+import sys
+from importlib import import_module
 from pathlib import Path
 
 import pandas as pd
@@ -10,11 +12,15 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL, Engine
 from sqlalchemy.exc import SQLAlchemyError
 
-from streamlit_state import audit_error, inject_payload, live_payload
+ROOT = Path(__file__).parent
+sys.path.insert(0, str(ROOT / ".streamlit"))
+_state = import_module("streamlit_state")
+audit_error = _state.audit_error
+inject_payload = _state.inject_payload
+live_payload = _state.live_payload
 
 REPO = "https://github.com/Nitinx12/Fleet-dbt-warehouse"
 BRANCH = "main"  # change if your default branch differs
-ROOT = Path(__file__).parent
 
 # Fixed allowlist: the only objects this app will ever query
 VIEWS = {

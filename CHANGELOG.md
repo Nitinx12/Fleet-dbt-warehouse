@@ -86,6 +86,7 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
 
 ### Changed
 
+- Moved the Streamlit audit payload helper into `.streamlit/streamlit_state.py`; the app and tests now load it from the Streamlit config directory.
 - Replaced the static landing-page pipeline cards with a detailed Mermaid diagram
   covering the Airflow-orchestrated batch path, source contracts, PostgreSQL
   warehouse layers, Databricks publication, audit/control plane and the planned

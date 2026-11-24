@@ -252,7 +252,8 @@ flowchart TD
 ├── pyproject.toml / uv.lock   # dependencies, pytest and Ruff config
 ├── .env.example               # every config knob, placeholders only
 ├── .githooks/                 # commit-msg and pre-push guards
-│
+├── .streamlit/                # Streamlit config and live audit payload helper
+│   └── streamlit_state.py     #   builds the embedded audit JSON
 ├── contracts/                 # source-of-truth schemas: 12 sources, 1 stream, samples
 ├── scripts/                   # runnable pipeline steps
 │   ├── ingestion.py           #   MySQL + MongoDB → bronze, watermarks, audit
