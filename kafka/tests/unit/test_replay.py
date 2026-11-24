@@ -86,6 +86,17 @@ def test_replay_counts_seeded_duplicates(monkeypatch: pytest.MonkeyPatch) -> Non
     )
 
 
+def test_replay_honours_pacing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A replay-speed multiplier pauses once per outgoing event."""
+    sleeps: list[float] = []
+    monkeypatch.setattr("fleet_stream.producer.replay.time.sleep", sleeps.append)
+    settings = _settings(monkeypatch, STREAM_REPLAY_SPEED="50")
+
+    replay([ROW], FakePublisher(), settings, load_contract())
+
+    assert sleeps == [0.5, 0.5]
+
+
 def test_replay_rejects_invalid_source_rows(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

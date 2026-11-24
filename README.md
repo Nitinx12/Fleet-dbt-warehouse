@@ -253,12 +253,13 @@ flowchart TD
 ├── .env.example               # every config knob, placeholders only
 ├── .githooks/                 # commit-msg and pre-push guards
 │
-├── contracts/                 # source-of-truth schemas for landing tables (12 YAML + samples)
+├── contracts/                 # source-of-truth schemas: 12 sources, 1 stream, samples
 ├── scripts/                   # runnable pipeline steps
 │   ├── ingestion.py           #   MySQL + MongoDB → bronze, watermarks, audit
 │   ├── run_dbt.py             #   dbt runner + audit artifact loader
 │   ├── publish_marts.py       #   approved Postgres marts → Databricks
-│   └── run_notebooks.py       #   reproducible notebook runner
+│   ├── run_notebooks.py       #   reproducible notebook runner
+│   └── stream_*.py            #   thin Kafka/Spark/stream-admin launchers
 ├── utils/                     # shared plumbing: config, connections, audit, logger
 │
 ├── dbt/                       # transformation layer
@@ -267,13 +268,18 @@ flowchart TD
 │   └── tests/generic/silver/  #   project-specific generic tests
 │
 ├── sql/
-│   ├── scripts/               #   bootstrap 01..07 applied by make db-init
+│   ├── scripts/               #   bootstrap 01..08 applied by make db-init
 │   └── metadata/              #   read-only inspection queries
 │
 ├── airflow/                   # orchestration stack (Dockerfile, compose, README)
 │   ├── dags/                  #   fleet_dbt_daliy, fleet_report_weekly, fleet_watchdog
 │   ├── helpers/               #   preflight, callbacks, notify, templates
 │   └── tests/                 #   DAG unit tests
+│
+├── kafka/                     # opt-in speed layer: contract, package, image, tests
+│   ├── fleet_stream/          #   producer, Spark job, admin and monitor modules
+│   ├── Dockerfile/compose.yml #   streaming image and `streaming` profile
+│   └── README.md              #   runbook for replay, health and reset
 │
 ├── docs/                      # DBT.md, FINDING.md, TESTING.md
 ├── tests/                     # unit / integration / smoke
@@ -321,6 +327,13 @@ make publish-marts ENV=dev   # publish approved marts to Databricks
 make airflow-test            # run Airflow orchestration tests
 make airflow-up              # start local Airflow stack
 make airflow-down            # stop local Airflow stack
+
+# Opt-in Kafka speed layer
+make stream-up               # start Kafka, topics, registry and supervised job
+make stream-produce          # replay fixture or live delivery_events
+make stream-status           # show registration and latest health evidence
+make stream-demo             # zero-credential fixture replay into fleet_dev
+make stream-reset CONFIRM=yes # drop checkpoints and truncate realtime only
 
 # Reports and cleanup
 make report                  # build charts and findings JSON

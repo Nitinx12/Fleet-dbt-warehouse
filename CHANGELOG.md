@@ -25,6 +25,10 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
   contract alignment and ARRIVED/DEPARTED lifecycle expansion.
 - Replay producer with fixture/live readers, strict JSON publishing by idempotency key,
   deterministic duplicate and late faults, and a `scripts/stream_producer.py` launcher.
+- Spark speed-layer job and opt-in stack: strict value validation with DLQ routing,
+  idempotent `realtime` raw upserts, watermarks, 15-minute service windows, detention
+  alerts, append-only health records, guarded admin scripts, `kafka/Dockerfile`,
+  `kafka/compose.yml` and Kafka-free/static Spark unit tests.
 - Airflow orchestration stack: Docker image, compose files, DAGs, helpers,
   callbacks and operational docs under `airflow/`.
 - Airflow and alert environment settings, plus batch-context support in the

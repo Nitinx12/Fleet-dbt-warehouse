@@ -6,7 +6,7 @@ import json
 from typing import Any
 
 import pytest
-from fleet_stream.producer.publisher import KafkaPublisher, PublishError
+from fleet_stream.producer.publish import KafkaPublisher, PublishError
 
 pytestmark = pytest.mark.unit
 

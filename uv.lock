@@ -835,6 +835,7 @@ dev = [
 ]
 kafka = [
     { name = "confluent-kafka" },
+    { name = "psycopg2-binary" },
     { name = "pyyaml" },
 ]
 spark = [
@@ -866,6 +867,7 @@ dev = [
 ]
 kafka = [
     { name = "confluent-kafka", specifier = "==2.16.2" },
+    { name = "psycopg2-binary", specifier = ">=2.9" },
     { name = "pyyaml", specifier = "==6.0.4" },
 ]
 spark = [{ name = "pyspark", specifier = "==4.3.0" }]

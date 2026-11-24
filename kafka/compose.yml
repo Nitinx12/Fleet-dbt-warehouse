@@ -1,0 +1,70 @@
+name: fleet-stream
+
+services:
+  kafka:
+    image: apache/kafka:4.4.0
+    profiles: ["streaming"]
+    env_file:
+      - ./config/broker.env
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    networks:
+      - warehouse
+
+  kafka-init:
+    build:
+      context: ..
+      dockerfile: kafka/Dockerfile
+    profiles: ["streaming"]
+    command: ["python", "/repo/scripts/stream_admin.py", "topics"]
+    env_file:
+      - ../.env
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - warehouse
+
+  stream-job:
+    build:
+      context: ..
+      dockerfile: kafka/Dockerfile
+    profiles: ["streaming"]
+    command: ["python", "/repo/scripts/stream_job.py"]
+    env_file:
+      - ../.env
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PG_HOST: ${STREAM_PG_HOST:-postgres}
+      STREAM_CHECKPOINT_DIR: /var/lib/fleet-stream/checkpoints/delivery_events_v1
+      CONFIRM: ${CONFIRM:-}
+    volumes:
+      - stream_checkpoints:/var/lib/fleet-stream
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - warehouse
+
+volumes:
+  kafka_data:
+  stream_checkpoints:
+
+networks:
+  warehouse:
+    name: ${WAREHOUSE_NETWORK:-fleet-airflow_airflow}
+    external: true

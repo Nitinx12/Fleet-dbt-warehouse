@@ -36,7 +36,7 @@ DBT_EXCLUDE = $(if $(strip $(EXCLUDE)),--exclude-resource-type "$(EXCLUDE)",)
 DBT = "$(UV)" run --no-sync python scripts/run_dbt.py
 PSQL_DB = PGPASSWORD="$(PG_PASSWORD)" "$(PSQL)" -h "$(PG_HOST)" -p "$(PG_PORT)" -U "$(DB_USER)"
 AIRFLOW_COMPOSE = docker compose --env-file .env -f airflow/compose.yml -f airflow/compose.dev.yml
-KAFKA_COMPOSE = docker compose --env-file .env -f kafka/compose.yml
+KAFKA_COMPOSE = docker compose --profile streaming --env-file .env -f kafka/compose.yml
 AIRFLOW_DAG_ID ?= fleet_daily_load
 AIRFLOW_RUN_ID ?=
 AIRFLOW_RUN_ID_ARG = $(if $(strip $(AIRFLOW_RUN_ID)),--run-id "$(AIRFLOW_RUN_ID)",)
@@ -228,7 +228,6 @@ stream-up: check-tools ## Start the local Kafka stream stack and register topics
 	$(Q)$(call require_cmd,docker,Install Docker and Docker Compose.)
 	$(Q)printf '%s\n' "==> Starting streaming stack for ENV=$(ENV)"
 	$(Q)$(KAFKA_COMPOSE) up -d --build kafka kafka-init
-	$(Q)"$(UV)" run --no-sync python scripts/stream_admin.py topics
 	$(Q)"$(UV)" run --no-sync python scripts/stream_admin.py register
 	$(Q)$(KAFKA_COMPOSE) up -d --build stream-job
 
@@ -244,19 +243,20 @@ stream-produce: check-version ## Replay delivery events through the stream produ
 	$(Q)$(call require_environment)
 	$(Q)$(call confirm_production)
 	$(Q)printf '%s\n' "==> Replaying delivery events from STREAM_SOURCE=$${STREAM_SOURCE:-fixture}"
-	$(Q)"$(UV)" run --no-sync python scripts/stream_producer.py
+	$(Q)"$(UV)" run --frozen --group kafka python scripts/stream_producer.py
 
-stream-reset: check-version ## Clear a stream checkpoint; requires CONFIRM=yes.
+stream-reset: check-version ## Drop checkpoints and truncate realtime; requires CONFIRM=yes.
 	$(Q)$(call require_environment)
 	$(Q)$(call confirm_destructive)
 	$(Q)$(call confirm_production)
-	$(Q)"$(UV)" run --no-sync python scripts/stream_admin.py reset
+	$(Q)$(call require_cmd,docker,Install Docker and Docker Compose.)
+	$(Q)CONFIRM="$(CONFIRM)" $(KAFKA_COMPOSE) run --rm stream-job python scripts/stream_admin.py reset
 
 stream-test: check-version ## Run Kafka-free streaming unit tests.
-	$(Q)PYTHONPATH=kafka "$(UV)" run --no-sync pytest kafka/tests/unit -m unit
+	$(Q)PYTHONPATH=kafka "$(UV)" run --frozen --group kafka --group spark pytest kafka/tests/unit -m unit
 
 stream-test-integration: check-version ## Run streaming tests that need the local Kafka stack.
-	$(Q)PYTHONPATH=kafka "$(UV)" run --no-sync pytest kafka/tests/integration -m integration
+	$(Q)PYTHONPATH=kafka "$(UV)" run --frozen --group kafka --group spark pytest kafka/tests/integration -m integration
 
 stream-demo: check-tools install ## Build a zero-credential fixture batch and drive the streaming speed layer.
 	$(Q)printf '%s\n' "==> Streaming fixture demo in $(DEMO_DB), stream schemas realtime and audit"
@@ -271,8 +271,9 @@ stream-demo: check-tools install ## Build a zero-credential fixture batch and dr
 		DATABRICKS_SCHEMA=marts DATABRICKS_TOKEN=placeholder \
 		SMTP_HOST=localhost SMTP_PORT=25 ALERT_EMAIL_FROM=ci@example.com ALERT_EMAIL_TO=ci@example.com \
 		DBT_TARGET=ci DBT_SCHEMA_PREFIX="$(DEMO_SCHEMA_PREFIX)" FIXTURE_LOAD=1 \
-		KAFKA_BOOTSTRAP_SERVERS=kafka:9092 KAFKA_TOPIC_PREFIX=ci. \
-		STREAM_SOURCE=fixture STREAM_CHECKPOINT_DIR=./.checkpoints/ci_delivery_events_v1 \
+		KAFKA_BOOTSTRAP_SERVERS=localhost:9092 KAFKA_TOPIC_PREFIX=ci. \
+		STREAM_PG_HOST=host.docker.internal WAREHOUSE_NETWORK=fleet-airflow_airflow \
+		STREAM_SOURCE=fixture \
 		STREAM_REPLAY_SPEED=0 STREAM_LATE_FRACTION=0 STREAM_DUPLICATE_FRACTION=0 \
 		$(MAKE) -e ENV=ci CONFIRM=yes EXCLUDE=unit_test \
 		env-check contracts-check db-init-audit load-fixtures dbt-deps dbt-build \

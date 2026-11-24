@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -77,6 +78,8 @@ def replay(
     stats.events = len(expanded)
     injector = FaultInjector(settings, contract.allowed_lateness_minutes)
     for seeded in injector.plan(expanded):
+        if settings.replay_speed:
+            time.sleep(0.01 * settings.replay_speed)
         result = validate_event(seeded.event, contract)
         if not result.ok:
             stats.rejected += 1

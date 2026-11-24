@@ -14,9 +14,9 @@ for path in (ROOT, ROOT / "kafka"):
         sys.path.insert(0, str(path))
 
 from fleet_stream.contract import load_contract
-from fleet_stream.producer.publisher import KafkaPublisher
-from fleet_stream.producer.reader import read_fixture_rows, read_live_rows
+from fleet_stream.producer.publish import KafkaPublisher
 from fleet_stream.producer.replay import replay
+from fleet_stream.producer.sources import read_fixture_rows, read_live_rows
 from fleet_stream.settings import from_env
 
 log = logging.getLogger(__name__)

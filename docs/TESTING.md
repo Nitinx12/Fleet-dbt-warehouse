@@ -24,6 +24,8 @@ make PG_DBNAME=fleet_dev DB_NAME=fleet_dev CONFIRM=yes db-init-audit  # bootstra
 make PG_DBNAME=fleet_dev load-fixtures ENV=ci  # land sample rows in bronze
 make verify                    # lint-fast + py-test
 make airflow-test              # orchestration tests with PYTHONPATH=airflow
+make stream-test               # Kafka-free stream and static Spark tests
+make stream-test-integration   # Kafka container + fleet_it_* database
 make dbt-parse ENV=dev         # static dbt parse, no warehouse queries
 make dbt-test ENV=dev          # DB-backed dbt tests
 ```
@@ -47,7 +49,7 @@ tests/
 ```
 
 `tests/integration/conftest.py` creates a uniquely named scratch database,
-applies `sql/scripts/01..07` in order, yields a SQLAlchemy engine, then drops the
+applies `sql/scripts/01..08` in order, yields a SQLAlchemy engine, then drops the
 database with `WITH (FORCE)`. Integration tests skip when Postgres is unreachable.
 
 | File | Coverage |
@@ -69,6 +71,15 @@ database with `WITH (FORCE)`. Integration tests skip when Postgres is unreachabl
 | `smoke/test_env_and_connectivity.py` | Required env settings and a Postgres reachability query. |
 | `smoke/test_imports.py` | Production modules import cleanly. |
 | `smoke/test_makefile.py` | `help`, `verify`, `contracts-check`, notebook and Airflow targets, plus destructive-target confirmation guards. |
+
+## Streaming suite — `kafka/tests/`
+
+`make stream-test` runs Kafka-free streaming tests with the locked `kafka` and
+`spark` dependency groups. It covers settings guards, strict contract validation,
+lifecycle expansion, seeded faults, replay pacing, admin guards, watermark state,
+topic prefixes, realtime reset and static Spark window/detention logic.
+`make stream-test-integration` is reserved for the opt-in Kafka container and a
+throwaway `fleet_it_*` database.
 
 ## Airflow suite — `airflow/tests/`
 
