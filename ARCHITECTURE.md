@@ -43,6 +43,7 @@ The warehouse turns two operational source systems into governed, reusable BI ma
 | Containers | Docker, Docker Compose, GHCR | multi-stage-style single Airflow image | One immutable image per commit, `sha-<commit>` tag, deployed by digest. |
 | Delivery | GitHub Actions, `make`, `bash`, OpenSSH | pinned action SHAs | CI gates, image build, staging auto-deploy, manual production deploy. |
 | Quality | pytest, ruff, gitleaks, dbt tests | gitleaks 8.30.1 | Unit/integration/smoke tests, lint/format, secret scanning. |
+| Presentation | Streamlit, pandas, SQLAlchemy | `streamlit==1.67.0` in `requirements.txt` | Read-only project site and live audit panel; no warehouse writes. |
 | Config / docs | YAML, JSON, Mermaid, Markdown | `.env.example` | Single source of config knobs, contracts index and living blueprints. |
 
 ---
@@ -109,6 +110,7 @@ The control/audit plane is cross-cutting: it is written by Python and SQL functi
 | `control` | Postgres | `control.*` functions, ingestion, Airflow, dbt runner | Airflow, Python, operators |
 | `audit` | Postgres | `utils/audit.py`, `utils/dbt_audit.py`, SQL triggers | Airflow summaries, operators |
 | Airflow metadata | Postgres | Airflow only | Airflow UI |
+| Streamlit presentation | Streamlit Cloud / local | none; `app.py` only reads three `audit` views | Operators and project visitors |
 
 Never write to a layer you do not own. `bronze` is read-only to dbt; the Databricks copy is read-only to everything except the publish job.
 
@@ -357,7 +359,44 @@ All commands are built as argv arrays (`uv run --no-sync python scripts/<name>.p
 
 ---
 
-## 8. Security and sensitive data
+## 8. Streamlit project site
+
+`app.py` is an observer, not a pipeline step. It serves `index.html` as the project front door and adds a read-only audit panel; it never writes to Postgres, Databricks or any warehouse layer.
+
+```mermaid
+flowchart LR
+    classDef ui fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#01579b
+    classDef helper fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#4a148c
+    classDef audit fill:#fce4ec,stroke:#c62828,stroke-width:2px,color:#b71c1c
+
+    APP["app.py<br/>two tabs, 60s cache,<br/>allowlisted queries"]:::ui
+    HTML["index.html<br/>project site<br/>__LIVE_DATA__ placeholder"]:::ui
+    STATE[".streamlit/streamlit_state.py<br/>payload builder + error guidance"]:::helper
+    SECRETS["st.secrets['postgres']<br/>.streamlit/secrets.toml ignored"]:::ui
+    VIEWS[("audit.v_batch_summary<br/>audit.v_dbt_results<br/>audit.v_data_quality_results")]:::audit
+
+    APP --> HTML
+    APP --> STATE
+    STATE --> HTML
+    SECRETS --> APP
+    APP -->|SELECT only| VIEWS
+```
+
+| Component | Location | Responsibility |
+|---|---|---|
+| Host | `app.py` | Renders the site and live tabs, validates the fixed `VIEWS` allowlist, caches reads for 60 seconds and redacts audit-read failures. |
+| Payload helper | `.streamlit/streamlit_state.py` | Builds the embedded JSON from the three rollup views, fails closed to empty data, escapes `<` and maps non-finite floats to `null`. |
+| Static site | `index.html`, `assets/logo/` | Holds the Mermaid pipeline diagram and documentation links; the placeholder is replaced at render time. |
+| Credentials | `st.secrets["postgres"]` | Supplies read-only Postgres credentials in Streamlit Cloud or the ignored `.streamlit/secrets.toml` locally. |
+
+- The live panel exposes run, dbt and data-quality evidence only; no bronze, silver, mart, source or PII rows are queried.
+- Missing secrets or a failed audit read produces an empty payload plus a safe, actionable message; the page still renders.
+- `make streamlit` is the local launcher; Streamlit Cloud runs the same `app.py` without a separate transformation path.
+- The site is not an Airflow asset and does not gate the daily batch.
+
+---
+
+## 9. Security and sensitive data
 
 | Value | Where it may exist | Required handling |
 |---|---|---|
@@ -374,7 +413,7 @@ All commands are built as argv arrays (`uv run --no-sync python scripts/<name>.p
 
 ---
 
-## 9. Testing and correctness gates
+## 10. Testing and correctness gates
 
 | Gate | Tool / command | What it protects |
 |---|---|---|
@@ -391,7 +430,7 @@ A failed contract or data test blocks the run; retries are for transient connect
 
 ---
 
-## 10. Current implementation state
+## 11. Current implementation state
 
 This document describes the implemented system. The following gaps are known and tracked rather than implied as working:
 
@@ -406,7 +445,7 @@ This document describes the implemented system. The following gaps are known and
 
 ---
 
-## 11. Why the design is shaped this way
+## 12. Why the design is shaped this way
 
 | Decision | Reason |
 |---|---|
@@ -422,7 +461,7 @@ This document describes the implemented system. The following gaps are known and
 
 ---
 
-## 12. Related documents
+## 13. Related documents
 
 - `DEPLOYMENT.md` — build, promotion, environments and runbooks.
 - `README.md` — repository map and quickstart.
