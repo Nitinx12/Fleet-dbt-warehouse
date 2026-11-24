@@ -51,12 +51,15 @@ extend-select = ["TID251"]
 "scripts/stream_*.py" = ["TID251"]
 "scripts/check_contracts.py" = ["TID251"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["streamlit_state"]
+
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "fleet_stream" = { msg = "streaming code must live under kafka/" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = [".", ".streamlit"]
 markers = [
     "unit: fast, isolated, no I/O",
     "integration: needs a real service",
