@@ -26,8 +26,8 @@ def lag_from_offsets(earliest: dict[Any, Any], latest: dict[Any, Any]) -> int:
 def topic_backlog(settings: StreamSettings, topic: str) -> int:
     """Return the largest topic high-minus-low backlog through the admin API."""
     try:
-        from confluent_kafka import KafkaException
-        from confluent_kafka.admin import AdminClient, OffsetSpec, TopicPartition
+        from confluent_kafka import KafkaException, TopicPartition
+        from confluent_kafka.admin import AdminClient, OffsetSpec
     except ImportError as exc:
         raise StreamMonitorError("confluent-kafka is required for lag probes") from exc
 

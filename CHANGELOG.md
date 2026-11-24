@@ -125,6 +125,12 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
 
 ### Fixed
 
+- Spark stream startup no longer resolves Maven packages at runtime; the image's
+  bundled jars are used, so the job no longer fails on a read-only Ivy cache.
+- Watchdog lag probes import `TopicPartition` from the public `confluent_kafka`
+  namespace, so `make stream-monitor` runs on the locked client version.
+- Kafka broker healthcheck timeout raised to 20s so the CLI tool can complete and
+  the streaming stack becomes healthy on slower local hosts.
 - Streaming wiring now uses one advertised broker listener per network, a local
   `fleet-stream:local` image, the external `9094` port, reachable Postgres hosts in
   Compose, the contract stream name in watchdog probes, and Airflow run ids in

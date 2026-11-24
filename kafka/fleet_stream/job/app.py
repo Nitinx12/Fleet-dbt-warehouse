@@ -68,11 +68,6 @@ def build_session(settings: StreamSettings) -> Any:
         .master(os.getenv("SPARK_MASTER", "local[2]"))
         .config("spark.sql.shuffle.partitions", "3")
         .config("spark.sql.session.timeZone", "UTC")
-        .config(
-            "spark.jars.packages",
-            "org.apache.spark:spark-sql-kafka-0-10_2.13:4.3.0,"
-            "org.postgresql:postgresql:42.7.14",
-        )
         .config("spark.sql.streaming.checkpointLocation", str(settings.checkpoint_dir))
         .getOrCreate()
     )
