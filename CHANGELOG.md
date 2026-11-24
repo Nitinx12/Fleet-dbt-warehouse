@@ -23,6 +23,8 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
   locked Kafka/Spark dependency groups, Make targets and contract alignment checks.
 - Kafka-free streaming unit tests for environment guards, strict schema validation,
   contract alignment and ARRIVED/DEPARTED lifecycle expansion.
+- Replay producer with fixture/live readers, strict JSON publishing by idempotency key,
+  deterministic duplicate and late faults, and a `scripts/stream_producer.py` launcher.
 - Airflow orchestration stack: Docker image, compose files, DAGs, helpers,
   callbacks and operational docs under `airflow/`.
 - Airflow and alert environment settings, plus batch-context support in the
