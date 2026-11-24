@@ -88,6 +88,7 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
 
 - Moved the Streamlit audit payload helper into `.streamlit/streamlit_state.py`; the app and tests now load it from the Streamlit config directory.
 - Added a Streamlit section to `ARCHITECTURE.md` covering the read-only project site, audit views, payload helper and secrets boundary.
+- Expanded the README tech stack with Kafka, Spark, Streamlit, source access, Redis and CI tooling; embedded `assets/screenshots/pipeline_flow.svg`; refreshed test counts and Makefile commands; aligned `docs/SCREENSHOTS.md`.
 - Replaced the static landing-page pipeline cards with a detailed Mermaid diagram
   covering the Airflow-orchestrated batch path, source contracts, PostgreSQL
   warehouse layers, Databricks publication, audit/control plane and the planned

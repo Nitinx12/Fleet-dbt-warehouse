@@ -15,11 +15,14 @@ A daily analytics warehouse for logistics operations that uses watermark-based m
 | Layer | Tools |
 |---|---|
 | **Sources** | ![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white) |
-| **Orchestration** | ![Airflow](https://img.shields.io/badge/Airflow-017CEE?logo=apacheairflow&logoColor=white) |
+| **Source access** | SQLAlchemy · PyMySQL · PyMongo |
+| **Orchestration** | ![Airflow](https://img.shields.io/badge/Airflow-017CEE?logo=apacheairflow&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white) |
 | **Transformation** | ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white) ![dbt](https://img.shields.io/badge/dbt-FF694B?logo=dbt&logoColor=white) |
 | **Warehouse** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white) ![Databricks](https://img.shields.io/badge/Databricks-FF3621?logo=databricks&logoColor=white) |
-| **Visualization** | ![Plotly](https://img.shields.io/badge/Plotly-3F4F75?logo=plotly&logoColor=white) |
-| **Infra & Dev tooling** | ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white) ![uv](https://img.shields.io/badge/uv-DE5FE9?logo=uv&logoColor=white) ![Ruff](https://img.shields.io/badge/Ruff-D7FF64?logo=ruff&logoColor=black) ![Make](https://img.shields.io/badge/Makefile-6D00CC?logo=gnu&logoColor=white) ![Shell](https://img.shields.io/badge/Shell-4EAA25?logo=gnubash&logoColor=white) |
+| **Speed layer** | ![Kafka](https://img.shields.io/badge/Kafka-231F20?logo=apachekafka&logoColor=white) ![Spark](https://img.shields.io/badge/Spark-E25A1C?logo=apachespark&logoColor=white) |
+| **Presentation** | ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white) ![Plotly](https://img.shields.io/badge/Plotly-3F4F75?logo=plotly&logoColor=white) |
+| **Infra & Dev tooling** | ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white) ![Docker Compose](https://img.shields.io/badge/Compose-2496ED?logo=docker&logoColor=white) ![uv](https://img.shields.io/badge/uv-DE5FE9?logo=uv&logoColor=white) ![Ruff](https://img.shields.io/badge/Ruff-D7FF64?logo=ruff&logoColor=black) ![Make](https://img.shields.io/badge/Makefile-6D00CC?logo=gnu&logoColor=white) ![Shell](https://img.shields.io/badge/Shell-4EAA25?logo=gnubash&logoColor=white) |
+| **CI & quality** | ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?logo=githubactions&logoColor=white) pytest · Gitleaks · dbt tests |
 
 ---
 
@@ -27,10 +30,22 @@ A daily analytics warehouse for logistics operations that uses watermark-based m
 
 - **12 → 32 → 5:** 12 source tables (9 MySQL, 3 MongoDB) feed 32 dbt models (12 silver, 13 gold, 7 marts); 5 BI marts are published to Databricks.
 - **415 nodes pass in one command:** `make demo` lands contract samples and builds 32 models plus 383 dbt tests on `fleet_dev` with no source or Databricks credentials.
-- **Tested at every boundary:** 383 dbt tests, 104 collected Python/Airflow test cases, 12 source contracts, and 7 GitHub Actions jobs plus a secret scan.
+- **Tested at every boundary:** 383 dbt tests, 118 collected Python/Airflow test cases, 12 source contracts, and 9 CI jobs plus a secret scan.
 - **Daily, observable runs:** Airflow DAG `fleet_daily_load` runs at `0 2 * * *` Asia/Kolkata; batches, watermarks, task outcomes, dbt results, and reconciliation are stored in `control.*` and `audit.*`.
 - **PII is designed out early:** licence numbers are hashed, dates of birth become age bands, fuel cards are masked, and the one PII-tagged mart is excluded from publication.
 - **Numbers you can reproduce:** 7 chart scripts regenerate 17 PNGs and 7 JSON findings files with `make report`; charts read populated `gold` tables and write no database rows.
+- **Independent speed layer:** opt-in Kafka replay and Spark Structured Streaming write only `realtime.*` and `audit.stream_health`; the daily batch does not depend on them.
+- **Live project site:** Streamlit serves the documented site plus a read-only audit panel backed by three `audit` views.
+
+---
+
+## Pipeline screenshot
+
+![Pipeline flow: MySQL and MongoDB feed a Python micro-batch into PostgreSQL bronze, silver, gold and marts, then approved BI marts into Databricks. Airflow schedules and audits the batch while an independent Kafka and Spark speed layer writes realtime data.](assets/screenshots/pipeline_flow.svg)
+
+The dark-theme vector capture lives at `assets/screenshots/pipeline_flow.svg`; remaining capture targets are listed in [SCREENSHOTS.md](docs/SCREENSHOTS.md).
+
+---
 
 ## Architecture
 
@@ -107,6 +122,8 @@ flowchart LR
     class CTRL,AUDIT ctrl
 ```
 
+The batch path above is the governed warehouse. Two observers run alongside it: the opt-in Kafka/Spark speed layer writes only `realtime.*` plus append-only health rows, and the Streamlit site reads only three `audit` views. Neither gates the daily batch. See the [Kafka runbook](kafka/README.md) and [architecture section 8](ARCHITECTURE.md#8-streamlit-project-site).
+
 ## Layer colours
 
 | Colour | Layer | Written by | Meaning |
@@ -150,8 +167,10 @@ Source: `gold.fct_delivery_events` joined to `gold.dim_facilities` and `gold.dim
 | dbt models | 32 | `dbt/target/manifest.json`: 12 silver + 13 gold + 7 marts |
 | Marts published | 5 | Publisher allowlist in `scripts/publish_marts.py`; 6 BI marts exist, driver scorecard excluded |
 | DQ checks across layers | 383 | `dbt/target/manifest.json`: 348 error severity + 35 warn severity |
-| Automated tests | 104 collected | 73 root pytest cases + 31 Airflow cases; `make py-test` runs the root 73 |
+| Automated tests | 118 collected | 84 root pytest cases + 34 Airflow cases; `make py-test` runs the root 84 |
 | Source contracts | 12 | `contracts/sources_index.json` and `make contracts-check` |
+| Speed layer | opt-in | Kafka + Spark replay into `realtime.*`, watchdog and reconciliation |
+| Project site | Streamlit | `app.py` + `.streamlit/streamlit_state.py`, audit views only |
 | Generated report charts | 17 | `reports/img/*.png`, regenerated by `make report` |
 | Test coverage | Not configured | No coverage plugin, gate, or `make cov` target in this repo |
 | Typical full-run time | Not measured | No scheduled-run timing artifact exists; `audit.pipeline_run_log` stores outcomes, not a published median |
@@ -195,8 +214,8 @@ Details: [architecture](docs/ARCHITECTURE.md) · [deployment](docs/DEPLOYMENT.md
 |---|---|---:|---|
 | dbt tests | Keys, nulls, ranges, accepted values, scale, date order, flags, relationships | 383 (348 error, 35 warn) | `make dbt-test ENV=ci` |
 | dbt tests by layer | silver 134 · gold 198 · marts 51 | 383 | `make dbt-build ENV=ci` |
-| Python tests | Ingestion, fixtures, publishing, audit, connections, Makefile guards | 73 collected | `make py-test` |
-| Airflow tests | DAG structure, tiers, callbacks, redaction, command builders | 33 collected | `PYTHONPATH=airflow uv run --no-sync pytest airflow/tests` |
+| Python tests | Ingestion, fixtures, publishing, audit, Streamlit state, connections, Makefile guards | 84 collected | `make py-test` |
+| Airflow tests | DAG structure, tiers, callbacks, redaction, command builders | 34 collected (29 passed, 5 skipped) | `PYTHONPATH=airflow uv run --no-sync pytest airflow/tests` |
 | Contracts | Index ↔ YAML ↔ dbt bronze source names | 12 sources | `make contracts-check` |
 | CI | Lint, unit tests, contracts, dbt parse, Airflow, stream tests, integration, image smoke | 9 jobs | `.github/workflows/ci.yml` |
 | Secret scan | Full-history Gitleaks | 1 workflow | `.github/workflows/leaks.yml` |
@@ -249,11 +268,16 @@ flowchart TD
 ├── AGENTS.md / CLAUDE.md      # agent rules and Claude-specific notes
 ├── CHANGELOG.md               # Keep a Changelog release history
 ├── Makefile                   # single entry point; run make help
+├── app.py / index.html        # Streamlit host and project site
 ├── pyproject.toml / uv.lock   # dependencies, pytest and Ruff config
+├── requirements.txt           # Streamlit runtime dependencies
 ├── .env.example               # every config knob, placeholders only
 ├── .githooks/                 # commit-msg and pre-push guards
 ├── .streamlit/                # Streamlit config and live audit payload helper
 │   └── streamlit_state.py     #   builds the embedded audit JSON
+├── assets/                    # logo and committed screenshots
+│   ├── logo/
+│   └── screenshots/pipeline_flow.svg
 ├── contracts/                 # source-of-truth schemas: 12 sources, 1 stream, samples
 ├── scripts/                   # runnable pipeline steps
 │   ├── ingestion.py           #   MySQL + MongoDB → bronze, watermarks, audit
@@ -329,6 +353,9 @@ make airflow-test            # run Airflow orchestration tests
 make airflow-up              # start local Airflow stack
 make airflow-down            # stop local Airflow stack
 
+# Streamlit project site
+make streamlit               # serve app.py with the live audit panel
+
 # Opt-in Kafka speed layer
 make stream-up               # start Kafka, topics, registry and supervised job
 make stream-produce          # replay fixture or live delivery_events
@@ -337,6 +364,7 @@ make stream-monitor          # probe Kafka lag and freshness once
 make stream-reconcile BATCH_ID=42 # compare realtime with gold observationally
 make stream-demo             # zero-credential fixture replay into fleet_dev
 make stream-reset CONFIRM=yes # drop checkpoints and truncate realtime only
+make stream-test             # run broker-free streaming unit tests
 
 # Reports and cleanup
 make report                  # build charts and findings JSON
