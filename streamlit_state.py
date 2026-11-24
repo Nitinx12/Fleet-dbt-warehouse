@@ -33,6 +33,44 @@ def live_payload(
         return {"batches": [], "dbt": [], "dq": []}
 
 
+def audit_error(exc: Exception) -> str:
+    """Return a safe, actionable cause for an audit read failure."""
+    if isinstance(exc, KeyError):
+        return "Missing [postgres] secret key: check host, port, dbname, user and password."
+    if isinstance(exc, (TypeError, ValueError)):
+        return "Invalid [postgres] value: port must be numeric and secrets must be strings."
+    if not isinstance(exc, SQLAlchemyError):
+        return "Unexpected error; check Streamlit Cloud logs."
+    detail = str(getattr(exc, "orig", exc)).lower()
+    if any(
+        s in detail
+        for s in (
+            "connection refused",
+            "timed out",
+            "could not connect",
+            "name or service not known",
+        )
+    ):
+        return "Network: database is unreachable from Cloud; use a public host, not localhost."
+    if (
+        "password authentication" in detail
+        or "no pg_hba.conf entry" in detail
+        or ("does not exist" in detail and ("role " in detail or "user " in detail))
+    ):
+        return "Credentials: check the user, password and dbname in [postgres]."
+    if (
+        "permission denied" in detail
+        or "must be owner" in detail
+        or "insufficient_privilege" in detail
+    ):
+        return (
+            "Grants: give the user USAGE ON SCHEMA audit and SELECT on the three views."
+        )
+    if "does not exist" in detail:
+        return "Schema: the database or audit views are missing; check dbname."
+    return "Database error; check Streamlit Cloud logs (details hidden here)."
+
+
 def inject_payload(html: str, payload: dict) -> str:
     """Replace the placeholder with escaped JSON for the embedded page."""
     data = json.dumps(_json_safe(payload), default=str, allow_nan=False).replace(

@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
 
-from streamlit_state import inject_payload, live_payload
+from sqlalchemy.exc import OperationalError, ProgrammingError
+
+from streamlit_state import audit_error, inject_payload, live_payload
 
 
 class FakeFrame:
@@ -64,6 +66,22 @@ def test_inject_payload_escapes_script_close():
     out = inject_payload("__LIVE_DATA__", {"x": "</script><b>hi</b>"})
     assert "</script><b>" not in out
     assert "\\u003c/script>" in out
+
+
+def test_audit_error_names_missing_secret():
+    assert "Missing [postgres]" in audit_error(KeyError("host"))
+
+
+def test_audit_error_names_unreachable_host():
+    exc = OperationalError("select", {}, Exception("connection refused"))
+    assert "public host" in audit_error(exc)
+
+
+def test_audit_error_names_missing_grants():
+    exc = ProgrammingError(
+        "select", {}, Exception("permission denied for schema audit")
+    )
+    assert "USAGE ON SCHEMA audit" in audit_error(exc)
 
 
 def test_index_expects_live_data_not_simulation():

@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL, Engine
 from sqlalchemy.exc import SQLAlchemyError
 
-from streamlit_state import inject_payload, live_payload
+from streamlit_state import audit_error, inject_payload, live_payload
 
 REPO = "https://github.com/Nitinx12/Fleet-dbt-warehouse"
 BRANCH = "main"  # change if your default branch differs
@@ -116,8 +116,5 @@ with live_tab:
                     df = read_view(view)
                     st.dataframe(df, width="stretch", hide_index=True)
                     st.caption(f"{view} · latest {len(df)} rows")
-                except (SQLAlchemyError, KeyError, TypeError, ValueError):
-                    # Deliberately generic: never echo connection details to the page
-                    st.error(
-                        f"Could not read {view}. Check the secrets, network access and grants."
-                    )
+                except (SQLAlchemyError, KeyError, TypeError, ValueError) as exc:
+                    st.error(f"Could not read {view}. {audit_error(exc)}")
