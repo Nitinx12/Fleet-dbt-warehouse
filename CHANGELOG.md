@@ -21,6 +21,8 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
 - Streaming foundation: strict `delivery_events.v1` contract, Kafka topic config,
   `realtime`/`control.stream`/`audit.stream_health` DDL, environment placeholders,
   locked Kafka/Spark dependency groups, Make targets and contract alignment checks.
+- Kafka-free streaming unit tests for environment guards, strict schema validation,
+  contract alignment and ARRIVED/DEPARTED lifecycle expansion.
 - Airflow orchestration stack: Docker image, compose files, DAGs, helpers,
   callbacks and operational docs under `airflow/`.
 - Airflow and alert environment settings, plus batch-context support in the
