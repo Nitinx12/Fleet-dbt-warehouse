@@ -42,16 +42,15 @@ def audit_error(exc: Exception) -> str:
     if not isinstance(exc, SQLAlchemyError):
         return "Unexpected error; check Streamlit Cloud logs."
     detail = str(getattr(exc, "orig", exc)).lower()
-    if any(
-        s in detail
-        for s in (
-            "connection refused",
-            "timed out",
-            "could not connect",
-            "name or service not known",
-        )
+    if (
+        "name or service not known" in detail
+        or "could not translate host name" in detail
     ):
-        return "Network: database is unreachable from Cloud; use a public host, not localhost."
+        return "Network: the host in [postgres] cannot be resolved; check the exact hostname."
+    if any(
+        s in detail for s in ("connection refused", "timed out", "could not connect")
+    ):
+        return "Network: check the port and the DB allowlist/firewall; localhost will not work from Cloud."
     if (
         "password authentication" in detail
         or "no pg_hba.conf entry" in detail

@@ -74,7 +74,12 @@ def test_audit_error_names_missing_secret():
 
 def test_audit_error_names_unreachable_host():
     exc = OperationalError("select", {}, Exception("connection refused"))
-    assert "public host" in audit_error(exc)
+    assert "allowlist/firewall" in audit_error(exc)
+
+
+def test_audit_error_names_bad_hostname():
+    exc = OperationalError("select", {}, Exception("name or service not known"))
+    assert "cannot be resolved" in audit_error(exc)
 
 
 def test_audit_error_names_missing_grants():
