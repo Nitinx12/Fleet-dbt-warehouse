@@ -80,12 +80,13 @@ lifecycle expansion, seeded faults, replay pacing, admin guards, watermark state
 topic prefixes, realtime reset, watchdog lag/freshness probes, observational
 reconciliation status classification and static Spark window/detention logic.
 `make stream-test-integration` is reserved for the opt-in Kafka container and a
-throwaway `fleet_it_*` database.
+throwaway `fleet_it_*` database; it stays skipped unless `RUN_STREAM_INTEGRATION=1`
+with the stream stack running.
 
 ## Airflow suite — `airflow/tests/`
 
-`make airflow-test` runs 14 files with `PYTHONPATH=airflow`: 31 collected,
-26 passing and 5 skipped locally. The skips are DAG tests that require the
+`make airflow-test` runs 14 files with `PYTHONPATH=airflow`: 32 collected,
+27 passing and 5 skipped locally. The skips are DAG tests that require the
 Airflow Task SDK installed in the Airflow image, not in the local venv.
 `airflow/tests/test_run_dbt.py` exists but is not in the Make target; running
 `PYTHONPATH=airflow pytest airflow/tests` collects all 33.

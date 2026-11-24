@@ -33,6 +33,7 @@ env_file="${ENV_FILE:-.env}"
 smoke_url="${SMOKE_URL:-http://localhost:8080/api/v2/monitor/health}"
 
 image_ref="$(printf '%q' "${IMAGE_REF:-}")"
+stream_image_ref="$(printf '%q' "${STREAM_IMAGE_REF:-}")"
 deploy_path="$(printf '%q' "$DEPLOY_PATH")"
 compose_file_q="$(printf '%q' "$compose_file")"
 env_file_q="$(printf '%q' "$env_file")"
@@ -56,6 +57,7 @@ if [[ "$mode" == "deploy" ]]; then
   ssh "${ssh_options[@]}" "$DEPLOY_USER@$DEPLOY_HOST" "bash -s" <<REMOTE
 set -euo pipefail
 export AIRFLOW_IMAGE=$image_ref
+export STREAM_IMAGE=$stream_image_ref
 cd $deploy_path
 compose=(docker compose --env-file $env_file_q -f $compose_file_q)
 "\${compose[@]}" pull

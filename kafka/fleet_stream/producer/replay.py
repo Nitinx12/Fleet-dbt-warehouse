@@ -27,6 +27,8 @@ class Publisher(Protocol):
 
     def publish(self, event: Mapping[str, Any]) -> None: ...
 
+    def publish_invalid(self, reason: str, payload: Mapping[str, Any]) -> None: ...
+
     def flush(self) -> None: ...
 
 
@@ -53,19 +55,23 @@ def replay(
 ) -> ReplayStats:
     """Expand, validate, seed faults and publish one replay batch."""
     stats = ReplayStats(source_rows=len(source_rows))
+
+    def reject(reason: str, payload: Mapping[str, Any]) -> None:
+        stats.rejected += 1
+        log.warning("%s rejected: invalid value", reason)
+        publisher.publish_invalid(reason, payload)
+
     expanded: list[dict[str, Any]] = []
     for row in source_rows:
         try:
             events = expand_source_row(row)
         except EventExpansionError:
-            stats.rejected += 1
-            log.warning("source row rejected: invalid value")
+            reject("source_row", {"source_row": dict(row)})
             continue
         for event in events:
             result = validate_event(event, contract)
             if not result.ok:
-                stats.rejected += 1
-                log.warning("event rejected: invalid contract")
+                reject("contract", event)
                 continue
             value = event_time(event)
             if from_time is not None and value < from_time:
@@ -82,8 +88,7 @@ def replay(
             time.sleep(0.01 * settings.replay_speed)
         result = validate_event(seeded.event, contract)
         if not result.ok:
-            stats.rejected += 1
-            log.warning("seeded event rejected: invalid contract")
+            reject("seeded_contract", seeded.event)
             continue
         publisher.publish(seeded.event)
         stats.published += 1

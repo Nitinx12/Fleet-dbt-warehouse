@@ -85,6 +85,47 @@ def test_reconcile_skips_with_audit_note_when_no_stream_is_enabled(
     monkeypatch.setitem(sys.modules, "utils.audit", fake_audit)
     monkeypatch.setattr(reconcile_module, "fetchone", lambda sql, params: None)
 
-    assert reconcile_module.reconcile(42, from_env()) == 0
+    assert (
+        reconcile_module.reconcile(
+            42,
+            from_env(),
+            airflow_dag_id="custom_dag",
+            airflow_run_id="run-42",
+        )
+        == 0
+    )
     assert calls[0]["error_code"] == "STREAM_SKIPPED"
     assert calls[0]["batch_id"] == 42
+    assert calls[0]["airflow_dag_id"] == "custom_dag"
+    assert "run-42" in calls[0]["error_message"]
+
+
+def test_reconcile_links_comparisons_to_airflow_run(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Every comparison carries the daily DAG run that produced it."""
+    captured: list[dict[str, Any]] = []
+
+    def capture(batch_id: int, comparisons: list[dict[str, Any]]) -> int:
+        captured.extend(comparisons)
+        return len(comparisons)
+
+    fake_audit = SimpleNamespace(
+        log_error=lambda **kwargs: None, log_reconciliation=capture
+    )
+    monkeypatch.setitem(sys.modules, "utils.audit", fake_audit)
+    monkeypatch.setattr(
+        reconcile_module,
+        "fetchone",
+        lambda sql, params: ("ENABLED", "dev.fleet.delivery_events.v1"),
+    )
+    monkeypatch.setattr(
+        reconcile_module,
+        "build_comparisons",
+        lambda contract, settings: [
+            {"message": "raw: counts match", "status": "MATCH"}
+        ],
+    )
+
+    assert reconcile_module.reconcile(42, from_env(), airflow_run_id="manual__42") == 1
+    assert captured[0]["message"].endswith("airflow_run_id=manual__42")

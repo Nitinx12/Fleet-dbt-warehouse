@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
 
@@ -33,10 +34,14 @@ class FakePublisher:
 
     def __init__(self) -> None:
         self.events: list[dict[str, Any]] = []
+        self.invalid: list[tuple[str, dict[str, Any]]] = []
         self.flushed = False
 
     def publish(self, event: dict[str, Any]) -> None:
         self.events.append(event)
+
+    def publish_invalid(self, reason: str, payload: Mapping[str, Any]) -> None:
+        self.invalid.append((reason, dict(payload)))
 
     def flush(self) -> None:
         self.flushed = True
@@ -100,7 +105,7 @@ def test_replay_honours_pacing(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_replay_rejects_invalid_source_rows(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Invalid source values never reach Kafka."""
+    """Invalid source values are routed to the DLQ, not the event topic."""
     publisher = FakePublisher()
     bad_row = {**ROW, "detention_minutes": "-1"}
     stats = replay([bad_row], publisher, _settings(monkeypatch), load_contract())
@@ -108,6 +113,7 @@ def test_replay_rejects_invalid_source_rows(
     assert stats.rejected == 1
     assert stats.published == 0
     assert publisher.events == []
+    assert publisher.invalid[0][0] == "source_row"
 
 
 def test_replay_honours_time_bounds(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -122,6 +122,15 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
 
 ### Fixed
 
+- Streaming wiring now uses one advertised broker listener per network, a local
+  `fleet-stream:local` image, the external `9094` port, reachable Postgres hosts in
+  Compose, the contract stream name in watchdog probes, and Airflow run ids in
+  reconciliation audit rows.
+- Producer rejects now reach the prefixed DLQ with a reason and original payload;
+  the stream image installs live-source clients, loads Spark defaults, records its
+  commit SHA and carries the files its import smoke check needs.
+- CI installs stream-test dependencies before running the Kafka-free suite, and
+  deploys resolve and export the immutable stream image digest alongside Airflow.
 - Helper scripts now read the project's env names (`PG_DBNAME`, `PG_PASSWORD`,
   `MYSQL_DATABASE`), find `.exe` clients on Windows/WSL and probe with native
   clients before falling back to port checks.

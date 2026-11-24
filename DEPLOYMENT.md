@@ -24,7 +24,7 @@ Every commit to `main` goes through GitHub Actions (lint, tests, contracts, dbt 
 
 | Environment | Where | Warehouse / database | dbt target and schema | Trigger | Approval |
 |---|---|---|---|---|---|
-| Local dev | Developer machine, `make airflow-up` | `PG_DBNAME` from `.env` (default `fleet_warehouse`) | `dev`; custom schemas resolve verbatim (`silver`, `gold`, `marts`) | Manual `make` targets | `CONFIRM=yes` for destructive/prod actions |
+| Local dev | Developer machine, `make airflow-up` | `PG_DBNAME` from `.env` (default `fleet_dev`) | `dev`; custom schemas resolve verbatim (`silver`, `gold`, `marts`) | Manual `make` targets | `CONFIRM=yes` for destructive/prod actions |
 | CI | `ubuntu-latest` GitHub runner + service `postgres:16` | `fleet_dev` | `ci`; `DBT_SCHEMA_PREFIX=ci_pr_<PR-or-run>_` | PR and push to `main` | Automatic; guarded by fixture and DB-name checks |
 | Staging | Remote host, Compose project `fleet-airflow` | **TODO:** database name | **TODO:** `DBT_TARGET` value (e.g. `prod`) and schema prefix | CI success on `main` via `workflow_run` | Automatic, then smoke |
 | Production | Separate remote host, same Compose project | **TODO:** database name | **TODO:** `DBT_TARGET` value (e.g. `prod`) and schema prefix | Manual `workflow_dispatch` with `release_sha` | `production` GitHub environment reviewers + smoke |
@@ -238,9 +238,9 @@ flowchart TD
 | Python | `setup-uv` with Python 3.12 and cache; `make install` runs `uv sync --frozen`. **TODO:** the image runs Python 3.13, so tests and production use different interpreters. Align both (see section 14). |
 | Jobs | `lint` (10m), `unit-tests` (10m), `contracts` (10m), `dbt-parse` (10m), `airflow-test` (10m), `stream-tests` (15m), `integration` (25m), `image-build` (35m), `stream-image-build` (35m). |
 | Integration | Service `postgres:16`, `make py-integration`, `make CONFIRM=yes db-init-audit`, `make dbt-deps`, `make load-fixtures ENV=ci`, `make dbt-build ENV=ci EXCLUDE=unit_test`. |
-| Stream tests | `make stream-test` in an isolated `uv` environment with the locked `kafka` and `spark` groups; no broker is started. |
+| Stream tests | `make install` then `make stream-test` in an isolated `uv` environment with the locked `kafka` and `spark` groups; no broker is started. |
 | Image | Builds `airflow/Dockerfile` from repo root with `AIRFLOW_VERSION=3.3.2`, `PYTHON_VERSION=3.13`, `GIT_SHA`. |
-| Stream image | Builds `kafka/Dockerfile` from repo root and tags `sha-<commit>-stream`, reusing the commit SHA but not the Airflow tag. |
+| Stream image | Builds `kafka/Dockerfile` from repo root with Python 3.12 and `GIT_SHA`, tags `sha-<commit>-stream`, reusing the commit SHA but not the Airflow tag. |
 | Registry | Login and push only when `github.event_name == 'push'`; PR builds are load-only. |
 | Smoke | `docker run --rm --entrypoint /opt/fleet/airflow/scripts/smoke.sh` with all runtime env forwarded; the stream image imports `fleet_stream` and `pyspark`. |
 | Actions | Every third-party action is pinned by commit SHA; no `pull_request_target`. |
@@ -251,13 +251,13 @@ Fixture loading is double-guarded: `FIXTURE_LOAD=1` and `PG_DBNAME` must be `fle
 
 | Job | Trigger | Environment | Key inputs | Command |
 |---|---|---|---|---|
-| `resolve-image` | `workflow_run` CI success on `main`, or `workflow_dispatch` | — | `release_sha` (dispatch) or `workflow_run.head_sha`; must be exactly 40 lowercase hex chars | `docker buildx imagetools inspect ghcr.io/<repo>:sha-<sha>` → digest, with `docker pull` fallback |
+| `resolve-image` | `workflow_run` CI success on `main`, or `workflow_dispatch` | — | `release_sha` (dispatch) or `workflow_run.head_sha`; must be exactly 40 lowercase hex chars | `docker buildx imagetools inspect` on `sha-<sha>` and `sha-<sha>-stream` → digests, with `docker pull` fallback |
 | `deploy-staging` | `workflow_run` only | `staging` | `STAGING_SSH_KEY`, `STAGING_DEPLOY_HOST`, `STAGING_DEPLOY_USER`, `STAGING_DEPLOY_PATH` | `make deploy CONFIRM=yes` |
 | `smoke-staging` | after staging deploy | `staging` | same `STAGING_*` secrets | `make deploy-smoke` |
 | `deploy-production` | `workflow_dispatch` only | `production` | `PRODUCTION_*` secrets | `make deploy CONFIRM=yes` |
 | `smoke-production` | after production deploy | `production` | same `PRODUCTION_*` secrets | `make deploy-smoke` |
 
-Deployments use `IMAGE_REF` as `ghcr.io/<owner>/<repo>@sha256:<digest>`; the `latest` tag is never used or assumed.
+Deployments use `IMAGE_REF` as `ghcr.io/<owner>/<repo>@sha256:<digest>` and `STREAM_IMAGE_REF` as `ghcr.io/<owner>/<repo>@sha256:<stream-digest>`; the `latest` tag is never used or assumed.
 
 ### 5.3 `leaks.yml`
 
@@ -398,7 +398,7 @@ GitHub secrets by environment:
 |---|---|
 | Validate | Mode must be `deploy` or `smoke`; require `SSH_PRIVATE_KEY`, `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_PATH` and, for deploy, `IMAGE_REF`. |
 | Key handling | `umask 077`, key written to a `mktemp` file, `chmod 600`, trap removes it; SSH uses `BatchMode=yes` and a 15s connect timeout. |
-| Deploy | Remote `export AIRFLOW_IMAGE=$IMAGE_REF`, `cd $DEPLOY_PATH`, `docker compose --env-file .env -f airflow/compose.yml pull`, then `up -d --no-build --remove-orphans`, then `ps`. |
+| Deploy | Remote `export AIRFLOW_IMAGE=$IMAGE_REF` and `STREAM_IMAGE=$STREAM_IMAGE_REF`, `cd $DEPLOY_PATH`, `docker compose --env-file .env -f airflow/compose.yml pull`, then `up -d --no-build --remove-orphans`, then `ps`. |
 | Smoke | `docker compose ps`; `curl --fail` against `http://localhost:8080/api/v2/monitor/health` inside `airflow-api-server`; `airflow jobs check --job-type SchedulerJob` inside `airflow-scheduler`. |
 | Rollback | See 3.2. |
 

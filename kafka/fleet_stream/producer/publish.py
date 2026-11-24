@@ -40,8 +40,11 @@ class KafkaPublisher:
         topic: str,
         bootstrap_servers: str,
         producer: Any | None = None,
+        *,
+        dlq_topic: str | None = None,
     ) -> None:
         self.topic = topic
+        self.dlq_topic = dlq_topic
         self._producer = producer or _create_producer(bootstrap_servers)
         self._published = 0
         self._errors = 0
@@ -65,6 +68,29 @@ class KafkaPublisher:
             self.topic, value=value, key=key, callback=self._on_delivery
         )
         self._published += 1
+
+    def publish_invalid(self, reason: str, payload: Mapping[str, Any]) -> None:
+        """Send a rejected payload to the DLQ with its reason but no offsets."""
+        if self.dlq_topic is None:
+            raise PublishError("DLQ topic is not configured")
+        value = json.dumps(
+            {
+                "reason": reason,
+                "original": dict(payload),
+                "topic": "",
+                "partition": None,
+                "offset": None,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+            default=str,
+        ).encode("utf-8")
+        self._producer.produce(
+            self.dlq_topic,
+            value=value,
+            key=reason.encode("utf-8"),
+            callback=self._on_delivery,
+        )
 
     def flush(self) -> None:
         """Wait for delivery and fail closed on undelivered records."""

@@ -98,7 +98,7 @@ def from_env() -> StreamSettings:
     seed = int(seed_raw) if seed_raw else None
     settings = StreamSettings(
         env=env,
-        bootstrap_servers=_text("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
+        bootstrap_servers=_text("KAFKA_BOOTSTRAP_SERVERS", "localhost:9094"),
         topic_prefix=_text("KAFKA_TOPIC_PREFIX", "dev."),
         source=source,
         replay_speed=_percentage("STREAM_REPLAY_SPEED", 0.0),

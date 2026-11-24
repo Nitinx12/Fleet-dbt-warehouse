@@ -29,7 +29,12 @@ def main() -> None:
     parser.add_argument("--airflow-run-id", required=True)
     args = parser.parse_args()
 
-    count = reconcile(args.batch_id, from_env())
+    count = reconcile(
+        args.batch_id,
+        from_env(),
+        airflow_dag_id=args.airflow_dag_id,
+        airflow_run_id=args.airflow_run_id,
+    )
     log.info("stream reconciliation comparisons=%s", count)
 
 

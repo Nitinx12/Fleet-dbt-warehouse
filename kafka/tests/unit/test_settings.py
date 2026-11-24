@@ -45,6 +45,7 @@ def test_from_env_applies_topic_prefix_and_defaults(
     settings = from_env()
 
     assert settings.env == "dev"
+    assert settings.bootstrap_servers == "localhost:9094"
     assert settings.topic("fleet.delivery_events.v1") == "dev.fleet.delivery_events.v1"
     assert settings.window_minutes == 15
     assert settings.watermark_minutes == 10

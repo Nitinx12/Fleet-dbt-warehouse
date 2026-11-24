@@ -37,6 +37,8 @@ DBT = "$(UV)" run --no-sync python scripts/run_dbt.py
 PSQL_DB = PGPASSWORD="$(PG_PASSWORD)" "$(PSQL)" -h "$(PG_HOST)" -p "$(PG_PORT)" -U "$(DB_USER)"
 AIRFLOW_COMPOSE = docker compose --env-file .env -f airflow/compose.yml -f airflow/compose.dev.yml
 KAFKA_COMPOSE = docker compose --profile streaming --env-file .env -f kafka/compose.yml
+STREAM_IMAGE ?= fleet-stream:local
+export STREAM_IMAGE
 AIRFLOW_DAG_ID ?= fleet_daily_load
 BATCH_ID ?=
 AIRFLOW_RUN_ID ?=
@@ -221,16 +223,20 @@ airflow-dag-trigger: ## Trigger a DAG run; requires CONFIRM=yes.
 	$(Q)$(AIRFLOW_COMPOSE) exec -T airflow-worker airflow dags trigger "$(AIRFLOW_DAG_ID)" $(AIRFLOW_RUN_ID_ARG) -o json
 
 ## Streaming
-.PHONY: stream-up stream-down stream-status stream-monitor stream-reconcile stream-produce stream-reset stream-test stream-test-integration stream-demo
-stream-up: check-tools ## Start the local Kafka stream stack and register topics.
+.PHONY: stream-build stream-up stream-down stream-status stream-monitor stream-reconcile stream-produce stream-reset stream-test stream-test-integration stream-demo
+stream-build: check-tools ## Build the local stream image.
+	$(Q)$(call require_cmd,docker,Install Docker and Docker Compose.)
+	$(Q)$(KAFKA_COMPOSE) build stream-job
+
+stream-up: check-tools stream-build ## Start the local Kafka stream stack and register topics.
 	$(Q)$(call require_environment)
 	$(Q)$(call confirm_production)
 	$(Q)$(call require_venv)
 	$(Q)$(call require_cmd,docker,Install Docker and Docker Compose.)
 	$(Q)printf '%s\n' "==> Starting streaming stack for ENV=$(ENV)"
-	$(Q)$(KAFKA_COMPOSE) up -d --build kafka kafka-init
+	$(Q)$(KAFKA_COMPOSE) up -d kafka kafka-init
 	$(Q)"$(UV)" run --no-sync python scripts/stream_admin.py register
-	$(Q)$(KAFKA_COMPOSE) up -d --build stream-job
+	$(Q)$(KAFKA_COMPOSE) up -d stream-job
 
 stream-down: ## Stop the local Kafka stream stack without deleting checkpoints.
 	$(Q)$(call require_cmd,docker,Install Docker and Docker Compose.)
@@ -280,7 +286,7 @@ stream-demo: check-tools install ## Build a zero-credential fixture batch and dr
 		DATABRICKS_SCHEMA=marts DATABRICKS_TOKEN=placeholder \
 		SMTP_HOST=localhost SMTP_PORT=25 ALERT_EMAIL_FROM=ci@example.com ALERT_EMAIL_TO=ci@example.com \
 		DBT_TARGET=ci DBT_SCHEMA_PREFIX="$(DEMO_SCHEMA_PREFIX)" FIXTURE_LOAD=1 \
-		KAFKA_BOOTSTRAP_SERVERS=localhost:9092 KAFKA_TOPIC_PREFIX=ci. \
+		KAFKA_BOOTSTRAP_SERVERS=localhost:9094 KAFKA_TOPIC_PREFIX=ci. \
 		STREAM_PG_HOST=host.docker.internal WAREHOUSE_NETWORK=fleet-airflow_airflow \
 		STREAM_SOURCE=fixture \
 		STREAM_REPLAY_SPEED=0 STREAM_LATE_FRACTION=0 STREAM_DUPLICATE_FRACTION=0 \

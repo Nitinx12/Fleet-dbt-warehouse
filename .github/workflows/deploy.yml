@@ -31,6 +31,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       image: ${{ steps.resolve.outputs.image }}
+      stream_image: ${{ steps.resolve.outputs.stream_image }}
       sha: ${{ steps.resolve.outputs.sha }}
     steps:
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
@@ -69,8 +70,21 @@ jobs:
             printf 'could not resolve digest for %s\n' "$tag" >&2
             exit 1
           fi
+          stream_tag="ghcr.io/${repository}:sha-${sha}-stream"
+          if ! stream_inspect="$(docker buildx imagetools inspect --format '{{.Manifest.Digest}}' "$stream_tag" 2>&1)"; then
+            printf '%s\n' "$stream_inspect" >&2
+            printf 'imagetools could not resolve %s; falling back to docker pull\n' "$stream_tag" >&2
+            docker pull "$stream_tag"
+            stream_inspect="$(docker inspect --format '{{index .RepoDigests 0}}' "$stream_tag" | cut -d'@' -f2)"
+          fi
+          stream_digest="$(printf '%s\n' "$stream_inspect" | awk '/^sha256:/ {print $1; exit}')"
+          if [ -z "$stream_digest" ]; then
+            printf 'could not resolve digest for %s\n' "$stream_tag" >&2
+            exit 1
+          fi
           printf 'sha=%s\n' "$sha" >> "$GITHUB_OUTPUT"
           printf 'image=ghcr.io/%s@%s\n' "$repository" "$digest" >> "$GITHUB_OUTPUT"
+          printf 'stream_image=ghcr.io/%s@%s\n' "$repository" "$stream_digest" >> "$GITHUB_OUTPUT"
 
   deploy-staging:
     name: Deploy staging
@@ -90,6 +104,7 @@ jobs:
           DEPLOY_USER: ${{ secrets.STAGING_DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.STAGING_DEPLOY_PATH }}
           IMAGE_REF: ${{ needs.resolve-image.outputs.image }}
+          STREAM_IMAGE_REF: ${{ needs.resolve-image.outputs.stream_image }}
         run: bash scripts/deploy.sh deploy
 
   smoke-staging:
@@ -130,6 +145,7 @@ jobs:
           DEPLOY_USER: ${{ secrets.PRODUCTION_DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.PRODUCTION_DEPLOY_PATH }}
           IMAGE_REF: ${{ needs.resolve-image.outputs.image }}
+          STREAM_IMAGE_REF: ${{ needs.resolve-image.outputs.stream_image }}
         run: bash scripts/deploy.sh deploy
 
   smoke-production:

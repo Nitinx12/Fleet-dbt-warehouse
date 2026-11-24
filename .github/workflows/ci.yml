@@ -134,6 +134,8 @@ jobs:
         with:
           python-version: "3.12"
           enable-cache: true
+      - name: Install dependencies
+        run: make install
       - name: Run broker-free stream tests
         run: make stream-test
 
@@ -267,6 +269,8 @@ jobs:
           tags: ${{ steps.stream_image.outputs.ref }}
           cache-from: type=gha,scope=stream-image
           cache-to: type=gha,mode=max,scope=stream-image
+          build-args: |
+            GIT_SHA=${{ github.sha }}
       - name: Smoke test stream image
         run: |
           docker run --rm \

@@ -88,7 +88,7 @@ def assert_registered(settings: StreamSettings, contract: Contract) -> None:
         raise StreamJobError(f"stream {contract.stream} is not ENABLED")
 
 
-def _write_dlq(invalid_df: Any, settings: StreamSettings) -> None:
+def _write_dlq(invalid_df: Any, settings: StreamSettings, contract: Contract) -> None:
     from pyspark.sql import functions as F
 
     value = F.to_json(
@@ -104,7 +104,7 @@ def _write_dlq(invalid_df: Any, settings: StreamSettings) -> None:
         invalid_df.select(F.col("key").alias("key"), value.alias("value"))
         .write.format("kafka")
         .option("kafka.bootstrap.servers", settings.bootstrap_servers)
-        .option("topic", settings.topic("fleet.delivery_events.v1.dlq"))
+        .option("topic", settings.topic(contract.dlq_topic))
         .save()
     )
 
@@ -127,7 +127,7 @@ def process_batch(
         )
         rejected = invalid_df.count()
         if rejected:
-            _write_dlq(invalid_df, settings)
+            _write_dlq(invalid_df, settings, contract)
 
         payload = F.from_json(F.col("value").cast("string"), payload_schema(contract))
         valid = (

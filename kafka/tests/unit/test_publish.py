@@ -56,6 +56,26 @@ def test_publisher_serialises_strict_json_with_dedupe_key() -> None:
     assert json.loads(producer.calls[0]["value"]) == event
 
 
+def test_publisher_sends_rejects_to_the_contract_dlq() -> None:
+    """Rejected payloads keep their reason and original value without offsets."""
+    producer = FakeProducer()
+    publisher = KafkaPublisher(
+        "ci.fleet.delivery_events.v1",
+        "broker:9092",
+        producer,
+        dlq_topic="ci.fleet.delivery_events.v1.dlq",
+    )
+
+    publisher.publish_invalid("contract", {"event_id": "evt-bad"})
+    publisher.flush()
+
+    assert producer.calls[0]["topic"] == "ci.fleet.delivery_events.v1.dlq"
+    body = json.loads(producer.calls[0]["value"])
+    assert body["reason"] == "contract"
+    assert body["original"] == {"event_id": "evt-bad"}
+    assert body["offset"] is None
+
+
 def test_publisher_fails_on_undelivered_records() -> None:
     """A partial delivery is an error, never a silent success."""
     publisher = KafkaPublisher("topic", "broker:9092", FakeProducer(remaining=1))

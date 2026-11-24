@@ -50,7 +50,9 @@ def main() -> None:
     else:
         source_rows = list(read_live_rows(args.limit))
     publisher = KafkaPublisher(
-        settings.topic(contract.topic), settings.bootstrap_servers
+        settings.topic(contract.topic),
+        settings.bootstrap_servers,
+        dlq_topic=settings.topic(contract.dlq_topic),
     )
     stats = replay(
         source_rows,

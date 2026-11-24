@@ -150,7 +150,13 @@ def build_comparisons(
     return comparisons
 
 
-def reconcile(batch_id: int, settings: StreamSettings) -> int:
+def reconcile(
+    batch_id: int,
+    settings: StreamSettings,
+    *,
+    airflow_dag_id: str = "fleet_daily_load",
+    airflow_run_id: str = "-",
+) -> int:
     """Log stream-vs-gold comparisons, or an audit note when no stream is enabled."""
     from utils.audit import log_error, log_reconciliation
 
@@ -159,13 +165,20 @@ def reconcile(batch_id: int, settings: StreamSettings) -> int:
     if registration is None or registration[0] != "ENABLED":
         log_error(
             component="CONTROL",
-            error_message="stream reconciliation skipped: no ENABLED stream",
+            error_message=(
+                "stream reconciliation skipped: no ENABLED stream "
+                f"(run_id={airflow_run_id})"
+            ),
             batch_id=batch_id,
             severity="WARNING",
             error_code="STREAM_SKIPPED",
-            airflow_dag_id="fleet_daily_load",
+            airflow_dag_id=airflow_dag_id,
             task_id="reconcile_stream",
         )
         return 0
     comparisons = build_comparisons(contract, settings)
+    for comparison in comparisons:
+        comparison["message"] = (
+            f"{comparison['message']}; airflow_run_id={airflow_run_id}"
+        )
     return log_reconciliation(batch_id, comparisons)

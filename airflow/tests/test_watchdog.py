@@ -20,3 +20,14 @@ def test_watchdog_probes_stream_health_without_batch_control() -> None:
     assert "start_batch" not in source
     assert "finalize_batch" not in source
     assert "NotImplementedError" not in source
+
+
+@pytest.mark.unit
+def test_watchdog_uses_the_contract_stream_name() -> None:
+    """Health lookups must not invent a second stream identifier."""
+    source = (
+        Path(__file__).resolve().parents[1] / "helpers" / "scripts" / "stream_health.py"
+    ).read_text(encoding="utf-8")
+
+    assert "load_contract().stream" in source
+    assert '"delivery_events"' not in source
