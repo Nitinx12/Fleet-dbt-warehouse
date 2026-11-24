@@ -1,0 +1,1670 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Fleet dbt Warehouse: a daily analytics pipeline from MySQL and MongoDB through Postgres bronze, silver, gold and marts to approved Databricks BI tables."
+    />
+    <meta
+      name="keywords"
+      content="fleet, dbt, airflow, postgres, databricks, mysql, mongodb, data warehouse, analytics,BI"
+    />
+    <meta name="author" content="Nitin" />
+    <meta name="theme-color" content="#080d17" />
+    <meta property="og:title" content="Fleet dbt Warehouse" />
+    <meta
+      property="og:description"
+      content="Contracted ingestion, dbt-owned transformation, auditable daily runs and governed marts for fleet analytics."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://github.com/Nitinx12/Fleet-dbt-warehouse" />
+    <title>Fleet dbt Warehouse</title>
+    <link rel="icon" href="assets/logo/logo_1.png" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080d17;
+        --surface: #111827;
+        --surface-2: #162033;
+        --border: rgba(148, 163, 184, 0.16);
+        --text: #e6edf7;
+        --muted: #9aa8bd;
+        --primary: #5eead4;
+        --primary-dark: #0f766e;
+        --bronze: #fb923c;
+        --silver: #c084fc;
+        --gold: #4ade80;
+        --marts: #22d3ee;
+        --control: #fb7185;
+        --radius: 16px;
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.32);
+        --progress: 0%;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 88px;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        line-height: 1.6;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 12% 0%, rgba(94, 234, 212, 0.12), transparent 28rem),
+          radial-gradient(circle at 88% 12%, rgba(34, 211, 238, 0.09), transparent 32rem),
+          var(--bg);
+      }
+
+      img {
+        display: block;
+        max-width: 100%;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      code,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 3px;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: -9999px;
+        top: 1rem;
+        z-index: 200;
+        padding: 0.7rem 1rem;
+        border-radius: 10px;
+        background: var(--primary);
+        color: #04201c;
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .skip-link:focus {
+        left: 1rem;
+      }
+
+      .wrap {
+        width: min(1180px, calc(100% - 2.5rem));
+        margin-inline: auto;
+      }
+
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        border-bottom: 1px solid var(--border);
+        background: rgba(8, 13, 23, 0.86);
+        backdrop-filter: blur(16px);
+      }
+
+      .nav-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding-block: 0.85rem;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.7rem;
+        font-weight: 850;
+        letter-spacing: -0.02em;
+        text-decoration: none;
+      }
+
+      .brand img {
+        width: 38px;
+        height: 38px;
+        padding: 4px;
+        border-radius: 11px;
+        background: rgba(255, 255, 255, 0.92);
+        object-fit: contain;
+      }
+
+      .brand span {
+        font-size: 0.98rem;
+      }
+
+      .nav-menu {
+        display: flex;
+        align-items: center;
+        gap: 0.15rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .nav-link {
+        display: block;
+        padding: 0.5rem 0.68rem;
+        border-radius: 9px;
+        color: var(--muted);
+        font-size: 0.88rem;
+        font-weight: 650;
+        text-decoration: none;
+      }
+
+      .nav-link:hover,
+      .nav-link:focus-visible {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .nav-cta {
+        margin-left: 0.5rem;
+        padding: 0.55rem 0.9rem;
+        border-radius: 10px;
+        background: var(--primary);
+        color: #04201c;
+        font-size: 0.85rem;
+        font-weight: 850;
+        text-decoration: none;
+      }
+
+      .nav-cta:hover {
+        background: #99f6e4;
+      }
+
+      .mobile-menu-toggle {
+        display: none;
+        width: 42px;
+        height: 42px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .mobile-menu-toggle__icon {
+        display: grid;
+        gap: 4px;
+      }
+
+      .mobile-menu-toggle__icon span {
+        display: block;
+        width: 18px;
+        height: 2px;
+        border-radius: 2px;
+        background: currentColor;
+      }
+
+      .scroll-progress {
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: var(--progress);
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary), var(--marts));
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        padding-block: 5rem 4rem;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(230px, 0.55fr);
+        gap: 3rem;
+        align-items: center;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.35rem 0.75rem;
+        border: 1px solid rgba(94, 234, 212, 0.28);
+        border-radius: 999px;
+        background: rgba(94, 234, 212, 0.07);
+        color: var(--primary);
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+        box-shadow: 0 0 0 4px rgba(94, 234, 212, 0.14);
+      }
+
+      .hero h1 {
+        margin: 1.1rem 0 1rem;
+        font-size: clamp(2.5rem, 6vw, 4.2rem);
+        line-height: 1.04;
+        letter-spacing: -0.055em;
+      }
+
+      .hero h1 span {
+        background: linear-gradient(100deg, var(--primary), #7dd3fc);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .hero-copy {
+        max-width: 64ch;
+        margin: 0;
+        color: var(--muted);
+        font-size: 1.04rem;
+      }
+
+      .hero-copy code {
+        color: #a5f3fc;
+        font-size: 0.92em;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        margin-top: 2rem;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.8rem 1.15rem;
+        border-radius: 11px;
+        font-size: 0.9rem;
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: #04201c;
+      }
+
+      .btn-primary:hover {
+        background: #99f6e4;
+      }
+
+      .btn-secondary {
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+      }
+
+      .btn-secondary:hover {
+        border-color: rgba(94, 234, 212, 0.5);
+      }
+
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 2.1rem;
+      }
+
+      .badge {
+        padding: 0.38rem 0.72rem;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 650;
+      }
+
+      .logo-card {
+        display: grid;
+        place-items: center;
+        padding: 2.5rem;
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        background: linear-gradient(160deg, rgba(94, 234, 212, 0.1), rgba(255, 255, 255, 0.015));
+        box-shadow: var(--shadow);
+      }
+
+      .logo-card img {
+        width: min(220px, 100%);
+        border-radius: 18px;
+      }
+
+      .stats {
+        border-block: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.018);
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .stat {
+        padding: 1.7rem 1rem;
+        text-align: center;
+        border-right: 1px solid var(--border);
+      }
+
+      .stat:last-child {
+        border-right: 0;
+      }
+
+      .stat-value {
+        font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        color: var(--primary);
+      }
+
+      .stat-label {
+        margin-top: 0.2rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .section {
+        padding-block: 5rem;
+      }
+
+      .section-head {
+        max-width: 760px;
+        margin-bottom: 2.6rem;
+      }
+
+      .kicker {
+        color: var(--primary);
+        font-size: 0.72rem;
+        font-weight: 850;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .section h2 {
+        margin: 0.55rem 0 0.7rem;
+        font-size: clamp(1.8rem, 3.4vw, 2.55rem);
+        line-height: 1.15;
+        letter-spacing: -0.04em;
+      }
+
+      .section-subtitle {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .grid-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+      }
+
+      .card {
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+        box-shadow: var(--shadow);
+      }
+
+      .icon-box {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: rgba(94, 234, 212, 0.11);
+        color: var(--primary);
+        font-size: 0.78rem;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+      }
+
+      .card h3 {
+        margin: 1rem 0 0.45rem;
+        font-size: 1.05rem;
+      }
+
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .mermaid-panel {
+        overflow-x: auto;
+        padding: clamp(1rem, 3vw, 2rem);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+        box-shadow: var(--shadow);
+      }
+
+      .mermaid-panel .mermaid {
+        min-width: 980px;
+      }
+
+      .diagram-key {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1rem;
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .diagram-key span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .diagram-key i {
+        display: inline-block;
+        width: 1.8rem;
+        border-top: 2px solid var(--primary);
+      }
+
+      .diagram-key .key-control {
+        border-top-color: var(--control);
+        border-top-style: dashed;
+      }
+
+      .diagram-key .key-planned {
+        border-top-color: #d9f99d;
+        border-top-style: dotted;
+      }
+
+      .support-band {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .support-card {
+        padding: 1rem 1.2rem;
+        border: 1px dashed rgba(251, 113, 133, 0.35);
+        border-radius: 14px;
+        background: rgba(251, 113, 133, 0.045);
+      }
+
+      .support-card strong {
+        display: block;
+        margin-bottom: 0.2rem;
+        color: var(--control);
+        font-size: 0.85rem;
+      }
+
+      .support-card span {
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .note {
+        margin: 1.2rem 0 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.7rem;
+        counter-reset: step;
+        margin-top: 2.2rem;
+      }
+
+      .step {
+        position: relative;
+        padding: 0.9rem 1rem 0.9rem 2.9rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.02);
+        font-size: 0.84rem;
+      }
+
+      .step::before {
+        counter-increment: step;
+        content: counter(step, decimal-leading-zero);
+        position: absolute;
+        left: 1rem;
+        top: 0.95rem;
+        color: var(--primary);
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .step small {
+        display: block;
+        margin-top: 0.15rem;
+        color: var(--muted);
+        font-size: 0.76rem;
+      }
+
+      .table-wrap {
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+
+      table {
+        width: 100%;
+        min-width: 760px;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+        vertical-align: top;
+        font-size: 0.88rem;
+      }
+
+      th {
+        background: rgba(255, 255, 255, 0.025);
+        color: var(--muted);
+        font-size: 0.7rem;
+        font-weight: 850;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+      }
+
+      td code {
+        color: var(--primary);
+        font-size: 0.82rem;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .quality-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+      }
+
+      .quality-card {
+        padding: 1.25rem;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .quality-value {
+        font-size: 1.9rem;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        color: var(--primary);
+      }
+
+      .quality-card p {
+        margin: 0.3rem 0 0;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .pii-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 0.8rem;
+        margin: 1.6rem 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .pii-list li {
+        padding: 0.9rem 1rem;
+        border-left: 3px solid var(--control);
+        border-radius: 0 10px 10px 0;
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .pii-list strong {
+        color: var(--text);
+      }
+
+      .code-grid {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .code-block {
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: #0b1220;
+      }
+
+      .code-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.6rem 0.9rem;
+        border-bottom: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .code-head span {
+        color: var(--muted);
+        font-size: 0.73rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .copy {
+        padding: 0.3rem 0.65rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text);
+        font-size: 0.74rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .copy:hover {
+        border-color: var(--primary);
+      }
+
+      pre {
+        margin: 0;
+        padding: 1rem;
+        overflow: auto;
+        color: #cbd5e1;
+        font-size: 0.82rem;
+        line-height: 1.75;
+      }
+
+      .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1rem;
+      }
+
+      .insight {
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: linear-gradient(160deg, rgba(34, 211, 238, 0.08), rgba(255, 255, 255, 0.015));
+      }
+
+      .insight-metric {
+        color: var(--primary);
+        font-size: 2rem;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+      }
+
+      .insight h3 {
+        margin: 0.35rem 0 0.5rem;
+        font-size: 1.04rem;
+      }
+
+      .insight p {
+        margin: 0 0 0.9rem;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .text-link {
+        color: var(--primary);
+        font-size: 0.84rem;
+        font-weight: 750;
+        text-decoration: none;
+      }
+
+      .text-link:hover {
+        text-decoration: underline;
+      }
+
+      .resource-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.8rem;
+      }
+
+      .resource {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1rem 1.1rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.02);
+        text-decoration: none;
+      }
+
+      .resource:hover {
+        border-color: rgba(94, 234, 212, 0.5);
+        transform: translateY(-2px);
+      }
+
+      .resource > span:first-child {
+        color: var(--text);
+      }
+
+      .resource strong {
+        display: block;
+        font-size: 0.9rem;
+      }
+
+      .resource span {
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .resource-arrow {
+        color: var(--primary);
+        font-weight: 900;
+      }
+
+      .footer {
+        border-top: 1px solid var(--border);
+        padding-block: 3rem 2rem;
+        background: rgba(0, 0, 0, 0.22);
+      }
+
+      .footer-grid {
+        display: grid;
+        grid-template-columns: 1.4fr repeat(2, 1fr);
+        gap: 2rem;
+      }
+
+      .footer-brand p {
+        max-width: 42ch;
+        margin: 0.8rem 0 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .footer h3 {
+        margin: 0 0 0.9rem;
+        color: var(--muted);
+        font-size: 0.74rem;
+        font-weight: 850;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      .footer ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .footer li {
+        margin: 0.45rem 0;
+      }
+
+      .footer a {
+        color: var(--muted);
+        font-size: 0.85rem;
+        text-decoration: none;
+      }
+
+      .footer a:hover {
+        color: var(--primary);
+      }
+
+      .footer .brand {
+        color: var(--text);
+      }
+
+      .footer-bottom {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-top: 2rem;
+        padding-top: 1.2rem;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .back-to-top {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+        z-index: 90;
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #04201c;
+        font-size: 1.2rem;
+        font-weight: 900;
+        text-decoration: none;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(8px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+
+      .back-to-top.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+      }
+
+      .js .reveal {
+        opacity: 0;
+        transform: translateY(14px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+      }
+
+      .js .reveal.is-visible {
+        opacity: 1;
+        transform: none;
+      }
+
+      @media (max-width: 860px) {
+        .mobile-menu-toggle {
+          display: inline-flex;
+        }
+
+        .nav-menu {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          display: none;
+          flex-direction: column;
+          align-items: stretch;
+          padding: 0.75rem 1.25rem 1rem;
+          border-bottom: 1px solid var(--border);
+          background: #0c1320;
+        }
+
+        .nav-menu.is-open {
+          display: flex;
+        }
+
+        .nav-link {
+          padding: 0.75rem 0.5rem;
+        }
+
+        .nav-cta {
+          margin: 0.5rem 0 0;
+          text-align: center;
+        }
+
+        .hero-grid {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
+
+        .logo-card {
+          display: none;
+        }
+
+        .footer-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .footer-brand {
+          grid-column: 1 / -1;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .wrap {
+          width: min(100% - 1.5rem, 1180px);
+        }
+
+        .hero {
+          padding-block: 3.5rem 3rem;
+        }
+
+        .section {
+          padding-block: 3.5rem;
+        }
+
+        .stats-grid,
+        .support-band {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .stat {
+          border-bottom: 1px solid var(--border);
+        }
+
+        .stat:nth-child(2n) {
+          border-right: 0;
+        }
+
+        .stat:nth-last-child(-n + 2) {
+          border-bottom: 0;
+        }
+
+        .footer-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="header">
+      <nav class="wrap nav-container" aria-label="Primary navigation">
+        <a class="brand" href="#top">
+          <img src="assets/logo/logo_1.png" alt="" />
+          <span>Fleet dbt Warehouse</span>
+        </a>
+
+        <button
+          class="mobile-menu-toggle"
+          type="button"
+          aria-label="Toggle navigation"
+          aria-expanded="false"
+          aria-controls="primary-navigation"
+        >
+          <span class="mobile-menu-toggle__icon" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+        </button>
+
+        <ul class="nav-menu" id="primary-navigation">
+          <li><a class="nav-link" href="#overview">Overview</a></li>
+          <li><a class="nav-link" href="#architecture">Architecture</a></li>
+          <li><a class="nav-link" href="#layers">Layers</a></li>
+          <li><a class="nav-link" href="#quality">Quality</a></li>
+          <li><a class="nav-link" href="#runbook">Runbook</a></li>
+          <li><a class="nav-link" href="#insights">Insights</a></li>
+          <li>
+            <a
+              class="nav-cta"
+              href="https://github.com/Nitinx12/Fleet-dbt-warehouse"
+              target="_blank"
+              rel="noreferrer"
+              >GitHub</a
+            >
+          </li>
+        </ul>
+      </nav>
+      <div class="scroll-progress" aria-hidden="true"></div>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top">
+        <div class="wrap hero-grid">
+          <div>
+            <span class="eyebrow">Daily analytics warehouse</span>
+            <h1>Fleet <span>dbt Warehouse</span></h1>
+            <p class="hero-copy">
+              MySQL <code>fleet_registry</code> and MongoDB <code>fleet_operations</code> land in
+              Postgres <code>bronze</code> through watermarked, contract-checked ingestion. dbt
+              builds <code>silver</code>, <code>gold</code> and <code>marts</code>; approved
+              non-PII marts sync to Databricks for BI. Airflow schedules the run, while
+              <code>control.*</code> and <code>audit.*</code> keep the evidence.
+            </p>
+            <div class="actions">
+              <a class="btn btn-primary" href="#architecture">See the architecture</a>
+              <a class="btn btn-secondary" href="#runbook">Run the demo</a>
+            </div>
+            <div class="badges" aria-label="Project facts">
+              <span class="badge">12 source contracts</span>
+              <span class="badge">32 dbt models</span>
+              <span class="badge">383 dbt tests</span>
+              <span class="badge">5 published marts</span>
+              <span class="badge">Daily at 02:00 IST</span>
+            </div>
+          </div>
+          <div class="logo-card" aria-hidden="true">
+            <img src="assets/logo/logo_1.png" alt="" />
+          </div>
+        </div>
+      </section>
+
+      <div class="stats">
+        <div class="wrap stats-grid">
+          <div class="stat">
+            <div class="stat-value" data-count="12">12</div>
+            <div class="stat-label">Sources (9 MySQL + 3 MongoDB)</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" data-count="32">32</div>
+            <div class="stat-label">dbt models (12 + 13 + 7)</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" data-count="383">383</div>
+            <div class="stat-label">dbt tests across layers</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" data-count="5">5</div>
+            <div class="stat-label">Marts published to Databricks</div>
+          </div>
+        </div>
+      </div>
+
+      <section class="section" id="overview">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <span class="kicker">Overview</span>
+            <h2>One governed path from source to dashboard</h2>
+            <p class="section-subtitle">
+              Every boundary has one writer, a versioned contract and a check that fails the run
+              when it drifts.
+            </p>
+          </div>
+          <div class="grid-cards">
+            <article class="card reveal">
+              <div class="icon-box">01</div>
+              <h3>Contracted ingestion</h3>
+              <p>
+                Twelve YAML contracts define columns, types, keys, freshness and expected counts.
+                Python extracts with a watermark and lookback, then lands immutable rows in
+                <code>bronze</code>.
+              </p>
+            </article>
+            <article class="card reveal">
+              <div class="icon-box">02</div>
+              <h3>dbt owns transformation</h3>
+              <p>
+                Silver cleans and dedupes one model per source. Gold builds the conformed star
+                schema, and marts denormalise it into guarded, ratio-safe BI grains. No
+                transformation lives in Python.
+              </p>
+            </article>
+            <article class="card reveal">
+              <div class="icon-box">03</div>
+              <h3>Governed serving</h3>
+              <p>
+                Five approved, non-PII marts are published to Databricks. The driver scorecard
+                stays in Postgres because it carries a driver display name.
+              </p>
+            </article>
+            <article class="card reveal">
+              <div class="icon-box">04</div>
+              <h3>Observable runs</h3>
+              <p>
+                Batches, watermarks, task outcomes, dbt results and reconciliation are stored in
+                <code>control.*</code> and <code>audit.*</code>; failures emit a database
+                notification.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="architecture">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <span class="kicker">Architecture</span>
+            <h2>Strict funnel, explicit ownership</h2>
+            <p class="section-subtitle">
+              Airflow schedules scripts. Python moves data. dbt transforms it. The publisher only
+              copies approved marts.
+            </p>
+          </div>
+
+          <div class="mermaid-panel reveal" aria-label="Detailed data pipeline flow">
+            <pre class="mermaid">
+flowchart LR
+    classDef source fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#172554
+    classDef orchestration fill:#cffafe,stroke:#0891b2,stroke-width:2px,color:#083344
+    classDef contract fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#451a03
+    classDef bronze fill:#ffedd5,stroke:#ea580c,stroke-width:2px,color:#431407
+    classDef transform fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#3b0764
+    classDef serve fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#052e16
+    classDef control fill:#ffe4e6,stroke:#e11d48,stroke-width:2px,color:#4c0519
+    classDef planned fill:#ecfccb,stroke:#65a30d,stroke-width:2px,stroke-dasharray: 5 3,color:#1a2e05
+
+    subgraph systems[Operational source systems]
+        MYSQL[(MySQL&lt;br/&gt;fleet_registry&lt;br/&gt;9 tables)]:::source
+        MONGO[(MongoDB&lt;br/&gt;fleet_operations&lt;br/&gt;3 collections)]:::source
+    end
+
+    subgraph run[Daily orchestration and ingestion]
+        AIRFLOW[Apache Airflow 3.3.2&lt;br/&gt;fleet_daily_load&lt;br/&gt;02:00 Asia/Kolkata]:::orchestration
+        CONTRACTS[Versioned YAML contracts&lt;br/&gt;schemas, keys, freshness&lt;br/&gt;and expected counts]:::contract
+        INGEST[Python + SQLAlchemy / PyMongo&lt;br/&gt;scripts/ingestion.py&lt;br/&gt;watermarks and idempotent upserts]:::orchestration
+    end
+
+    subgraph warehouse[PostgreSQL 16 warehouse]
+        BRONZE[(bronze&lt;br/&gt;12 immutable landed tables&lt;br/&gt;raw history)]:::bronze
+        DBT[dbt Core + dbt-postgres&lt;br/&gt;models, tests, macros&lt;br/&gt;the only transform engine]:::transform
+        SILVER[(silver&lt;br/&gt;cast, dedupe, normalise&lt;br/&gt;PII handling)]:::transform
+        GOLD[(gold&lt;br/&gt;7 dimensions + 6 facts&lt;br/&gt;conformed analytics)]:::transform
+        MARTS[(marts&lt;br/&gt;6 BI marts + reconciliation&lt;br/&gt;guarded KPIs)]:::serve
+        CONTROL[(control.*&lt;br/&gt;pipeline, batch, source&lt;br/&gt;and watermark state)]:::control
+        AUDIT[(audit.*&lt;br/&gt;task, dbt, DQ, reconciliation&lt;br/&gt;and error evidence)]:::control
+    end
+
+    subgraph serving[Governed serving]
+        PUBLISH[Python publisher&lt;br/&gt;allowlist + schema validation&lt;br/&gt;MERGE and reconciliation]:::orchestration
+        DBX[(Databricks SQL Warehouse&lt;br/&gt;5 approved Delta marts)]:::serve
+        BI[BI dashboards&lt;br/&gt;and analysts]:::serve
+    end
+
+    subgraph speed[Planned speed layer — independent from batch]
+        REPLAY[Replay producer&lt;br/&gt;Mongo delivery events]:::planned
+        KAFKA[(Kafka KRaft&lt;br/&gt;delivery_events.v1 + DLQ)]:::planned
+        SPARK[PySpark Structured Streaming&lt;br/&gt;validate, windows, detention]:::planned
+        REALTIME[(Postgres realtime&lt;br/&gt;raw, windows, alerts)]:::planned
+        RECON[reconcile_stream&lt;br/&gt;observational comparison to gold]:::planned
+    end
+
+    AIRFLOW -->|triggers| INGEST
+    AIRFLOW -->|runs dbt| DBT
+    AIRFLOW -->|triggers| PUBLISH
+    CONTRACTS -->|validates boundary| INGEST
+    MYSQL -->|read-only extract| INGEST
+    MONGO -->|read-only extract| INGEST
+    INGEST -->|contracted landing| BRONZE
+    BRONZE -->|source()| DBT
+    DBT --> SILVER --> GOLD --> MARTS
+    MARTS -->|approved marts only| PUBLISH --> DBX --> BI
+
+    INGEST -. batch state and watermarks .-> CONTROL
+    DBT -. invocation and test results .-> AUDIT
+    INGEST -. task and reconciliation evidence .-> AUDIT
+    PUBLISH -. publish reconciliation .-> AUDIT
+    CONTROL -. failure events .-> AUDIT
+
+    MONGO -. replay .-> REPLAY --> KAFKA --> SPARK --> REALTIME
+    REALTIME -. compare .-> RECON
+    GOLD -. compare .-> RECON
+    RECON -. results .-> AUDIT
+            </pre>
+          </div>
+
+          <div class="diagram-key" aria-label="Diagram legend">
+            <span><i></i> Governed batch data flow</span>
+            <span><i class="key-control"></i> Control and audit evidence</span>
+            <span><i class="key-planned"></i> Planned streaming path</span>
+          </div>
+
+          <div class="support-band reveal">
+            <div class="support-card">
+              <strong>control.*</strong>
+              <span>Pipeline registry, source registry, batches and watermarks. One active batch per pipeline.</span>
+            </div>
+            <div class="support-card">
+              <strong>audit.*</strong>
+              <span>Task runs, dbt invocations, test results, DQ checks, reconciliation and errors.</span>
+            </div>
+          </div>
+
+          <p class="note">
+            The solid path is the production batch pipeline. The dotted speed layer is an approved
+            target design: it never feeds <code>silver</code>, <code>gold</code>,
+            <code>marts</code> or Databricks. Orchestration DAG <code>fleet_daily_load</code>
+            runs at <code>0 2 * * *</code> in Asia/Kolkata with <code>catchup=False</code> and
+            one active run at a time.
+          </p>
+
+          <ol class="steps reveal" aria-label="Daily run task sequence">
+            <li class="step">Preflight<small>env, connectivity, contracts</small></li>
+            <li class="step">start_batch<small>one control batch</small></li>
+            <li class="step">Ingest sources<small>12 parallel source tasks</small></li>
+            <li class="step">ingest_done<small>assert 12 task rows</small></li>
+            <li class="step">Silver<small>run, then test</small></li>
+            <li class="step">Gold<small>dims, facts, then test</small></li>
+            <li class="step">Marts<small>run, then test</small></li>
+            <li class="step">Publish<small>allowlist and reconcile</small></li>
+            <li class="step">Notify<small>finish batch with summary</small></li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section" id="layers">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <span class="kicker">Data layers</span>
+            <h2>What lives where, and who writes it</h2>
+            <p class="section-subtitle">
+              Cross-layer writes are deliberately blocked so replay and incident triage stay
+              deterministic.
+            </p>
+          </div>
+          <div class="table-wrap reveal">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Layer</th>
+                  <th scope="col">Models / tables</th>
+                  <th scope="col">Written by</th>
+                  <th scope="col">Responsibility</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>bronze</code></td>
+                  <td>12 landed tables</td>
+                  <td>ingestion / fixture loader</td>
+                  <td class="muted">Immutable record of what arrived, with <code>_ingested_at</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>silver</code></td>
+                  <td>12 models</td>
+                  <td>dbt</td>
+                  <td class="muted">One model per source: rename, cast, dedupe, normalise flags, route rejects.</td>
+                </tr>
+                <tr>
+                  <td><code>gold</code></td>
+                  <td>13 models</td>
+                  <td>dbt</td>
+                  <td class="muted">Seven SCD1 dimensions, <code>dim_date</code> and six incremental facts.</td>
+                </tr>
+                <tr>
+                  <td><code>marts</code></td>
+                  <td>7 models</td>
+                  <td>dbt</td>
+                  <td class="muted">Six BI grains plus <code>assert_marts_reconcile_to_facts</code>.</td>
+                </tr>
+                <tr>
+                  <td>Databricks copy</td>
+                  <td>5 approved marts</td>
+                  <td>publisher</td>
+                  <td class="muted">Read-only Delta copy for BI; the driver scorecard is excluded.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="quality">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <span class="kicker">Quality &amp; governance</span>
+            <h2>Fail fast, keep evidence, protect PII</h2>
+            <p class="section-subtitle">
+              A failed contract or data test blocks the run. Only transient connection failures are
+              retried.
+            </p>
+          </div>
+
+          <div class="quality-grid reveal">
+            <div class="quality-card">
+              <div class="quality-value">383</div>
+              <p>dbt tests: 348 error severity and 35 warn severity.</p>
+            </div>
+            <div class="quality-card">
+              <div class="quality-value">104</div>
+              <p>Collected Python and Airflow test cases.</p>
+            </div>
+            <div class="quality-card">
+              <div class="quality-value">12</div>
+              <p>Source contracts checked by <code>make contracts-check</code>.</p>
+            </div>
+            <div class="quality-card">
+              <div class="quality-value">7 + 1</div>
+              <p>CI jobs plus a full-history Gitleaks workflow.</p>
+            </div>
+          </div>
+
+          <ul class="pii-list reveal">
+            <li><strong>Licence numbers</strong> are hashed in staging; the raw value stops there.</li>
+            <li><strong>Dates of birth</strong> become <code>age_band</code> and never reach a mart.</li>
+            <li><strong>Fuel card numbers</strong> are masked to the last four digits in staging.</li>
+            <li><strong>Incident descriptions</strong> stay in Postgres bronze and out of gold marts.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section" id="runbook">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <span class="kicker">Runbook</span>
+            <h2>Start with the zero-credential demo</h2>
+            <p class="section-subtitle">
+              <code>make help</code> is the authoritative command list. Production targets require
+              explicit confirmation and approval.
+            </p>
+          </div>
+
+          <div class="code-grid reveal">
+            <div class="code-block">
+              <div class="code-head">
+                <span>Local checks</span>
+                <button class="copy" type="button" data-copy>Copy</button>
+              </div>
+              <pre><code>cp .env.example .env
+make install
+make check-tools
+make env-check
+make verify
+make contracts-check</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-head">
+                <span>Fixture demo in fleet_dev</span>
+                <button class="copy" type="button" data-copy>Copy</button>
+              </div>
+              <pre><code>make demo</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-head">
+                <span>Layer-by-layer build</span>
+                <button class="copy" type="button" data-copy>Copy</button>
+              </div>
+              <pre><code>make dbt-silver ENV=dev &amp;&amp; make dbt-silver-tests ENV=dev
+make dbt-gold ENV=dev &amp;&amp; make dbt-gold-tests ENV=dev
+make dbt-marts ENV=dev &amp;&amp; make dbt-marts-tests ENV=dev
+make publish-marts ENV=dev</code></pre>
+            </div>
+          </div>
+
+          <p class="note">
+            Airflow is started with <code>make airflow-up</code>; the UI is at
+            <a class="text-link" href="http://localhost:8080">localhost:8080</a>.
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="insights">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <span class="kicker">Business insights</span>
+            <h2>What the warehouse finds</h2>
+            <p class="section-subtitle">
+              Charts and findings are regenerated from populated gold tables with
+              <code>make report</code>. Full analysis lives in
+              <a class="text-link" href="reports/INSIGHT.md">reports/INSIGHT.md</a>.
+            </p>
+          </div>
+
+          <div class="insights-grid reveal">
+            <article class="insight">
+              <div class="insight-metric">55.7%</div>
+              <h3>On-time delivery overall</h3>
+              <p>
+                170,820 delivery events with an estimated $19.5M detention cost at $75/hour.
+              </p>
+              <a class="text-link" href="reports/findings/02_delivery_service.json">Delivery findings</a>
+            </article>
+            <article class="insight">
+              <div class="insight-metric">53.4%</div>
+              <h3>Weakest high-volume facility</h3>
+              <p>
+                Atlanta Distribution Center: 3,278 events and about $379K detention. First Group
+                carried $689K across 6,002 events.
+              </p>
+              <a
+                class="text-link"
+                href="reports/img/02_delivery_service_detention_cost_by_customer.png"
+                >View detention chart</a
+              >
+            </article>
+            <article class="insight">
+              <div class="insight-metric">37.6%</div>
+              <h3>Preventable safety incidents</h3>
+              <p>
+                170 incidents produced $2.65M in claims; 64 were marked preventable.
+              </p>
+              <a
+                class="text-link"
+                href="reports/img/05_safety_preventable_share_by_experience.png"
+                >View safety chart</a
+              >
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="resources">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <span class="kicker">Documentation</span>
+            <h2>Go deeper</h2>
+          </div>
+          <div class="resource-grid reveal">
+            <a class="resource" href="README.md">
+              <span><strong>README</strong><span>Project front door</span></span>
+              <span class="resource-arrow" aria-hidden="true">→</span>
+            </a>
+            <a class="resource" href="ARCHITECTURE.md">
+              <span><strong>Architecture</strong><span>Layers, contracts, ownership</span></span>
+              <span class="resource-arrow" aria-hidden="true">→</span>
+            </a>
+            <a class="resource" href="DEPLOYMENT.md">
+              <span><strong>Deployment</strong><span>Release, rollback, runbooks</span></span>
+              <span class="resource-arrow" aria-hidden="true">→</span>
+            </a>
+            <a class="resource" href="docs/DBT.md">
+              <span><strong>dbt guide</strong><span>Models, tests, conventions</span></span>
+              <span class="resource-arrow" aria-hidden="true">→</span>
+            </a>
+            <a class="resource" href="docs/TESTING.md">
+              <span><strong>Testing</strong><span>Full check inventory</span></span>
+              <span class="resource-arrow" aria-hidden="true">→</span>
+            </a>
+            <a class="resource" href="reports/INSIGHT.md">
+              <span><strong>Insights</strong><span>Business findings and charts</span></span>
+              <span class="resource-arrow" aria-hidden="true">→</span>
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="wrap footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="#top">
+            <img src="assets/logo/logo_1.png" alt="" />
+            <span>Fleet dbt Warehouse</span>
+          </a>
+          <p>
+            A daily logistics warehouse: contracted ingestion into Postgres, dbt-owned
+            transformation, auditable runs and a governed Databricks BI copy.
+          </p>
+        </div>
+        <div>
+          <h3>Project</h3>
+          <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#layers">Layers</a></li>
+            <li><a href="#quality">Quality</a></li>
+            <li><a href="#runbook">Runbook</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Links</h3>
+          <ul>
+            <li><a href="README.md">README</a></li>
+            <li><a href="docs/DBT.md">dbt guide</a></li>
+            <li><a href="docs/TESTING.md">Testing</a></li>
+            <li><a href="reports/INSIGHT.md">Insights</a></li>
+            <li>
+              <a href="https://github.com/Nitinx12/Fleet-dbt-warehouse" target="_blank" rel="noreferrer"
+                >GitHub repository</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 Nitin. Released under the MIT License.</span>
+        <span>Built with Airflow, dbt, PostgreSQL and Databricks.</span>
+      </div>
+    </footer>
+
+    <a class="back-to-top" href="#top" aria-label="Back to top">↑</a>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "base",
+        flowchart: { curve: "basis", htmlLabels: true, useMaxWidth: true },
+        themeVariables: {
+          background: "transparent",
+          primaryTextColor: "#e6edf7",
+          lineColor: "#9aa8bd",
+          clusterBkg: "#111827",
+          clusterBorder: "#334155",
+          edgeLabelBackground: "#111827",
+          fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
+        },
+      });
+    </script>
+
+    <script>
+      document.documentElement.classList.add("js");
+
+      const menuToggle = document.querySelector(".mobile-menu-toggle");
+      const navMenu = document.querySelector(".nav-menu");
+
+      menuToggle?.addEventListener("click", () => {
+        const isOpen = navMenu.classList.toggle("is-open");
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+      });
+
+      navMenu?.addEventListener("click", (event) => {
+        if (event.target.closest("a")) {
+          navMenu.classList.remove("is-open");
+          menuToggle?.setAttribute("aria-expanded", "false");
+        }
+      });
+
+      const backToTop = document.querySelector(".back-to-top");
+
+      const onScroll = () => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const percent = max > 0 ? (window.scrollY / max) * 100 : 0;
+        document.documentElement.style.setProperty(
+          "--progress",
+          `${Math.min(100, Math.max(0, percent))}%`,
+        );
+        backToTop?.classList.toggle("is-visible", window.scrollY > 600);
+      };
+
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const numberFormat = new Intl.NumberFormat("en-US");
+      const counters = document.querySelectorAll("[data-count]");
+
+      const animateCount = (element) => {
+        const target = Number(element.dataset.count);
+        const start = performance.now();
+        const duration = 900;
+
+        const tick = (now) => {
+          const progress = Math.min((now - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          element.textContent = numberFormat.format(Math.round(target * eased));
+          if (progress < 1) requestAnimationFrame(tick);
+        };
+
+        requestAnimationFrame(tick);
+      };
+
+      if (reduceMotion || !("IntersectionObserver" in window)) {
+        counters.forEach((element) => {
+          element.textContent = numberFormat.format(Number(element.dataset.count));
+        });
+      } else {
+        const counterObserver = new IntersectionObserver(
+          (entries, observer) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                animateCount(entry.target);
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.5 },
+        );
+        counters.forEach((element) => counterObserver.observe(element));
+      }
+
+      const revealItems = document.querySelectorAll(".reveal");
+
+      if (reduceMotion || !("IntersectionObserver" in window)) {
+        revealItems.forEach((element) => element.classList.add("is-visible"));
+      } else {
+        const revealObserver = new IntersectionObserver(
+          (entries, observer) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.12 },
+        );
+        revealItems.forEach((element) => revealObserver.observe(element));
+      }
+
+      document.querySelectorAll("[data-copy]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const code = button.closest(".code-block")?.querySelector("code");
+          if (!code) return;
+
+          try {
+            await navigator.clipboard.writeText(code.textContent.trim());
+            button.textContent = "Copied";
+          } catch {
+            button.textContent = "Select code";
+          }
+
+          window.setTimeout(() => {
+            button.textContent = "Copy";
+          }, 1500);
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -81,6 +81,10 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
 
 ### Changed
 
+- Replaced the static landing-page pipeline cards with a detailed Mermaid diagram
+  covering the Airflow-orchestrated batch path, source contracts, PostgreSQL
+  warehouse layers, Databricks publication, audit/control plane and the planned
+  independent streaming path.
 - Rewrote the root `README.md` as a concise project front door with an updated
   repository map and links to `docs/DBT.md`, `docs/TESTING.md` and
   `airflow/README.md`.
