@@ -7,1664 +7,1839 @@
       name="description"
       content="Fleet dbt Warehouse: a daily analytics pipeline from MySQL and MongoDB through Postgres bronze, silver, gold and marts to approved Databricks BI tables."
     />
-    <meta
-      name="keywords"
-      content="fleet, dbt, airflow, postgres, databricks, mysql, mongodb, data warehouse, analytics,BI"
-    />
     <meta name="author" content="Nitin" />
-    <meta name="theme-color" content="#080d17" />
+    <meta name="theme-color" content="#0b0f14" />
     <meta property="og:title" content="Fleet dbt Warehouse" />
     <meta
       property="og:description"
       content="Contracted ingestion, dbt-owned transformation, auditable daily runs and governed marts for fleet analytics."
     />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://github.com/Nitinx12/Fleet-dbt-warehouse" />
+    <meta
+      property="og:url"
+      content="https://github.com/Nitinx12/Fleet-dbt-warehouse"
+    />
     <title>Fleet dbt Warehouse</title>
     <link rel="icon" href="assets/logo/logo_1.png" />
     <style>
       :root {
         color-scheme: dark;
-        --bg: #080d17;
-        --surface: #111827;
-        --surface-2: #162033;
-        --border: rgba(148, 163, 184, 0.16);
-        --text: #e6edf7;
-        --muted: #9aa8bd;
-        --primary: #5eead4;
-        --primary-dark: #0f766e;
-        --bronze: #fb923c;
-        --silver: #c084fc;
-        --gold: #4ade80;
-        --marts: #22d3ee;
-        --control: #fb7185;
-        --radius: 16px;
-        --shadow: 0 20px 60px rgba(0, 0, 0, 0.32);
-        --progress: 0%;
+        --bg: #0b0f14;
+        --panel: #11171f;
+        --line: #232c38;
+        --text: #e8edf3;
+        --mut: #8b97a7;
+        --src: #5b9dff;
+        --air: #38bdf8;
+        --brz: #e07b39;
+        --slv: #b6c2d4;
+        --gld: #f0c040;
+        --mrt: #34d399;
+        --ctl: #f472b6;
+        --str: #a3e635;
+        --dbt: #a78bfa;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
-
       * {
         box-sizing: border-box;
       }
-
       html {
         scroll-behavior: smooth;
-        scroll-padding-top: 88px;
+        scroll-padding-top: 70px;
       }
-
       body {
         margin: 0;
-        font-family:
-          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          sans-serif;
-        line-height: 1.6;
+        background: var(--bg);
         color: var(--text);
-        background:
-          radial-gradient(circle at 12% 0%, rgba(94, 234, 212, 0.12), transparent 28rem),
-          radial-gradient(circle at 88% 12%, rgba(34, 211, 238, 0.09), transparent 32rem),
-          var(--bg);
+        font:
+          16px/1.6 Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        background-image:
+          linear-gradient(var(--line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 56px 56px;
+        background-attachment: fixed;
+        background-blend-mode: soft-light;
       }
-
-      img {
-        display: block;
-        max-width: 100%;
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(
+          ellipse at 50% 0,
+          transparent,
+          var(--bg) 75%
+        );
+        pointer-events: none;
+        z-index: -1;
       }
-
       a {
         color: inherit;
       }
-
-      button {
-        font: inherit;
-      }
-
       code,
       pre {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-family: var(--mono);
       }
-
       :focus-visible {
-        outline: 2px solid var(--primary);
+        outline: 2px solid var(--air);
         outline-offset: 3px;
       }
-
-      .skip-link {
-        position: absolute;
-        left: -9999px;
-        top: 1rem;
-        z-index: 200;
-        padding: 0.7rem 1rem;
-        border-radius: 10px;
-        background: var(--primary);
-        color: #04201c;
-        font-weight: 800;
-        text-decoration: none;
-      }
-
-      .skip-link:focus {
-        left: 1rem;
-      }
-
       .wrap {
-        width: min(1180px, calc(100% - 2.5rem));
+        width: min(1200px, calc(100% - 2rem));
         margin-inline: auto;
       }
-
-      .header {
+      header {
         position: sticky;
         top: 0;
-        z-index: 100;
-        border-bottom: 1px solid var(--border);
-        background: rgba(8, 13, 23, 0.86);
-        backdrop-filter: blur(16px);
+        z-index: 50;
+        background: rgba(11, 15, 20, 0.88);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--line);
       }
-
-      .nav-container {
+      .nav {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 1rem;
-        padding-block: 0.85rem;
+        padding-block: 0.7rem;
       }
-
       .brand {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.7rem;
-        font-weight: 850;
-        letter-spacing: -0.02em;
-        text-decoration: none;
-      }
-
-      .brand img {
-        width: 38px;
-        height: 38px;
-        padding: 4px;
-        border-radius: 11px;
-        background: rgba(255, 255, 255, 0.92);
-        object-fit: contain;
-      }
-
-      .brand span {
-        font-size: 0.98rem;
-      }
-
-      .nav-menu {
         display: flex;
-        align-items: center;
-        gap: 0.15rem;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-      }
-
-      .nav-link {
-        display: block;
-        padding: 0.5rem 0.68rem;
-        border-radius: 9px;
-        color: var(--muted);
-        font-size: 0.88rem;
-        font-weight: 650;
-        text-decoration: none;
-      }
-
-      .nav-link:hover,
-      .nav-link:focus-visible {
-        color: var(--text);
-        background: rgba(255, 255, 255, 0.06);
-      }
-
-      .nav-cta {
-        margin-left: 0.5rem;
-        padding: 0.55rem 0.9rem;
-        border-radius: 10px;
-        background: var(--primary);
-        color: #04201c;
-        font-size: 0.85rem;
-        font-weight: 850;
-        text-decoration: none;
-      }
-
-      .nav-cta:hover {
-        background: #99f6e4;
-      }
-
-      .mobile-menu-toggle {
-        display: none;
-        width: 42px;
-        height: 42px;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.03);
-        color: var(--text);
-        cursor: pointer;
-      }
-
-      .mobile-menu-toggle__icon {
-        display: grid;
-        gap: 4px;
-      }
-
-      .mobile-menu-toggle__icon span {
-        display: block;
-        width: 18px;
-        height: 2px;
-        border-radius: 2px;
-        background: currentColor;
-      }
-
-      .scroll-progress {
-        position: absolute;
-        bottom: -1px;
-        left: 0;
-        width: var(--progress);
-        height: 2px;
-        background: linear-gradient(90deg, var(--primary), var(--marts));
-      }
-
-      .hero {
-        position: relative;
-        overflow: hidden;
-        padding-block: 5rem 4rem;
-      }
-
-      .hero-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1.45fr) minmax(230px, 0.55fr);
-        gap: 3rem;
-        align-items: center;
-      }
-
-      .eyebrow {
-        display: inline-flex;
         align-items: center;
         gap: 0.6rem;
-        padding: 0.35rem 0.75rem;
-        border: 1px solid rgba(94, 234, 212, 0.28);
-        border-radius: 999px;
-        background: rgba(94, 234, 212, 0.07);
-        color: var(--primary);
-        font-size: 0.74rem;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .eyebrow::before {
-        content: "";
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: currentColor;
-        box-shadow: 0 0 0 4px rgba(94, 234, 212, 0.14);
-      }
-
-      .hero h1 {
-        margin: 1.1rem 0 1rem;
-        font-size: clamp(2.5rem, 6vw, 4.2rem);
-        line-height: 1.04;
-        letter-spacing: -0.055em;
-      }
-
-      .hero h1 span {
-        background: linear-gradient(100deg, var(--primary), #7dd3fc);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-
-      .hero-copy {
-        max-width: 64ch;
-        margin: 0;
-        color: var(--muted);
-        font-size: 1.04rem;
-      }
-
-      .hero-copy code {
-        color: #a5f3fc;
-        font-size: 0.92em;
-      }
-
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.8rem;
-        margin-top: 2rem;
-      }
-
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        padding: 0.8rem 1.15rem;
-        border-radius: 11px;
-        font-size: 0.9rem;
         font-weight: 800;
         text-decoration: none;
       }
-
-      .btn-primary {
-        background: var(--primary);
-        color: #04201c;
-      }
-
-      .btn-primary:hover {
-        background: #99f6e4;
-      }
-
-      .btn-secondary {
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.03);
-        color: var(--text);
-      }
-
-      .btn-secondary:hover {
-        border-color: rgba(94, 234, 212, 0.5);
-      }
-
-      .badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-top: 2.1rem;
-      }
-
-      .badge {
-        padding: 0.38rem 0.72rem;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.035);
-        color: var(--muted);
-        font-size: 0.78rem;
-        font-weight: 650;
-      }
-
-      .logo-card {
-        display: grid;
-        place-items: center;
-        padding: 2.5rem;
-        border: 1px solid var(--border);
-        border-radius: 24px;
-        background: linear-gradient(160deg, rgba(94, 234, 212, 0.1), rgba(255, 255, 255, 0.015));
-        box-shadow: var(--shadow);
-      }
-
-      .logo-card img {
-        width: min(220px, 100%);
-        border-radius: 18px;
-      }
-
-      .stats {
-        border-block: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.018);
-      }
-
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
-
-      .stat {
-        padding: 1.7rem 1rem;
-        text-align: center;
-        border-right: 1px solid var(--border);
-      }
-
-      .stat:last-child {
-        border-right: 0;
-      }
-
-      .stat-value {
-        font-size: clamp(1.8rem, 3.5vw, 2.5rem);
-        font-weight: 900;
-        letter-spacing: -0.04em;
-        color: var(--primary);
-      }
-
-      .stat-label {
-        margin-top: 0.2rem;
-        color: var(--muted);
-        font-size: 0.82rem;
-      }
-
-      .section {
-        padding-block: 5rem;
-      }
-
-      .section-head {
-        max-width: 760px;
-        margin-bottom: 2.6rem;
-      }
-
-      .kicker {
-        color: var(--primary);
-        font-size: 0.72rem;
-        font-weight: 850;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-      }
-
-      .section h2 {
-        margin: 0.55rem 0 0.7rem;
-        font-size: clamp(1.8rem, 3.4vw, 2.55rem);
-        line-height: 1.15;
-        letter-spacing: -0.04em;
-      }
-
-      .section-subtitle {
-        margin: 0;
-        color: var(--muted);
-      }
-
-      .grid-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1rem;
-      }
-
-      .card {
-        padding: 1.5rem;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
-        box-shadow: var(--shadow);
-      }
-
-      .icon-box {
-        display: grid;
-        place-items: center;
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
-        background: rgba(94, 234, 212, 0.11);
-        color: var(--primary);
-        font-size: 0.78rem;
-        font-weight: 900;
-        letter-spacing: 0.04em;
-      }
-
-      .card h3 {
-        margin: 1rem 0 0.45rem;
-        font-size: 1.05rem;
-      }
-
-      .card p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 0.9rem;
-      }
-
-      .mermaid-panel {
-        overflow-x: auto;
-        padding: clamp(1rem, 3vw, 2rem);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
-        box-shadow: var(--shadow);
-      }
-
-      .mermaid-panel .mermaid {
-        min-width: 980px;
-      }
-
-      .diagram-key {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-top: 1rem;
-        color: var(--muted);
-        font-size: 0.8rem;
-      }
-
-      .diagram-key span {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-      }
-
-      .diagram-key i {
-        display: inline-block;
-        width: 1.8rem;
-        border-top: 2px solid var(--primary);
-      }
-
-      .diagram-key .key-control {
-        border-top-color: var(--control);
-        border-top-style: dashed;
-      }
-
-      .diagram-key .key-planned {
-        border-top-color: #d9f99d;
-        border-top-style: dotted;
-      }
-
-      .support-band {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 1rem;
-        margin-top: 1rem;
-      }
-
-      .support-card {
-        padding: 1rem 1.2rem;
-        border: 1px dashed rgba(251, 113, 133, 0.35);
-        border-radius: 14px;
-        background: rgba(251, 113, 133, 0.045);
-      }
-
-      .support-card strong {
-        display: block;
-        margin-bottom: 0.2rem;
-        color: var(--control);
-        font-size: 0.85rem;
-      }
-
-      .support-card span {
-        color: var(--muted);
-        font-size: 0.84rem;
-      }
-
-      .note {
-        margin: 1.2rem 0 0;
-        color: var(--muted);
-        font-size: 0.86rem;
-      }
-
-      .steps {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 0.7rem;
-        counter-reset: step;
-        margin-top: 2.2rem;
-      }
-
-      .step {
-        position: relative;
-        padding: 0.9rem 1rem 0.9rem 2.9rem;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.02);
-        font-size: 0.84rem;
-      }
-
-      .step::before {
-        counter-increment: step;
-        content: counter(step, decimal-leading-zero);
-        position: absolute;
-        left: 1rem;
-        top: 0.95rem;
-        color: var(--primary);
-        font-size: 0.72rem;
-        font-weight: 900;
-      }
-
-      .step small {
-        display: block;
-        margin-top: 0.15rem;
-        color: var(--muted);
-        font-size: 0.76rem;
-      }
-
-      .table-wrap {
-        overflow: auto;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-      }
-
-      table {
-        width: 100%;
-        min-width: 760px;
-        border-collapse: collapse;
-      }
-
-      th,
-      td {
-        padding: 1rem;
-        border-bottom: 1px solid var(--border);
-        text-align: left;
-        vertical-align: top;
-        font-size: 0.88rem;
-      }
-
-      th {
-        background: rgba(255, 255, 255, 0.025);
-        color: var(--muted);
-        font-size: 0.7rem;
-        font-weight: 850;
-        letter-spacing: 0.11em;
-        text-transform: uppercase;
-      }
-
-      td code {
-        color: var(--primary);
-        font-size: 0.82rem;
-      }
-
-      tbody tr:last-child td {
-        border-bottom: 0;
-      }
-
-      .muted {
-        color: var(--muted);
-      }
-
-      .quality-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 1rem;
-      }
-
-      .quality-card {
-        padding: 1.25rem;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.025);
-      }
-
-      .quality-value {
-        font-size: 1.9rem;
-        font-weight: 900;
-        letter-spacing: -0.04em;
-        color: var(--primary);
-      }
-
-      .quality-card p {
-        margin: 0.3rem 0 0;
-        color: var(--muted);
-        font-size: 0.85rem;
-      }
-
-      .pii-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 0.8rem;
-        margin: 1.6rem 0 0;
-        padding: 0;
-        list-style: none;
-      }
-
-      .pii-list li {
-        padding: 0.9rem 1rem;
-        border-left: 3px solid var(--control);
-        border-radius: 0 10px 10px 0;
-        background: rgba(255, 255, 255, 0.02);
-        color: var(--muted);
-        font-size: 0.86rem;
-      }
-
-      .pii-list strong {
-        color: var(--text);
-      }
-
-      .code-grid {
-        display: grid;
-        gap: 1rem;
-      }
-
-      .code-block {
-        overflow: hidden;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        background: #0b1220;
-      }
-
-      .code-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 0.6rem 0.9rem;
-        border-bottom: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.025);
-      }
-
-      .code-head span {
-        color: var(--muted);
-        font-size: 0.73rem;
-        font-weight: 800;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-      }
-
-      .copy {
-        padding: 0.3rem 0.65rem;
-        border: 1px solid var(--border);
+      .brand img {
+        width: 32px;
+        height: 32px;
         border-radius: 8px;
-        background: transparent;
+        background: #fff;
+        padding: 3px;
+        object-fit: contain;
+      }
+      nav ul {
+        display: flex;
+        gap: 0.2rem;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        align-items: center;
+      }
+      nav a.l {
+        padding: 0.4rem 0.65rem;
+        color: var(--mut);
+        font-size: 0.86rem;
+        text-decoration: none;
+        border-radius: 6px;
+      }
+      nav a.l:hover {
         color: var(--text);
-        font-size: 0.74rem;
+        background: #ffffff0d;
+      }
+      .gh {
+        margin-left: 0.4rem;
+        padding: 0.45rem 0.8rem;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        font-size: 0.84rem;
+        text-decoration: none;
         font-weight: 700;
+      }
+      .gh:hover {
+        border-color: var(--air);
+      }
+      #mb {
+        display: none;
+        background: none;
+        border: 1px solid var(--line);
+        color: var(--text);
+        border-radius: 6px;
+        padding: 0.4rem 0.7rem;
         cursor: pointer;
       }
-
-      .copy:hover {
-        border-color: var(--primary);
+      .hero {
+        padding: 4rem 0 3rem;
       }
-
-      pre {
-        margin: 0;
-        padding: 1rem;
-        overflow: auto;
-        color: #cbd5e1;
-        font-size: 0.82rem;
-        line-height: 1.75;
-      }
-
-      .insights-grid {
+      .hero .wrap {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 1rem;
-      }
-
-      .insight {
-        padding: 1.5rem;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        background: linear-gradient(160deg, rgba(34, 211, 238, 0.08), rgba(255, 255, 255, 0.015));
-      }
-
-      .insight-metric {
-        color: var(--primary);
-        font-size: 2rem;
-        font-weight: 900;
-        letter-spacing: -0.04em;
-      }
-
-      .insight h3 {
-        margin: 0.35rem 0 0.5rem;
-        font-size: 1.04rem;
-      }
-
-      .insight p {
-        margin: 0 0 0.9rem;
-        color: var(--muted);
-        font-size: 0.88rem;
-      }
-
-      .text-link {
-        color: var(--primary);
-        font-size: 0.84rem;
-        font-weight: 750;
-        text-decoration: none;
-      }
-
-      .text-link:hover {
-        text-decoration: underline;
-      }
-
-      .resource-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 0.8rem;
-      }
-
-      .resource {
-        display: flex;
+        grid-template-columns: 1.05fr 1fr;
+        gap: 2.5rem;
         align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1rem 1.1rem;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.02);
-        text-decoration: none;
       }
-
-      .resource:hover {
-        border-color: rgba(94, 234, 212, 0.5);
-        transform: translateY(-2px);
-      }
-
-      .resource > span:first-child {
-        color: var(--text);
-      }
-
-      .resource strong {
-        display: block;
-        font-size: 0.9rem;
-      }
-
-      .resource span {
-        color: var(--muted);
-        font-size: 0.78rem;
-      }
-
-      .resource-arrow {
-        color: var(--primary);
-        font-weight: 900;
-      }
-
-      .footer {
-        border-top: 1px solid var(--border);
-        padding-block: 3rem 2rem;
-        background: rgba(0, 0, 0, 0.22);
-      }
-
-      .footer-grid {
-        display: grid;
-        grid-template-columns: 1.4fr repeat(2, 1fr);
-        gap: 2rem;
-      }
-
-      .footer-brand p {
-        max-width: 42ch;
-        margin: 0.8rem 0 0;
-        color: var(--muted);
-        font-size: 0.86rem;
-      }
-
-      .footer h3 {
-        margin: 0 0 0.9rem;
-        color: var(--muted);
-        font-size: 0.74rem;
-        font-weight: 850;
-        letter-spacing: 0.13em;
+      .tag {
+        font: 700 0.72rem var(--mono);
+        letter-spacing: 0.12em;
         text-transform: uppercase;
+        color: var(--air);
       }
-
-      .footer ul {
+      h1 {
+        font-size: clamp(2.2rem, 5vw, 3.6rem);
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+        margin: 0.8rem 0 1rem;
+      }
+      h1 em {
+        font-style: normal;
+        color: var(--mrt);
+      }
+      .lead {
+        color: var(--mut);
+        max-width: 56ch;
         margin: 0;
-        padding: 0;
-        list-style: none;
       }
-
-      .footer li {
-        margin: 0.45rem 0;
-      }
-
-      .footer a {
-        color: var(--muted);
-        font-size: 0.85rem;
-        text-decoration: none;
-      }
-
-      .footer a:hover {
-        color: var(--primary);
-      }
-
-      .footer .brand {
+      .lead code {
         color: var(--text);
+        font-size: 0.88em;
       }
-
-      .footer-bottom {
+      .btns {
+        display: flex;
+        gap: 0.7rem;
+        flex-wrap: wrap;
+        margin: 1.6rem 0;
+      }
+      .btn {
+        padding: 0.7rem 1.1rem;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        text-decoration: none;
+        border: 1px solid var(--line);
+      }
+      .btn.p {
+        background: var(--text);
+        color: #0b0f14;
+        border-color: var(--text);
+      }
+      .btn:hover {
+        border-color: var(--air);
+      }
+      .facts {
         display: flex;
         flex-wrap: wrap;
+        gap: 0.4rem;
+        font: 0.74rem var(--mono);
+        color: var(--mut);
+      }
+      .facts span {
+        padding: 0.25rem 0.55rem;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: #0b0f14aa;
+      }
+      .term {
+        background: #0a0e13;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px #0008;
+      }
+      .term-h {
+        display: flex;
         justify-content: space-between;
-        gap: 0.5rem;
-        margin-top: 2rem;
-        padding-top: 1.2rem;
-        border-top: 1px solid var(--border);
-        color: var(--muted);
-        font-size: 0.8rem;
+        align-items: center;
+        padding: 0.55rem 0.9rem;
+        border-bottom: 1px solid var(--line);
+        font: 0.74rem var(--mono);
+        color: var(--mut);
       }
-
-      .back-to-top {
-        position: fixed;
-        right: 1rem;
-        bottom: 1rem;
-        z-index: 90;
-        display: grid;
-        place-items: center;
-        width: 42px;
-        height: 42px;
+      .dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
-        background: var(--primary);
-        color: #04201c;
-        font-size: 1.2rem;
-        font-weight: 900;
-        text-decoration: none;
-        opacity: 0;
-        pointer-events: none;
-        transform: translateY(8px);
-        transition: opacity 0.2s ease, transform 0.2s ease;
+        background: var(--mrt);
+        margin-right: 0.5rem;
+        animation: pulse 1.6s infinite;
       }
-
-      .back-to-top.is-visible {
-        opacity: 1;
-        pointer-events: auto;
-        transform: none;
-      }
-
-      .js .reveal {
-        opacity: 0;
-        transform: translateY(14px);
-        transition: opacity 0.5s ease, transform 0.5s ease;
-      }
-
-      .js .reveal.is-visible {
-        opacity: 1;
-        transform: none;
-      }
-
-      @media (max-width: 860px) {
-        .mobile-menu-toggle {
-          display: inline-flex;
+      @keyframes pulse {
+        50% {
+          opacity: 0.25;
         }
-
-        .nav-menu {
+      }
+      #log {
+        height: 290px;
+        overflow: hidden;
+        padding: 0.8rem 0.9rem;
+        font: 0.76rem/1.65 var(--mono);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+      }
+      #log div {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        animation: in 0.3s;
+      }
+      @keyframes in {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+      }
+      #log time {
+        color: #566273;
+        margin-right: 0.6rem;
+      }
+      .prog {
+        height: 3px;
+        background: var(--line);
+      }
+      .prog i {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: linear-gradient(90deg, var(--air), var(--mrt));
+        transition: width 0.5s;
+      }
+      section {
+        padding: 4.5rem 0;
+        border-top: 1px solid var(--line);
+      }
+      .head {
+        max-width: 720px;
+        margin-bottom: 2rem;
+      }
+      h2 {
+        font-size: clamp(1.7rem, 3.2vw, 2.4rem);
+        line-height: 1.15;
+        letter-spacing: -0.03em;
+        margin: 0.5rem 0;
+      }
+      .head p {
+        color: var(--mut);
+        margin: 0;
+      }
+      .ctl {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        margin-bottom: 0.9rem;
+      }
+      .ctl button {
+        font: 700 0.78rem var(--mono);
+        padding: 0.5rem 0.8rem;
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .ctl button[aria-pressed='true'] {
+        border-color: var(--air);
+        color: var(--air);
+      }
+      .ctl .sp {
+        flex: 1;
+      }
+      .leg {
+        display: flex;
+        gap: 1rem;
+        font: 0.72rem var(--mono);
+        color: var(--mut);
+      }
+      .leg i {
+        display: inline-block;
+        width: 20px;
+        vertical-align: middle;
+        margin-right: 0.35rem;
+        border-top: 2px solid;
+      }
+      .canvas {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #0a0e13cc;
+        overflow-x: auto;
+      }
+      svg {
+        display: block;
+        width: 100%;
+        min-width: 980px;
+        height: auto;
+      }
+      svg text {
+        font-family: var(--mono);
+      }
+      .node {
+        cursor: pointer;
+      }
+      .node rect {
+        fill: #121923;
+        stroke: var(--c);
+        stroke-width: 1.5;
+        transition:
+          filter 0.3s,
+          stroke-width 0.2s;
+      }
+      .node .l {
+        fill: var(--text);
+        font: 700 13px var(--mono);
+      }
+      .node .s {
+        fill: var(--mut);
+        font-size: 9.5px;
+      }
+      .node:hover rect,
+      .node.sel rect {
+        stroke-width: 2.6;
+      }
+      .node.on rect {
+        filter: drop-shadow(0 0 9px var(--c));
+        fill: #182231;
+      }
+      .box rect {
+        fill: color-mix(in srgb, var(--c) 6%, transparent);
+        stroke: var(--c);
+        stroke-dasharray: 5 4;
+        stroke-width: 1.2;
+        stroke-opacity: 0.6;
+      }
+      .box.on rect {
+        fill: color-mix(in srgb, var(--c) 14%, transparent);
+        stroke-opacity: 1;
+      }
+      .box .l {
+        fill: var(--c);
+        font: 700 10.5px var(--mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .box .s {
+        fill: var(--mut);
+        font-size: 9.5px;
+      }
+      .e {
+        fill: none;
+        stroke-width: 1.6;
+        stroke-opacity: 0.55;
+      }
+      .e.c {
+        stroke-dasharray: 2 4;
+      }
+      .e.s {
+        stroke-dasharray: 6 4;
+      }
+      svg[data-m='b'] .ls,
+      svg[data-m='s'] .lb {
+        opacity: 0.14;
+      }
+      .lb,
+      .ls {
+        transition: opacity 0.4s;
+      }
+      .panel {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      .box2 {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--panel);
+        padding: 1.2rem 1.3rem;
+      }
+      #info h3 {
+        margin: 0.4rem 0 0.2rem;
+        font-size: 1.15rem;
+      }
+      #info p {
+        margin: 0.5rem 0 0;
+        color: var(--mut);
+        font-size: 0.9rem;
+      }
+      #info .by {
+        font: 0.76rem var(--mono);
+        color: var(--mut);
+      }
+      .pill {
+        display: inline-block;
+        font: 700 0.68rem var(--mono);
+        padding: 0.15rem 0.5rem;
+        border-radius: 99px;
+        border: 1px solid;
+      }
+      #steps {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.35rem;
+      }
+      #steps li {
+        display: flex;
+        gap: 0.7rem;
+        align-items: baseline;
+        padding: 0.4rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        color: var(--mut);
+        border: 1px solid transparent;
+        transition: 0.3s;
+      }
+      #steps b {
+        font: 700 0.72rem var(--mono);
+        color: #566273;
+      }
+      #steps small {
+        margin-left: auto;
+        font: 0.72rem var(--mono);
+      }
+      #steps li.on {
+        color: var(--text);
+        border-color: var(--air);
+        background: #38bdf812;
+      }
+      #steps li.on b {
+        color: var(--air);
+      }
+      #steps li.done b {
+        color: var(--mrt);
+      }
+      #steps li.failed b {
+        color: var(--ctl);
+      }
+      #steps li.failed {
+        border-color: var(--ctl);
+        background: #f472b612;
+      }
+      .layers {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.6rem;
+        counter-reset: x;
+      }
+      .ly {
+        position: relative;
+        border: 1px solid var(--line);
+        border-top: 3px solid var(--c);
+        border-radius: 10px;
+        background: var(--panel);
+        padding: 1rem;
+      }
+      .ly + .ly::before {
+        content: '→';
+        position: absolute;
+        left: -0.62rem;
+        top: 1.1rem;
+        color: var(--mut);
+        background: var(--bg);
+        width: 0.65rem;
+        text-align: center;
+        font-size: 0.8rem;
+        z-index: 1;
+      }
+      .ly h3 {
+        margin: 0;
+        font: 700 0.85rem var(--mono);
+        color: var(--c);
+      }
+      .ly .n {
+        font-size: 2.2rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        line-height: 1.1;
+      }
+      .ly .by {
+        font: 0.7rem var(--mono);
+        color: var(--mut);
+        margin-bottom: 0.5rem;
+      }
+      .ly p {
+        font-size: 0.8rem;
+        color: var(--mut);
+        margin: 0.6rem 0 0;
+      }
+      .dots {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 0.4rem;
+      }
+      .dots i {
+        width: 11px;
+        height: 11px;
+        border-radius: 3px;
+        background: var(--c);
+        animation: blink 3.2s infinite;
+      }
+      .dots i.r {
+        background: none;
+        border: 1.5px solid var(--c);
+      }
+      @keyframes blink {
+        0%,
+        60%,
+        100% {
+          opacity: 1;
+        }
+        30% {
+          opacity: 0.25;
+        }
+      }
+      .gate {
+        margin-top: 1rem;
+        font: 0.78rem var(--mono);
+        color: var(--mut);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .gate span {
+        padding: 0.25rem 0.6rem;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+      }
+      .gate .a {
+        color: var(--dbt);
+        border-color: var(--dbt);
+      }
+      .gate .t {
+        color: var(--mrt);
+        border-color: var(--mrt);
+      }
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      .two .box2 {
+        border-top: 3px solid var(--c);
+      }
+      .two h3 {
+        margin: 0.2rem 0 0.4rem;
+        font-size: 1.1rem;
+      }
+      .two ul {
+        margin: 0.5rem 0 0;
+        padding-left: 1.1rem;
+        color: var(--mut);
+        font-size: 0.9rem;
+      }
+      .two li {
+        margin: 0.25rem 0;
+      }
+      .q {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+      }
+      .q div {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 1.1rem;
+        background: var(--panel);
+      }
+      .q b {
+        display: block;
+        font-size: 2rem;
+        letter-spacing: -0.04em;
+        color: var(--mrt);
+        line-height: 1.2;
+      }
+      .q span {
+        font-size: 0.82rem;
+        color: var(--mut);
+      }
+      .pii {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 0.7rem;
+        list-style: none;
+        padding: 0;
+        margin: 1rem 0 0;
+      }
+      .pii li {
+        border-left: 3px solid var(--ctl);
+        padding: 0.7rem 1rem;
+        background: var(--panel);
+        border-radius: 0 8px 8px 0;
+        font-size: 0.86rem;
+        color: var(--mut);
+      }
+      .pii strong {
+        color: var(--text);
+      }
+      .code {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #0a0e13;
+        overflow: hidden;
+        margin-bottom: 0.8rem;
+      }
+      .code div {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.4rem 0.9rem;
+        border-bottom: 1px solid var(--line);
+        font: 0.72rem var(--mono);
+        color: var(--mut);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .code button {
+        background: none;
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        font: 0.72rem var(--mono);
+        padding: 0.2rem 0.6rem;
+        cursor: pointer;
+      }
+      pre {
+        margin: 0;
+        padding: 0.9rem 1rem;
+        overflow: auto;
+        font-size: 0.82rem;
+        line-height: 1.75;
+        color: #cbd5e1;
+      }
+      .ins {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 0.8rem;
+      }
+      .ins article {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 1.3rem;
+        background: var(--panel);
+      }
+      .ins b {
+        font-size: 2.2rem;
+        letter-spacing: -0.04em;
+        color: var(--gld);
+        line-height: 1.1;
+        display: block;
+      }
+      .ins h3 {
+        margin: 0.3rem 0;
+        font-size: 1rem;
+      }
+      .ins p {
+        margin: 0 0 0.7rem;
+        color: var(--mut);
+        font-size: 0.88rem;
+      }
+      .ins a,
+      .note a {
+        color: var(--air);
+        font-size: 0.84rem;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      .note {
+        color: var(--mut);
+        font-size: 0.85rem;
+        margin-top: 1rem;
+      }
+      .res {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+      .res a {
+        padding: 0.6rem 1rem;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        text-decoration: none;
+        font-size: 0.88rem;
+        font-weight: 700;
+      }
+      .res a:hover {
+        border-color: var(--air);
+      }
+      .res small {
+        color: var(--mut);
+        font-weight: 400;
+        margin-left: 0.4rem;
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 2rem 0;
+        color: var(--mut);
+        font-size: 0.82rem;
+        background: #0008;
+      }
+      footer .wrap {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+      @media (max-width: 900px) {
+        .hero .wrap,
+        .panel,
+        .two {
+          grid-template-columns: 1fr;
+        }
+        .layers {
+          grid-template-columns: 1fr 1fr;
+        }
+        .ly + .ly::before {
+          display: none;
+        }
+        .q {
+          grid-template-columns: 1fr 1fr;
+        }
+        #mb {
+          display: block;
+        }
+        nav ul {
+          display: none;
           position: absolute;
           top: 100%;
           left: 0;
           right: 0;
-          display: none;
           flex-direction: column;
           align-items: stretch;
-          padding: 0.75rem 1.25rem 1rem;
-          border-bottom: 1px solid var(--border);
-          background: #0c1320;
+          background: var(--bg);
+          padding: 0.6rem 1rem;
+          border-bottom: 1px solid var(--line);
         }
-
-        .nav-menu.is-open {
+        nav ul.open {
           display: flex;
         }
-
-        .nav-link {
-          padding: 0.75rem 0.5rem;
-        }
-
-        .nav-cta {
-          margin: 0.5rem 0 0;
+        .gh {
+          margin: 0.3rem 0 0;
           text-align: center;
         }
-
-        .hero-grid {
-          grid-template-columns: 1fr;
-          gap: 2rem;
-        }
-
-        .logo-card {
-          display: none;
-        }
-
-        .footer-grid {
-          grid-template-columns: 1fr 1fr;
-        }
-
-        .footer-brand {
-          grid-column: 1 / -1;
-        }
       }
-
-      @media (max-width: 640px) {
-        .wrap {
-          width: min(100% - 1.5rem, 1180px);
-        }
-
-        .hero {
-          padding-block: 3.5rem 3rem;
-        }
-
-        .section {
-          padding-block: 3.5rem;
-        }
-
-        .stats-grid,
-        .support-band {
-          grid-template-columns: 1fr 1fr;
-        }
-
-        .stat {
-          border-bottom: 1px solid var(--border);
-        }
-
-        .stat:nth-child(2n) {
-          border-right: 0;
-        }
-
-        .stat:nth-last-child(-n + 2) {
-          border-bottom: 0;
-        }
-
-        .footer-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
       @media (prefers-reduced-motion: reduce) {
-        html {
-          scroll-behavior: auto;
-        }
-
-        *,
-        *::before,
-        *::after {
+        * {
           animation: none !important;
           transition: none !important;
+        }
+        html {
+          scroll-behavior: auto;
         }
       }
     </style>
   </head>
   <body>
-    <a class="skip-link" href="#main">Skip to content</a>
-
-    <header class="header">
-      <nav class="wrap nav-container" aria-label="Primary navigation">
-        <a class="brand" href="#top">
-          <img src="assets/logo/logo_1.png" alt="" />
-          <span>Fleet dbt Warehouse</span>
-        </a>
-
-        <button
-          class="mobile-menu-toggle"
-          type="button"
-          aria-label="Toggle navigation"
-          aria-expanded="false"
-          aria-controls="primary-navigation"
+    <header>
+      <div class="wrap nav">
+        <a class="brand" href="#top"
+          ><img src="assets/logo/logo_1.png" alt="" /><span
+            >Fleet dbt Warehouse</span
+          ></a
         >
-          <span class="mobile-menu-toggle__icon" aria-hidden="true">
-            <span></span><span></span><span></span>
-          </span>
+        <button id="mb" aria-label="Toggle navigation" aria-expanded="false">
+          Menu
         </button>
-
-        <ul class="nav-menu" id="primary-navigation">
-          <li><a class="nav-link" href="#overview">Overview</a></li>
-          <li><a class="nav-link" href="#architecture">Architecture</a></li>
-          <li><a class="nav-link" href="#layers">Layers</a></li>
-          <li><a class="nav-link" href="#quality">Quality</a></li>
-          <li><a class="nav-link" href="#runbook">Runbook</a></li>
-          <li><a class="nav-link" href="#insights">Insights</a></li>
-          <li>
-            <a
-              class="nav-cta"
-              href="https://github.com/Nitinx12/Fleet-dbt-warehouse"
-              target="_blank"
-              rel="noreferrer"
-              >GitHub</a
-            >
-          </li>
-        </ul>
-      </nav>
-      <div class="scroll-progress" aria-hidden="true"></div>
+        <nav aria-label="Primary">
+          <ul id="menu">
+            <li><a class="l" href="#architecture">Pipeline</a></li>
+            <li><a class="l" href="#layers">dbt layers</a></li>
+            <li><a class="l" href="#streaming">Streaming</a></li>
+            <li><a class="l" href="#quality">Quality</a></li>
+            <li><a class="l" href="#runbook">Runbook</a></li>
+            <li><a class="l" href="#insights">Insights</a></li>
+            <li>
+              <a
+                class="gh"
+                href="https://github.com/Nitinx12/Fleet-dbt-warehouse"
+                target="_blank"
+                rel="noreferrer"
+                >GitHub</a
+              >
+            </li>
+          </ul>
+        </nav>
+      </div>
     </header>
 
-    <main id="main">
-      <section class="hero" id="top">
-        <div class="wrap hero-grid">
+    <main id="top">
+      <div class="hero">
+        <div class="wrap">
           <div>
-            <span class="eyebrow">Daily analytics warehouse</span>
-            <h1>Fleet <span>dbt Warehouse</span></h1>
-            <p class="hero-copy">
-              MySQL <code>fleet_registry</code> and MongoDB <code>fleet_operations</code> land in
-              Postgres <code>bronze</code> through watermarked, contract-checked ingestion. dbt
-              builds <code>silver</code>, <code>gold</code> and <code>marts</code>; approved
-              non-PII marts sync to Databricks for BI. Airflow schedules the run, while
-              <code>control.*</code> and <code>audit.*</code> keep the evidence.
+            <span class="tag">Daily analytics warehouse</span>
+            <h1>
+              Watch fleet data travel from raw rows to <em>dashboards</em>.
+            </h1>
+            <p class="lead">
+              MySQL <code>fleet_registry</code> and MongoDB
+              <code>fleet_operations</code> land in Postgres
+              <code>bronze</code> through watermarked, contract-checked
+              ingestion. dbt builds <code>silver</code>, <code>gold</code> and
+              <code>marts</code>; approved non-PII marts sync to Databricks.
+              Airflow schedules the run and <code>control.*</code> /
+              <code>audit.*</code> keep the evidence.
             </p>
-            <div class="actions">
-              <a class="btn btn-primary" href="#architecture">See the architecture</a>
-              <a class="btn btn-secondary" href="#runbook">Run the demo</a>
+            <div class="btns">
+              <a class="btn p" href="#architecture">Explore the live flow</a
+              ><a class="btn" href="#runbook">Run the demo</a>
             </div>
-            <div class="badges" aria-label="Project facts">
-              <span class="badge">12 source contracts</span>
-              <span class="badge">32 dbt models</span>
-              <span class="badge">383 dbt tests</span>
-              <span class="badge">5 published marts</span>
-              <span class="badge">Daily at 02:00 IST</span>
+            <div class="facts">
+              <span>12 contracts</span><span>32 dbt models</span
+              ><span>383 dbt tests</span><span>5 marts published</span
+              ><span>02:00 IST daily</span>
             </div>
           </div>
-          <div class="logo-card" aria-hidden="true">
-            <img src="assets/logo/logo_1.png" alt="" />
-          </div>
-        </div>
-      </section>
-
-      <div class="stats">
-        <div class="wrap stats-grid">
-          <div class="stat">
-            <div class="stat-value" data-count="12">12</div>
-            <div class="stat-label">Sources (9 MySQL + 3 MongoDB)</div>
-          </div>
-          <div class="stat">
-            <div class="stat-value" data-count="32">32</div>
-            <div class="stat-label">dbt models (12 + 13 + 7)</div>
-          </div>
-          <div class="stat">
-            <div class="stat-value" data-count="383">383</div>
-            <div class="stat-label">dbt tests across layers</div>
-          </div>
-          <div class="stat">
-            <div class="stat-value" data-count="5">5</div>
-            <div class="stat-label">Marts published to Databricks</div>
+          <div class="term" aria-label="Live Airflow run log">
+            <div class="term-h">
+              <span><i class="dot"></i>airflow · fleet_daily_load</span
+              ><span id="runlbl">loading live run</span>
+            </div>
+            <div id="log" aria-live="off"></div>
+            <div class="prog"><i id="bar"></i></div>
           </div>
         </div>
       </div>
 
-      <section class="section" id="overview">
+      <section id="architecture">
         <div class="wrap">
-          <div class="section-head reveal">
-            <span class="kicker">Overview</span>
-            <h2>One governed path from source to dashboard</h2>
-            <p class="section-subtitle">
-              Every boundary has one writer, a versioned contract and a check that fails the run
-              when it drifts.
+          <div class="head">
+            <span class="tag">Pipeline flow</span>
+            <h2>Follow one daily batch, end to end</h2>
+            <p>
+              Airflow schedules scripts, Python moves data, dbt transforms it,
+              the publisher only copies approved marts. Dots show data moving;
+              click any stage to see who owns it.
             </p>
           </div>
-          <div class="grid-cards">
-            <article class="card reveal">
-              <div class="icon-box">01</div>
-              <h3>Contracted ingestion</h3>
-              <p>
-                Twelve YAML contracts define columns, types, keys, freshness and expected counts.
-                Python extracts with a watermark and lookback, then lands immutable rows in
-                <code>bronze</code>.
-              </p>
-            </article>
-            <article class="card reveal">
-              <div class="icon-box">02</div>
-              <h3>dbt owns transformation</h3>
-              <p>
-                Silver cleans and dedupes one model per source. Gold builds the conformed star
-                schema, and marts denormalise it into guarded, ratio-safe BI grains. No
-                transformation lives in Python.
-              </p>
-            </article>
-            <article class="card reveal">
-              <div class="icon-box">03</div>
-              <h3>Governed serving</h3>
-              <p>
-                Five approved, non-PII marts are published to Databricks. The driver scorecard
-                stays in Postgres because it carries a driver display name.
-              </p>
-            </article>
-            <article class="card reveal">
-              <div class="icon-box">04</div>
-              <h3>Observable runs</h3>
-              <p>
-                Batches, watermarks, task outcomes, dbt results and reconciliation are stored in
-                <code>control.*</code> and <code>audit.*</code>; failures emit a database
-                notification.
-              </p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="architecture">
-        <div class="wrap">
-          <div class="section-head reveal">
-            <span class="kicker">Architecture</span>
-            <h2>Strict funnel, explicit ownership</h2>
-            <p class="section-subtitle">
-              Airflow schedules scripts. Python moves data. dbt transforms it. The publisher only
-              copies approved marts.
-            </p>
-          </div>
-
-          <div class="mermaid-panel reveal" aria-label="Detailed data pipeline flow">
-            <pre class="mermaid">
-flowchart LR
-    classDef source fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#172554
-    classDef orchestration fill:#cffafe,stroke:#0891b2,stroke-width:2px,color:#083344
-    classDef contract fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#451a03
-    classDef bronze fill:#ffedd5,stroke:#ea580c,stroke-width:2px,color:#431407
-    classDef transform fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#3b0764
-    classDef serve fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#052e16
-    classDef control fill:#ffe4e6,stroke:#e11d48,stroke-width:2px,color:#4c0519
-    classDef planned fill:#ecfccb,stroke:#65a30d,stroke-width:2px,stroke-dasharray: 5 3,color:#1a2e05
-
-    subgraph systems[Operational source systems]
-        MYSQL[(MySQL&lt;br/&gt;fleet_registry&lt;br/&gt;9 tables)]:::source
-        MONGO[(MongoDB&lt;br/&gt;fleet_operations&lt;br/&gt;3 collections)]:::source
-    end
-
-    subgraph run[Daily orchestration and ingestion]
-        AIRFLOW[Apache Airflow 3.3.2&lt;br/&gt;fleet_daily_load&lt;br/&gt;02:00 Asia/Kolkata]:::orchestration
-        CONTRACTS[Versioned YAML contracts&lt;br/&gt;schemas, keys, freshness&lt;br/&gt;and expected counts]:::contract
-        INGEST[Python + SQLAlchemy / PyMongo&lt;br/&gt;scripts/ingestion.py&lt;br/&gt;watermarks and idempotent upserts]:::orchestration
-    end
-
-    subgraph warehouse[PostgreSQL 16 warehouse]
-        BRONZE[(bronze&lt;br/&gt;12 immutable landed tables&lt;br/&gt;raw history)]:::bronze
-        DBT[dbt Core + dbt-postgres&lt;br/&gt;models, tests, macros&lt;br/&gt;the only transform engine]:::transform
-        SILVER[(silver&lt;br/&gt;cast, dedupe, normalise&lt;br/&gt;PII handling)]:::transform
-        GOLD[(gold&lt;br/&gt;7 dimensions + 6 facts&lt;br/&gt;conformed analytics)]:::transform
-        MARTS[(marts&lt;br/&gt;6 BI marts + reconciliation&lt;br/&gt;guarded KPIs)]:::serve
-        CONTROL[(control.*&lt;br/&gt;pipeline, batch, source&lt;br/&gt;and watermark state)]:::control
-        AUDIT[(audit.*&lt;br/&gt;task, dbt, DQ, reconciliation&lt;br/&gt;and error evidence)]:::control
-    end
-
-    subgraph serving[Governed serving]
-        PUBLISH[Python publisher&lt;br/&gt;allowlist + schema validation&lt;br/&gt;MERGE and reconciliation]:::orchestration
-        DBX[(Databricks SQL Warehouse&lt;br/&gt;5 approved Delta marts)]:::serve
-        BI[BI dashboards&lt;br/&gt;and analysts]:::serve
-    end
-
-    subgraph speed[Planned speed layer — independent from batch]
-        REPLAY[Replay producer&lt;br/&gt;Mongo delivery events]:::planned
-        KAFKA[(Kafka KRaft&lt;br/&gt;delivery_events.v1 + DLQ)]:::planned
-        SPARK[PySpark Structured Streaming&lt;br/&gt;validate, windows, detention]:::planned
-        REALTIME[(Postgres realtime&lt;br/&gt;raw, windows, alerts)]:::planned
-        RECON[reconcile_stream&lt;br/&gt;observational comparison to gold]:::planned
-    end
-
-    AIRFLOW -->|triggers| INGEST
-    AIRFLOW -->|runs dbt| DBT
-    AIRFLOW -->|triggers| PUBLISH
-    CONTRACTS -->|validates boundary| INGEST
-    MYSQL -->|read-only extract| INGEST
-    MONGO -->|read-only extract| INGEST
-    INGEST -->|contracted landing| BRONZE
-    BRONZE -->|source()| DBT
-    DBT --> SILVER --> GOLD --> MARTS
-    MARTS -->|approved marts only| PUBLISH --> DBX --> BI
-
-    INGEST -. batch state and watermarks .-> CONTROL
-    DBT -. invocation and test results .-> AUDIT
-    INGEST -. task and reconciliation evidence .-> AUDIT
-    PUBLISH -. publish reconciliation .-> AUDIT
-    CONTROL -. failure events .-> AUDIT
-
-    MONGO -. replay .-> REPLAY --> KAFKA --> SPARK --> REALTIME
-    REALTIME -. compare .-> RECON
-    GOLD -. compare .-> RECON
-    RECON -. results .-> AUDIT
-            </pre>
-          </div>
-
-          <div class="diagram-key" aria-label="Diagram legend">
-            <span><i></i> Governed batch data flow</span>
-            <span><i class="key-control"></i> Control and audit evidence</span>
-            <span><i class="key-planned"></i> Planned streaming path</span>
-          </div>
-
-          <div class="support-band reveal">
-            <div class="support-card">
-              <strong>control.*</strong>
-              <span>Pipeline registry, source registry, batches and watermarks. One active batch per pipeline.</span>
-            </div>
-            <div class="support-card">
-              <strong>audit.*</strong>
-              <span>Task runs, dbt invocations, test results, DQ checks, reconciliation and errors.</span>
+          <div class="ctl">
+            <button id="play">↻ Refresh live data</button>
+            <button data-m="a" aria-pressed="true">Both lanes</button
+            ><button data-m="b" aria-pressed="false">Batch</button
+            ><button data-m="s" aria-pressed="false">Streaming</button>
+            <span class="sp"></span>
+            <div class="leg">
+              <span><i style="border-color: var(--mrt)"></i>data</span
+              ><span
+                ><i
+                  style="border-color: var(--ctl); border-top-style: dotted"
+                ></i
+                >control / audit</span
+              ><span
+                ><i
+                  style="border-color: var(--str); border-top-style: dashed"
+                ></i
+                >streaming</span
+              >
             </div>
           </div>
-
+          <div class="canvas">
+            <svg
+              id="svg"
+              viewBox="0 0 1250 460"
+              data-m="a"
+              role="img"
+              aria-label="Data pipeline diagram"
+            ></svg>
+          </div>
+          <div class="panel">
+            <div class="box2" id="info"></div>
+            <div class="box2">
+              <span class="tag">Daily run · fleet_daily_load</span>
+              <ol id="steps" style="margin-top: 0.7rem"></ol>
+            </div>
+          </div>
           <p class="note">
-            The solid path is the production batch pipeline. The dotted speed layer is an approved
-            target design: it never feeds <code>silver</code>, <code>gold</code>,
-            <code>marts</code> or Databricks. Orchestration DAG <code>fleet_daily_load</code>
-            runs at <code>0 2 * * *</code> in Asia/Kolkata with <code>catchup=False</code> and
-            one active run at a time.
+            The log and step states come from <code>audit.*</code> views: a
+            snapshot taken when the app renders. Production runs at
+            <code>0 2 * * *</code> Asia/Kolkata, <code>catchup=False</code>, one
+            active run at a time.
           </p>
-
-          <ol class="steps reveal" aria-label="Daily run task sequence">
-            <li class="step">Preflight<small>env, connectivity, contracts</small></li>
-            <li class="step">start_batch<small>one control batch</small></li>
-            <li class="step">Ingest sources<small>12 parallel source tasks</small></li>
-            <li class="step">ingest_done<small>assert 12 task rows</small></li>
-            <li class="step">Silver<small>run, then test</small></li>
-            <li class="step">Gold<small>dims, facts, then test</small></li>
-            <li class="step">Marts<small>run, then test</small></li>
-            <li class="step">Publish<small>allowlist and reconcile</small></li>
-            <li class="step">Notify<small>finish batch with summary</small></li>
-          </ol>
         </div>
       </section>
 
-      <section class="section" id="layers">
+      <section id="layers">
         <div class="wrap">
-          <div class="section-head reveal">
-            <span class="kicker">Data layers</span>
-            <h2>What lives where, and who writes it</h2>
-            <p class="section-subtitle">
-              Cross-layer writes are deliberately blocked so replay and incident triage stay
-              deterministic.
+          <div class="head">
+            <span class="tag">How dbt works here</span>
+            <h2>Four layers, each one run, then tested</h2>
+            <p>
+              Each square is one table or model. dbt reads
+              <code>bronze</code> through <code>source()</code>, builds layer by
+              layer, and Airflow runs the tests before moving on. Nothing
+              outside its layer writes to it.
             </p>
           </div>
-          <div class="table-wrap reveal">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Layer</th>
-                  <th scope="col">Models / tables</th>
-                  <th scope="col">Written by</th>
-                  <th scope="col">Responsibility</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><code>bronze</code></td>
-                  <td>12 landed tables</td>
-                  <td>ingestion / fixture loader</td>
-                  <td class="muted">Immutable record of what arrived, with <code>_ingested_at</code>.</td>
-                </tr>
-                <tr>
-                  <td><code>silver</code></td>
-                  <td>12 models</td>
-                  <td>dbt</td>
-                  <td class="muted">One model per source: rename, cast, dedupe, normalise flags, route rejects.</td>
-                </tr>
-                <tr>
-                  <td><code>gold</code></td>
-                  <td>13 models</td>
-                  <td>dbt</td>
-                  <td class="muted">Seven SCD1 dimensions, <code>dim_date</code> and six incremental facts.</td>
-                </tr>
-                <tr>
-                  <td><code>marts</code></td>
-                  <td>7 models</td>
-                  <td>dbt</td>
-                  <td class="muted">Six BI grains plus <code>assert_marts_reconcile_to_facts</code>.</td>
-                </tr>
-                <tr>
-                  <td>Databricks copy</td>
-                  <td>5 approved marts</td>
-                  <td>publisher</td>
-                  <td class="muted">Read-only Delta copy for BI; the driver scorecard is excluded.</td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="layers" id="layers-grid"></div>
+          <div class="gate">
+            <span class="a">dbt run silver</span>→<span class="t">dbt test</span
+            >→<span class="a">dbt run gold</span>→<span class="t">dbt test</span
+            >→<span class="a">dbt run marts</span>→<span class="t"
+              >dbt test</span
+            >→<span>publish</span>
+            <span style="border: 0"
+              >An error-severity failure stops the batch.</span
+            >
           </div>
         </div>
       </section>
 
-      <section class="section" id="quality">
+      <section id="streaming">
         <div class="wrap">
-          <div class="section-head reveal">
-            <span class="kicker">Quality &amp; governance</span>
+          <div class="head">
+            <span class="tag">Batch vs streaming</span>
+            <h2>Two planes that never mix</h2>
+            <p>
+              The streaming layer runs beside the batch pipeline and only
+              observes it.
+            </p>
+          </div>
+          <div class="two">
+            <div class="box2" style="--c: var(--mrt)">
+              <span class="pill" style="color: var(--mrt)">Production</span>
+              <h3>Daily batch</h3>
+              <ul>
+                <li>
+                  Source → <code>bronze</code> → dbt → <code>marts</code> →
+                  Databricks
+                </li>
+                <li>Runs once a day, fully contracted and tested</li>
+                <li>Feeds BI dashboards and analysts</li>
+              </ul>
+            </div>
+            <div class="box2" style="--c: var(--str)">
+              <span class="pill" style="color: var(--str)">Implemented</span>
+              <h3>Speed layer</h3>
+              <ul>
+                <li>
+                  Replay Mongo delivery events → Kafka
+                  <code>delivery_events.v1</code> (+ DLQ)
+                </li>
+                <li>
+                  PySpark validates, windows and tracks detention → Postgres
+                  <code>realtime</code>
+                </li>
+                <li>
+                  <code>reconcile_stream</code> compares to
+                  <code>gold</code> and writes to <code>audit.*</code>; it never
+                  feeds <code>silver</code>, <code>gold</code>,
+                  <code>marts</code> or Databricks
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="quality">
+        <div class="wrap">
+          <div class="head">
+            <span class="tag">Quality &amp; governance</span>
             <h2>Fail fast, keep evidence, protect PII</h2>
-            <p class="section-subtitle">
-              A failed contract or data test blocks the run. Only transient connection failures are
-              retried.
+            <p>
+              A failed contract or data test blocks the run. Only transient
+              connection failures are retried.
             </p>
           </div>
-
-          <div class="quality-grid reveal">
-            <div class="quality-card">
-              <div class="quality-value">383</div>
-              <p>dbt tests: 348 error severity and 35 warn severity.</p>
+          <div class="q">
+            <div>
+              <b>383</b><span>dbt tests: 348 error, 35 warn severity</span>
             </div>
-            <div class="quality-card">
-              <div class="quality-value">104</div>
-              <p>Collected Python and Airflow test cases.</p>
+            <div><b>104</b><span>Python and Airflow test cases</span></div>
+            <div>
+              <b>12</b
+              ><span
+                >contracts checked by <code>make contracts-check</code></span
+              >
             </div>
-            <div class="quality-card">
-              <div class="quality-value">12</div>
-              <p>Source contracts checked by <code>make contracts-check</code>.</p>
-            </div>
-            <div class="quality-card">
-              <div class="quality-value">7 + 1</div>
-              <p>CI jobs plus a full-history Gitleaks workflow.</p>
-            </div>
+            <div><b>9</b><span>CI jobs plus full-history Gitleaks</span></div>
           </div>
-
-          <ul class="pii-list reveal">
-            <li><strong>Licence numbers</strong> are hashed in staging; the raw value stops there.</li>
-            <li><strong>Dates of birth</strong> become <code>age_band</code> and never reach a mart.</li>
-            <li><strong>Fuel card numbers</strong> are masked to the last four digits in staging.</li>
-            <li><strong>Incident descriptions</strong> stay in Postgres bronze and out of gold marts.</li>
+          <ul class="pii">
+            <li>
+              <strong>Licence numbers</strong> are hashed in staging; the raw
+              value stops there.
+            </li>
+            <li>
+              <strong>Dates of birth</strong> become <code>age_band</code> and
+              never reach a mart.
+            </li>
+            <li>
+              <strong>Fuel card numbers</strong> are masked to the last four
+              digits.
+            </li>
+            <li>
+              <strong>Incident descriptions</strong> stay in Postgres bronze,
+              out of gold marts.
+            </li>
           </ul>
         </div>
       </section>
 
-      <section class="section" id="runbook">
+      <section id="runbook">
         <div class="wrap">
-          <div class="section-head reveal">
-            <span class="kicker">Runbook</span>
+          <div class="head">
+            <span class="tag">Runbook</span>
             <h2>Start with the zero-credential demo</h2>
-            <p class="section-subtitle">
-              <code>make help</code> is the authoritative command list. Production targets require
-              explicit confirmation and approval.
+            <p>
+              <code>make help</code> is the authoritative command list.
+              Production targets need explicit confirmation.
             </p>
           </div>
-
-          <div class="code-grid reveal">
-            <div class="code-block">
-              <div class="code-head">
-                <span>Local checks</span>
-                <button class="copy" type="button" data-copy>Copy</button>
-              </div>
-              <pre><code>cp .env.example .env
+          <div class="code">
+            <div>Local checks<button data-copy>Copy</button></div>
+            <pre><code>cp .env.example .env
 make install
 make check-tools
 make env-check
 make verify
 make contracts-check</code></pre>
-            </div>
-            <div class="code-block">
-              <div class="code-head">
-                <span>Fixture demo in fleet_dev</span>
-                <button class="copy" type="button" data-copy>Copy</button>
-              </div>
-              <pre><code>make demo</code></pre>
-            </div>
-            <div class="code-block">
-              <div class="code-head">
-                <span>Layer-by-layer build</span>
-                <button class="copy" type="button" data-copy>Copy</button>
-              </div>
-              <pre><code>make dbt-silver ENV=dev &amp;&amp; make dbt-silver-tests ENV=dev
+          </div>
+          <div class="code">
+            <div>Fixture demo in fleet_dev<button data-copy>Copy</button></div>
+            <pre><code>make demo</code></pre>
+          </div>
+          <div class="code">
+            <div>Layer-by-layer build<button data-copy>Copy</button></div>
+            <pre><code>make dbt-silver ENV=dev &amp;&amp; make dbt-silver-tests ENV=dev
 make dbt-gold ENV=dev &amp;&amp; make dbt-gold-tests ENV=dev
 make dbt-marts ENV=dev &amp;&amp; make dbt-marts-tests ENV=dev
 make publish-marts ENV=dev</code></pre>
-            </div>
           </div>
-
           <p class="note">
-            Airflow is started with <code>make airflow-up</code>; the UI is at
-            <a class="text-link" href="http://localhost:8080">localhost:8080</a>.
+            Start Airflow with <code>make airflow-up</code>; the UI is at
+            <a href="http://localhost:8080">localhost:8080</a>.
           </p>
         </div>
       </section>
 
-      <section class="section" id="insights">
+      <section id="insights">
         <div class="wrap">
-          <div class="section-head reveal">
-            <span class="kicker">Business insights</span>
+          <div class="head">
+            <span class="tag">Business insights</span>
             <h2>What the warehouse finds</h2>
-            <p class="section-subtitle">
-              Charts and findings are regenerated from populated gold tables with
-              <code>make report</code>. Full analysis lives in
-              <a class="text-link" href="reports/INSIGHT.md">reports/INSIGHT.md</a>.
+            <p>
+              Regenerated from populated gold tables with
+              <code>make report</code>. Full analysis in
+              <a href="reports/INSIGHT.md" style="color: var(--air)"
+                >reports/INSIGHT.md</a
+              >.
             </p>
           </div>
-
-          <div class="insights-grid reveal">
-            <article class="insight">
-              <div class="insight-metric">55.7%</div>
+          <div class="ins">
+            <article>
+              <b>55.7%</b>
               <h3>On-time delivery overall</h3>
               <p>
-                170,820 delivery events with an estimated $19.5M detention cost at $75/hour.
+                170,820 delivery events with an estimated $19.5M detention cost
+                at $75/hour.
               </p>
-              <a class="text-link" href="reports/findings/02_delivery_service.json">Delivery findings</a>
+              <a href="reports/findings/02_delivery_service.json"
+                >Delivery findings →</a
+              >
             </article>
-            <article class="insight">
-              <div class="insight-metric">53.4%</div>
+            <article>
+              <b>53.4%</b>
               <h3>Weakest high-volume facility</h3>
               <p>
-                Atlanta Distribution Center: 3,278 events and about $379K detention. First Group
-                carried $689K across 6,002 events.
+                Atlanta Distribution Center: 3,278 events and about $379K
+                detention. First Group carried $689K across 6,002 events.
               </p>
               <a
-                class="text-link"
                 href="reports/img/02_delivery_service_detention_cost_by_customer.png"
-                >View detention chart</a
+                >View detention chart →</a
               >
             </article>
-            <article class="insight">
-              <div class="insight-metric">37.6%</div>
+            <article>
+              <b>37.6%</b>
               <h3>Preventable safety incidents</h3>
               <p>
-                170 incidents produced $2.65M in claims; 64 were marked preventable.
+                170 incidents produced $2.65M in claims; 64 were marked
+                preventable.
               </p>
               <a
-                class="text-link"
                 href="reports/img/05_safety_preventable_share_by_experience.png"
-                >View safety chart</a
+                >View safety chart →</a
               >
             </article>
           </div>
-        </div>
-      </section>
-
-      <section class="section" id="resources">
-        <div class="wrap">
-          <div class="section-head reveal">
-            <span class="kicker">Documentation</span>
-            <h2>Go deeper</h2>
-          </div>
-          <div class="resource-grid reveal">
-            <a class="resource" href="README.md">
-              <span><strong>README</strong><span>Project front door</span></span>
-              <span class="resource-arrow" aria-hidden="true">→</span>
-            </a>
-            <a class="resource" href="ARCHITECTURE.md">
-              <span><strong>Architecture</strong><span>Layers, contracts, ownership</span></span>
-              <span class="resource-arrow" aria-hidden="true">→</span>
-            </a>
-            <a class="resource" href="DEPLOYMENT.md">
-              <span><strong>Deployment</strong><span>Release, rollback, runbooks</span></span>
-              <span class="resource-arrow" aria-hidden="true">→</span>
-            </a>
-            <a class="resource" href="docs/DBT.md">
-              <span><strong>dbt guide</strong><span>Models, tests, conventions</span></span>
-              <span class="resource-arrow" aria-hidden="true">→</span>
-            </a>
-            <a class="resource" href="docs/TESTING.md">
-              <span><strong>Testing</strong><span>Full check inventory</span></span>
-              <span class="resource-arrow" aria-hidden="true">→</span>
-            </a>
-            <a class="resource" href="reports/INSIGHT.md">
-              <span><strong>Insights</strong><span>Business findings and charts</span></span>
-              <span class="resource-arrow" aria-hidden="true">→</span>
-            </a>
+          <div class="res" style="margin-top: 2rem">
+            <a href="README.md">README</a
+            ><a href="ARCHITECTURE.md"
+              >Architecture<small>layers, contracts</small></a
+            ><a href="DEPLOYMENT.md">Deployment</a
+            ><a href="docs/DBT.md">dbt guide</a
+            ><a href="docs/TESTING.md">Testing</a>
           </div>
         </div>
       </section>
     </main>
 
-    <footer class="footer">
-      <div class="wrap footer-grid">
-        <div class="footer-brand">
-          <a class="brand" href="#top">
-            <img src="assets/logo/logo_1.png" alt="" />
-            <span>Fleet dbt Warehouse</span>
-          </a>
-          <p>
-            A daily logistics warehouse: contracted ingestion into Postgres, dbt-owned
-            transformation, auditable runs and a governed Databricks BI copy.
-          </p>
-        </div>
-        <div>
-          <h3>Project</h3>
-          <ul>
-            <li><a href="#overview">Overview</a></li>
-            <li><a href="#architecture">Architecture</a></li>
-            <li><a href="#layers">Layers</a></li>
-            <li><a href="#quality">Quality</a></li>
-            <li><a href="#runbook">Runbook</a></li>
-          </ul>
-        </div>
-        <div>
-          <h3>Links</h3>
-          <ul>
-            <li><a href="README.md">README</a></li>
-            <li><a href="docs/DBT.md">dbt guide</a></li>
-            <li><a href="docs/TESTING.md">Testing</a></li>
-            <li><a href="reports/INSIGHT.md">Insights</a></li>
-            <li>
-              <a href="https://github.com/Nitinx12/Fleet-dbt-warehouse" target="_blank" rel="noreferrer"
-                >GitHub repository</a
-              >
-            </li>
-          </ul>
-        </div>
-      </div>
-      <div class="wrap footer-bottom">
-        <span>© 2026 Nitin. Released under the MIT License.</span>
-        <span>Built with Airflow, dbt, PostgreSQL and Databricks.</span>
+    <footer>
+      <div class="wrap">
+        <span>© 2026 Nitin · MIT License</span
+        ><span
+          >Built with Airflow, dbt, PostgreSQL and Databricks ·
+          <a
+            href="https://github.com/Nitinx12/Fleet-dbt-warehouse"
+            target="_blank"
+            rel="noreferrer"
+            >GitHub</a
+          ></span
+        >
       </div>
     </footer>
 
-    <a class="back-to-top" href="#top" aria-label="Back to top">↑</a>
-
-    <script type="module">
-      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
-
-      mermaid.initialize({
-        startOnLoad: true,
-        theme: "base",
-        flowchart: { curve: "basis", htmlLabels: true, useMaxWidth: true },
-        themeVariables: {
-          background: "transparent",
-          primaryTextColor: "#e6edf7",
-          lineColor: "#9aa8bd",
-          clusterBkg: "#111827",
-          clusterBorder: "#334155",
-          edgeLabelBackground: "#111827",
-          fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
-        },
-      });
+    <script id="live-data" type="application/json">
+      __LIVE_DATA__
     </script>
-
     <script>
-      document.documentElement.classList.add("js");
-
-      const menuToggle = document.querySelector(".mobile-menu-toggle");
-      const navMenu = document.querySelector(".nav-menu");
-
-      menuToggle?.addEventListener("click", () => {
-        const isOpen = navMenu.classList.toggle("is-open");
-        menuToggle.setAttribute("aria-expanded", String(isOpen));
-      });
-
-      navMenu?.addEventListener("click", (event) => {
-        if (event.target.closest("a")) {
-          navMenu.classList.remove("is-open");
-          menuToggle?.setAttribute("aria-expanded", "false");
+      const $ = (s) => document.querySelector(s),
+        NS = 'http://www.w3.org/2000/svg'
+      const V = (k) => `var(--${k})`,
+        W = 104,
+        X = (i) => 10 + i * 140
+      const el = (t, a = {}, p) => {
+        const e = document.createElementNS(NS, t)
+        for (const k in a) e.setAttribute(k, a[k])
+        p && p.appendChild(e)
+        return e
+      }
+      const svg = $('#svg')
+      svg.innerHTML =
+        '<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs>'
+      /* nodes: id,x,y,w,h,color,label,sub,lane,box,title,owner,desc */
+      const B = (id, x, y, w, h, c, l, s, t, o, d) => ({
+        id,
+        x,
+        y,
+        w,
+        h,
+        c,
+        l,
+        s,
+        lane: 'lb',
+        box: 1,
+        t,
+        o,
+        d,
+      })
+      const nd = (id, col, y, c, l, s, lane, t, o, d) => ({
+        id,
+        x: X(col),
+        y,
+        w: W,
+        h: y < 100 && col == 0 ? 64 : 70,
+        c,
+        l,
+        s,
+        lane,
+        t,
+        o,
+        d,
+      })
+      const N = [
+        B(
+          'air',
+          X(1) - 12,
+          8,
+          X(6) + W + 24 - X(1),
+          26,
+          'air',
+          'Apache Airflow 3.3.2 · fleet_daily_load · 02:00 Asia/Kolkata',
+          '',
+          'Orchestration',
+          'Apache Airflow 3.3.2',
+          'Airflow only schedules scripts: it triggers ingestion, runs dbt and triggers the publisher. It moves and transforms no data. Runs at 0 2 * * *, catchup=False, one active run at a time.'
+        ),
+        B(
+          'dbt',
+          X(3) - 12,
+          62,
+          X(5) + W + 24 - X(3),
+          140,
+          'dbt',
+          'dbt Core + dbt-postgres · the only transform engine',
+          '',
+          'Transformation',
+          'dbt Core + dbt-postgres',
+          'Models, tests and macros. Each layer is run, then tested. 383 tests: 348 error severity block the batch, 35 warn. No transformation lives in Python.'
+        ),
+        B(
+          'ctl',
+          X(1) - 12,
+          250,
+          X(6) + W + 24 - X(1),
+          40,
+          'ctl',
+          'control.*  ·  audit.*',
+          'control: pipeline + source registry, batches, watermarks    audit: task runs, dbt results, DQ, reconciliation, errors',
+          'Evidence store',
+          'Postgres control.* and audit.*',
+          'control holds pipeline and source registry, batches and watermarks (one active batch per pipeline). audit holds task runs, dbt invocations, test results, DQ checks, reconciliation and errors. Failures emit a database notification.'
+        ),
+        {
+          ...B(
+            'strm',
+            X(1) - 12,
+            320,
+            X(5) + W + 24 - X(1),
+            132,
+            'str',
+            'Streaming speed layer · observational',
+            '',
+            'Streaming',
+            'Streaming plane',
+            'Implemented beside the batch pipeline. It never feeds silver, gold, marts or Databricks.'
+          ),
+          lane: 'ls',
+        },
+        nd(
+          'mysql',
+          0,
+          48,
+          'src',
+          'MySQL',
+          'fleet_registry|9 tables',
+          'lb',
+          'Source system',
+          'Application owner',
+          'Read-only extract of 9 fleet_registry tables. Ingestion never writes back to the source.'
+        ),
+        nd(
+          'mongo',
+          0,
+          148,
+          'src',
+          'MongoDB',
+          'fleet_operations|3 collections',
+          'lb',
+          'Source system',
+          'Application owner',
+          'Read-only extract of 3 fleet_operations collections. Delivery events here also feed the replay producer.'
+        ),
+        nd(
+          'ingest',
+          1,
+          95,
+          'air',
+          'Ingest',
+          'Python scripts|watermarks',
+          'lb',
+          'Contracted ingestion',
+          'Python (SQLAlchemy / PyMongo)',
+          'Validates each source against its YAML contract (columns, types, keys, freshness, expected counts), extracts with a watermark and lookback, and upserts idempotently. No transformation happens here.'
+        ),
+        nd(
+          'bronze',
+          2,
+          95,
+          'brz',
+          'bronze',
+          '12 raw tables|immutable',
+          'lb',
+          'Raw landing layer',
+          'Ingestion / fixture loader',
+          'Immutable record of what arrived, with _ingested_at. dbt reads it through source().'
+        ),
+        nd(
+          'silver',
+          3,
+          95,
+          'slv',
+          'silver',
+          '12 models|cast · dedupe',
+          'lb',
+          'Clean layer',
+          'dbt',
+          'One model per source: rename, cast, dedupe, normalise flags, route rejects. PII is handled here: licence numbers hashed, fuel cards masked, date of birth turned into age_band.'
+        ),
+        nd(
+          'gold',
+          4,
+          95,
+          'gld',
+          'gold',
+          '7 dims + 6 facts|star schema',
+          'lb',
+          'Conformed analytics',
+          'dbt',
+          'Seven SCD1 dimensions (including dim_date) and six incremental facts forming the conformed star schema.'
+        ),
+        nd(
+          'marts',
+          5,
+          95,
+          'mrt',
+          'marts',
+          '6 BI marts|guarded KPIs',
+          'lb',
+          'BI grains',
+          'dbt',
+          'Six denormalised, ratio-safe BI marts plus assert_marts_reconcile_to_facts, which proves they tie back to the facts.'
+        ),
+        nd(
+          'publish',
+          6,
+          95,
+          'air',
+          'Publisher',
+          'allowlist|MERGE + recon',
+          'lb',
+          'Governed serving',
+          'Python publisher',
+          'Copies only allowlisted marts after schema validation, MERGEs into Databricks and reconciles into audit.*. The driver scorecard stays in Postgres because it carries a driver display name.'
+        ),
+        nd(
+          'dbx',
+          7,
+          95,
+          'mrt',
+          'Databricks',
+          '5 Delta marts|non-PII',
+          'lb',
+          'Serving copy',
+          'Publisher',
+          'Read-only Delta copy of the 5 approved non-PII marts, built for BI.'
+        ),
+        nd(
+          'bi',
+          8,
+          95,
+          'mrt',
+          'BI',
+          'dashboards|analysts',
+          'lb',
+          'Consumers',
+          'Analysts',
+          'Dashboards and analysts consume the governed Databricks copy.'
+        ),
+        nd(
+          'replay',
+          1,
+          365,
+          'str',
+          'Replay',
+          'Mongo events|producer',
+          'ls',
+          'Streaming · producer',
+          'Python',
+          'Replays Mongo delivery events into Kafka.'
+        ),
+        nd(
+          'kafka',
+          2,
+          365,
+          'str',
+          'Kafka',
+          'delivery topic|+ DLQ',
+          'ls',
+          'Streaming · event log',
+          'Kafka (KRaft)',
+          'Topic delivery_events.v1 plus a dead-letter queue for rejected events.'
+        ),
+        nd(
+          'spark',
+          3,
+          365,
+          'str',
+          'Spark',
+          'windows|detention',
+          'ls',
+          'Streaming · processing',
+          'PySpark Structured Streaming',
+          'Validates events, builds time windows and computes detention.'
+        ),
+        nd(
+          'realtime',
+          4,
+          365,
+          'str',
+          'realtime',
+          'raw · windows|alerts',
+          'ls',
+          'Streaming · serving',
+          'Postgres realtime schema',
+          'Holds raw events, windows and alerts, separate from silver, gold and marts.'
+        ),
+        nd(
+          'recon',
+          5,
+          365,
+          'str',
+          'reconcile',
+          'vs gold|observational',
+          'ls',
+          'Streaming · reconcile',
+          'Python',
+          'Compares realtime against gold without changing either, and writes results to audit.*.'
+        ),
+      ]
+      const M = Object.fromEntries(N.map((n) => [n.id, n]))
+      const gE = (a, b) => {
+        const x = a.x + a.w,
+          y = a.y + a.h / 2,
+          y2 = b.y + b.h / 2,
+          m = (x + b.x) / 2
+        return `M${x} ${y}C${m} ${y},${m} ${y2},${b.x} ${y2}`
+      }
+      const E = [
+        ['mysql', 'ingest', 'src', 2, 'lb'],
+        ['mongo', 'ingest', 'src', 2, 'lb'],
+        ['ingest', 'bronze', 'brz', 2, 'lb'],
+        ['bronze', 'silver', 'slv', 2, 'lb'],
+        ['silver', 'gold', 'gld', 2, 'lb'],
+        ['gold', 'marts', 'mrt', 2, 'lb'],
+        ['marts', 'publish', 'mrt', 2, 'lb'],
+        ['publish', 'dbx', 'mrt', 2, 'lb'],
+        ['dbx', 'bi', 'mrt', 2, 'lb'],
+        ['replay', 'kafka', 'str', 3, 'ls', 's'],
+        ['kafka', 'spark', 'str', 3, 'ls', 's'],
+        ['spark', 'realtime', 'str', 3, 'ls', 's'],
+        ['realtime', 'recon', 'str', 2, 'ls', 's'],
+      ]
+      const custom = [
+        [`M62 212C62 400,110 400,150 400`, 'str', 3, 'ls', 's'],
+        [
+          `M${X(4) + 30} 165C${X(4) + 30} 270,${X(5) + 78} 270,${X(5) + 78} 365`,
+          'str',
+          2,
+          'ls',
+          's c',
+        ],
+        [`M${X(5) + 22} 365V290`, 'ctl', 0, 'ls', 'c'],
+        ...[1, 3, 6].map((i) => [`M${X(i) + 52} 165V250`, 'ctl', 0, 'lb', 'c']),
+      ]
+      // boxes first
+      N.filter((n) => n.box).forEach((n) => draw(n))
+      const edgeLayer = el('g', {}, svg)
+      function edge(p, c, pk, lane, cls) {
+        const g = el('g', { class: lane }, edgeLayer)
+        el(
+          'path',
+          {
+            d: p,
+            class: 'e ' + (cls || ''),
+            stroke: V(c),
+            'marker-end': 'url(#ar)',
+            style: pk ? '' : 'marker-end:none',
+          },
+          g
+        )
+        const dur = pk > 2 ? 1.6 : 2.8
+        for (let i = 0; i < pk; i++) {
+          const d = el('circle', { r: pk > 2 ? 3 : 3.6, fill: V(c) }, g)
+          el(
+            'animateMotion',
+            {
+              dur: dur + 's',
+              repeatCount: 'indefinite',
+              begin: `-${((dur / pk) * i).toFixed(2)}s`,
+              path: p,
+            },
+            d
+          )
         }
-      });
-
-      const backToTop = document.querySelector(".back-to-top");
-
-      const onScroll = () => {
-        const max = document.documentElement.scrollHeight - window.innerHeight;
-        const percent = max > 0 ? (window.scrollY / max) * 100 : 0;
-        document.documentElement.style.setProperty(
-          "--progress",
-          `${Math.min(100, Math.max(0, percent))}%`,
-        );
-        backToTop?.classList.toggle("is-visible", window.scrollY > 600);
-      };
-
-      window.addEventListener("scroll", onScroll, { passive: true });
-      onScroll();
-
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const numberFormat = new Intl.NumberFormat("en-US");
-      const counters = document.querySelectorAll("[data-count]");
-
-      const animateCount = (element) => {
-        const target = Number(element.dataset.count);
-        const start = performance.now();
-        const duration = 900;
-
-        const tick = (now) => {
-          const progress = Math.min((now - start) / duration, 1);
-          const eased = 1 - Math.pow(1 - progress, 3);
-          element.textContent = numberFormat.format(Math.round(target * eased));
-          if (progress < 1) requestAnimationFrame(tick);
-        };
-
-        requestAnimationFrame(tick);
-      };
-
-      if (reduceMotion || !("IntersectionObserver" in window)) {
-        counters.forEach((element) => {
-          element.textContent = numberFormat.format(Number(element.dataset.count));
-        });
-      } else {
-        const counterObserver = new IntersectionObserver(
-          (entries, observer) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                animateCount(entry.target);
-                observer.unobserve(entry.target);
-              }
-            });
-          },
-          { threshold: 0.5 },
-        );
-        counters.forEach((element) => counterObserver.observe(element));
       }
-
-      const revealItems = document.querySelectorAll(".reveal");
-
-      if (reduceMotion || !("IntersectionObserver" in window)) {
-        revealItems.forEach((element) => element.classList.add("is-visible"));
-      } else {
-        const revealObserver = new IntersectionObserver(
-          (entries, observer) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                entry.target.classList.add("is-visible");
-                observer.unobserve(entry.target);
-              }
-            });
+      E.forEach(([a, b, c, pk, lane, cls]) =>
+        edge(gE(M[a], M[b]), c, pk, lane, cls)
+      )
+      custom.forEach(([p, c, pk, lane, cls]) => edge(p, c, pk, lane, cls))
+      N.filter((n) => !n.box).forEach((n) => draw(n))
+      function draw(n) {
+        const g = el(
+          'g',
+          {
+            class:
+              (n.box ? 'box ' : 'node ') +
+              n.lane +
+              ' ' +
+              (n.box ? '' : '') +
+              '',
+            style: `--c:${V(n.c)}`,
+            tabindex: 0,
+            role: 'button',
+            'data-id': n.id,
+            'aria-label': n.t,
           },
-          { threshold: 0.12 },
-        );
-        revealItems.forEach((element) => revealObserver.observe(element));
-      }
-
-      document.querySelectorAll("[data-copy]").forEach((button) => {
-        button.addEventListener("click", async () => {
-          const code = button.closest(".code-block")?.querySelector("code");
-          if (!code) return;
-
-          try {
-            await navigator.clipboard.writeText(code.textContent.trim());
-            button.textContent = "Copied";
-          } catch {
-            button.textContent = "Select code";
+          svg
+        )
+        el(
+          'rect',
+          { x: n.x, y: n.y, width: n.w, height: n.h, rx: n.box ? 8 : 9 },
+          g
+        )
+        if (n.box) {
+          const t = el(
+            'text',
+            { class: 'l', x: n.x + 10, y: n.y + (n.h < 30 ? 17 : 16) },
+            g
+          )
+          t.textContent = n.l
+          if (n.s) {
+            const s = el('text', { class: 's', x: n.x + 10, y: n.y + 31 }, g)
+            s.textContent = n.s
           }
-
-          window.setTimeout(() => {
-            button.textContent = "Copy";
-          }, 1500);
-        });
-      });
+        } else {
+          const t = el(
+            'text',
+            {
+              class: 'l',
+              x: n.x + W / 2,
+              y: n.y + 27,
+              'text-anchor': 'middle',
+            },
+            g
+          )
+          t.textContent = n.l
+          n.s.split('|').forEach((s, i) => {
+            const e = el(
+              'text',
+              {
+                class: 's',
+                x: n.x + W / 2,
+                y: n.y + 44 + i * 13,
+                'text-anchor': 'middle',
+              },
+              g
+            )
+            e.textContent = s
+          })
+        }
+        g.addEventListener('click', () => show(n.id))
+        g.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            show(n.id)
+          }
+        })
+      }
+      function show(id) {
+        const n = M[id]
+        svg.querySelectorAll('.sel').forEach((e) => e.classList.remove('sel'))
+        svg.querySelector(`[data-id="${id}"]`).classList.add('sel')
+        const pl = n.lane === 'ls' || id === 'strm'
+        $('#info').innerHTML =
+          `<span class="pill" style="color:${V(pl ? 'str' : n.c)}">${pl ? 'Streaming' : 'Live batch'}</span><h3>${n.t}</h3><div class="by">Owner: ${n.o}</div><p>${n.d}</p>`
+      }
+      show('ingest')
+      /* dim toggle */
+      document.querySelectorAll('[data-m]').forEach((b) =>
+        b.addEventListener('click', () => {
+          document
+            .querySelectorAll('[data-m]')
+            .forEach((x) => x.setAttribute('aria-pressed', x === b))
+          svg.dataset.m = b.dataset.m
+        })
+      )
+      /* layers grid */
+      const L = [
+        [
+          'brz',
+          'bronze',
+          12,
+          'Ingestion',
+          'Immutable record of what arrived, with _ingested_at.',
+          0,
+        ],
+        [
+          'slv',
+          'silver',
+          12,
+          'dbt',
+          'One model per source: rename, cast, dedupe, normalise flags, route rejects.',
+          0,
+        ],
+        [
+          'gld',
+          'gold',
+          13,
+          'dbt',
+          'Seven SCD1 dimensions (incl. dim_date) and six incremental facts.',
+          7,
+        ],
+        [
+          'mrt',
+          'marts',
+          7,
+          'dbt',
+          'Six BI grains plus assert_marts_reconcile_to_facts.',
+          6,
+        ],
+        [
+          'air',
+          'Databricks',
+          5,
+          'Publisher',
+          'Read-only Delta copy of approved marts. Driver scorecard excluded.',
+          0,
+        ],
+      ]
+      $('#layers-grid').innerHTML = L.map(
+        ([c, n, k, by, d, r]) =>
+          `<div class="ly" style="--c:${V(c)}"><h3>${n}</h3><div class="n">${k}</div><div class="by">written by ${by}</div><div class="dots">${Array.from(
+            { length: k },
+            (_, i) =>
+              `<i class="${n === 'gold' && i >= r ? 'r' : n === 'marts' && i === r ? 'r' : ''}" style="animation-delay:${(i * 0.14).toFixed(2)}s"></i>`
+          ).join('')}</div><p>${d}</p></div>`
+      ).join('')
+      /* live audit snapshot */
+      const live = JSON.parse($('#live-data').textContent)
+      const batches = live.batches || [],
+        dbtRows = live.dbt || [],
+        dqRows = live.dq || []
+      const batch = [...batches].sort((a, b) =>
+        String(b.started_at || '').localeCompare(String(a.started_at || ''))
+      )[0]
+      const bid = batch && batch.batch_id
+      const rows = dbtRows.filter((r) => r.batch_id === bid)
+      const layer = (s) => rows.filter((r) => r.target_schema === s)
+      const state = (s) => {
+        const x = layer(s)
+        return x.length
+          ? x.some((r) => r.status === 'ERROR')
+            ? 'failed'
+            : 'done'
+          : 'idle'
+      }
+      const logEl = $('#log')
+      const on = (ids, v) =>
+        ids.forEach((id) =>
+          svg.querySelector(`[data-id="${id}"]`)?.classList.toggle('on', v)
+        )
+      function log(t, c) {
+        const d = document.createElement('div')
+        d.innerHTML = `<span style="color:${V(c)}">${t.split('  ')[0]}</span>  ${t
+          .split('  ')
+          .slice(1)
+          .join('  ')}`
+        logEl.appendChild(d)
+        while (logEl.children.length > 14) logEl.firstChild.remove()
+      }
+      if (batch) {
+        const lines = [
+          `batch  #${bid} · ${batch.airflow_dag_id} · ${batch.airflow_run_id}`,
+          `status  ${batch.status}${batch.started_at ? ` · ${batch.started_at}` : ''}`,
+          `tasks   ${batch.tasks_total ?? 0} total · ${batch.tasks_failed ?? 0} failed`,
+          `dbt     ${batch.dbt_nodes_total ?? 0} nodes · ${batch.dbt_nodes_failed ?? 0} failed`,
+          `dq      ${batch.dq_checks_total ?? 0} checks · ${batch.dq_checks_failed ?? 0} failed · ${batch.dq_failing_rows ?? 0} rows`,
+          `recon   ${batch.recon_mismatches ?? 0} mismatches · ${batch.errors_open ?? 0} open errors`,
+        ]
+        lines.forEach((l) => log(l, batch.status === 'SUCCEEDED' ? 'mrt' : 'ctl'))
+        rows
+          .slice(0, 5)
+          .forEach((r) =>
+            log(
+              `dbt ${r.node_name}  ${r.status} · ${r.target_schema}`,
+              r.status === 'ERROR' ? 'ctl' : 'dbt'
+            )
+          )
+        dqRows
+          .filter((r) => r.batch_id === bid)
+          .slice(0, 5)
+          .forEach((r) =>
+            log(
+              `dq ${r.check_name}  ${r.status} · ${r.failing_rows ?? 0} rows`,
+              r.status === 'PASS' ? 'mrt' : 'ctl'
+            )
+          )
+        $('#runlbl').textContent = `live · #${bid}`
+      } else {
+        log('status  no batch in audit.v_batch_summary', 'mut')
+        $('#runlbl').textContent = 'no live run'
+      }
+      const steps = [
+        [
+          'Preflight',
+          'env · connectivity · contracts',
+          batch ? 'done' : 'idle',
+          ['air'],
+        ],
+        [
+          'start_batch',
+          batch ? `control.batch #${bid}` : 'no batch',
+          batch ? 'done' : 'idle',
+          ['ctl'],
+        ],
+        [
+          'Ingest sources',
+          batch
+            ? `${batch.tasks_total ?? 0} tasks · ${batch.tasks_failed ?? 0} failed`
+            : '—',
+          batch ? (batch.tasks_failed > 0 ? 'failed' : 'done') : 'idle',
+          ['mysql', 'mongo', 'ingest', 'bronze'],
+        ],
+        [
+          'ingest_done',
+          'assert 12 task rows',
+          batch && batch.tasks_total >= 12 ? 'done' : 'idle',
+          ['ingest'],
+        ],
+        ['Silver', 'run, then test', state('silver'), ['dbt', 'silver']],
+        ['Gold', 'dims, facts, then test', state('gold'), ['dbt', 'gold']],
+        ['Marts', 'run, then test', state('marts'), ['dbt', 'marts']],
+        [
+          'Publish',
+          'allowlist and reconcile',
+          batch
+            ? batch.recon_mismatches > 0
+              ? 'failed'
+              : batch.finished_at
+                ? 'done'
+                : 'idle'
+            : 'idle',
+          ['publish', 'dbx', 'bi'],
+        ],
+        [
+          'Notify',
+          'finish batch with summary',
+          batch && batch.finished_at ? 'done' : 'idle',
+          ['ctl'],
+        ],
+      ]
+      $('#steps').innerHTML = steps
+        .map(
+          ([n, s, st]) =>
+            `<li class="${st}"><b>${st === 'done' ? '✓' : st === 'failed' ? '✕' : '·'}</b>${n}<small>${s}</small></li>`
+        )
+        .join('')
+      $('#bar').style.width =
+        (steps.filter((s) => s[2] === 'done').length / steps.length) * 100 + '%'
+      const last = [...steps].reverse().find((s) => s[2] !== 'idle')
+      if (last) on(last[3], 1)
+      /* stream lane pulse */
+      const SL = ['replay', 'kafka', 'spark', 'realtime', 'recon']
+      let si = 0
+      setInterval(() => {
+        on(SL, 0)
+        on([SL[si++ % 5]], 1)
+      }, 900)
+      $('#play').addEventListener('click', () => {
+        try {
+          window.parent.location.reload()
+        } catch {
+          location.reload()
+        }
+      })
+      /* ui */
+      const mb = $('#mb'),
+        menu = $('#menu')
+      mb.addEventListener('click', () =>
+        mb.setAttribute('aria-expanded', menu.classList.toggle('open'))
+      )
+      menu.addEventListener('click', (e) => {
+        if (e.target.closest('a')) {
+          menu.classList.remove('open')
+          mb.setAttribute('aria-expanded', 'false')
+        }
+      })
+      document.querySelectorAll('[data-copy]').forEach((b) =>
+        b.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(
+              b.closest('.code').querySelector('code').textContent.trim()
+            )
+            b.textContent = 'Copied'
+          } catch {
+            b.textContent = 'Select code'
+          }
+          setTimeout(() => (b.textContent = 'Copy'), 1500)
+        })
+      )
     </script>
   </body>
 </html>

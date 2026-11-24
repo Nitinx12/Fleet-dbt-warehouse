@@ -294,6 +294,11 @@ stream-demo: check-tools install ## Build a zero-credential fixture batch and dr
 		env-check contracts-check db-init-audit load-fixtures dbt-deps dbt-build \
 		stream-up stream-produce stream-status
 
+## Streamlit
+.PHONY: streamlit
+streamlit: check-version ## Serve app.py with Streamlit using requirements.txt.
+	$(Q)"$(UV)" run --no-sync --with-requirements requirements.txt python -m streamlit run app.py --server.headless true
+
 ## Notebooks
 .PHONY: notebooks
 notebooks: check-version ## Execute EDA notebooks into out/notebooks.
