@@ -4,13 +4,13 @@
 
 **Audience:** Maintainers preparing a release or refreshing the README.
 
-[Back to README](../README.md) · [Results section](../README.md#results)
+[Back to README](../README.md) · [Business insights](../README.md#business-insights)
 
 One vector screenshot is embedded in the README; the remaining captures are still TODO. Do not embed placeholders.
 
 | Asset | Target path | How to capture |
 |---|---|---|
-| Pipeline flow | `assets/screenshots/pipeline_flow.svg` (new) | Dark-theme vector of the source → batch → serving path and independent speed layer; contains no credentials or PII. |
+| Pipeline flow | `assets/screenshots/pipeline_flow.svg` | Vector export of the README architecture Mermaid diagram; no credentials or PII. |
 | Airflow DAG graph | `assets/screenshots/airflow_dag.png` | Run `make airflow-up`, open the Airflow UI, unpause `fleet_daily_load`, wait for one successful run, then save the Graph view. |
 | dbt lineage | `assets/screenshots/dbt_lineage.png` | Run `make dbt-docs ENV=ci`, open `dbt/target/index.html`, choose Lineage, then save the view. |
 | BI dashboard | `assets/screenshots/bi_dashboard.png` | Capture a real dashboard backed by the five published Databricks marts. A BI workspace is not configured in this repo. |
