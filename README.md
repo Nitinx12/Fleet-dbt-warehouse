@@ -69,51 +69,65 @@ flowchart LR
   classDef ctrl fill:#fce4ec,stroke:#c62828,stroke-width:2px,color:#b71c1c
   classDef orch fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#01579b
   classDef speed fill:#ede7f6,stroke:#4527a0,stroke-width:2px,color:#311b92
-  classDef blocked fill:#fce4ec,stroke:#c62828,stroke-width:2px,stroke-dasharray: 5 4,color:#b71c1c
+  classDef blocked fill:#fce4ec,stroke:#c62828,stroke-width:2px,stroke-dasharray:5 4,color:#b71c1c
+
   AF["Airflow<br/>fleet_daily_load"]:::orch
+
   subgraph sources["Sources"]
     MYSQL[("MySQL<br/>fleet_registry")]:::src
     MONGO[("MongoDB<br/>fleet_operations")]:::src
   end
-  subgraph ingestion["Ingestion"]
-    ING["scripts/ingestion.py<br/>contract + watermark"]:::bronze
-  end
-  subgraph warehouse["Postgres warehouse: bronze → silver → gold → marts"]
+
+  ING["scripts/ingestion.py<br/>contract + watermark"]:::bronze
+
+  subgraph warehouse["PostgreSQL warehouse"]
     BRONZE[("bronze<br/>12 landed tables")]:::bronze
-    SILVER[("silver<br/>12 models")]:::silver
-    GOLD[("gold<br/>7 dims + 6 facts")]:::gold
-    MARTS[("marts<br/>6 BI marts + reconcile")]:::mart
+    subgraph dbt["dbt build + test"]
+      SILVER[("silver<br/>12 models")]:::silver
+      GOLD[("gold<br/>7 dims + 6 facts")]:::gold
+      MARTS[("marts<br/>6 BI marts + reconcile")]:::mart
+    end
   end
-  subgraph dbt_layer["dbt"]
-    DBT["dbt build + tests<br/>no enforced contracts yet"]:::silver
-  end
+
+  PUB["publish_marts.py<br/>five-mart allowlist"]:::mart
+
   subgraph databricks["Databricks"]
     DATABRICKS[("approved marts<br/>Delta copy for BI")]:::bi
     BLOCKED["excluded: PII<br/>mart_driver_scorecard_monthly"]:::blocked
   end
-  subgraph control_audit["Control/Audit"]
+
+  subgraph control_audit["Control and audit"]
     CTRL[("control.* + audit.*<br/>batches + evidence")]:::ctrl
   end
+
+  STREAMLIT["Streamlit site<br/>reads 3 audit views"]:::orch
+
   subgraph speed["Speed layer (opt-in)"]
     SPEED["Kafka + Spark<br/>fixture replay"]:::speed
     REALTIME[("realtime.*")]:::speed
     STREAMHEALTH[("audit.stream_health")]:::ctrl
   end
+
   MYSQL --> ING
   MONGO --> ING
   ING --> BRONZE
-  BRONZE --> SILVER
-  SILVER --> GOLD
-  GOLD --> MARTS
-  MARTS -->|"publish_marts.py<br/>five-mart allowlist"| DATABRICKS
-  MARTS -. "not published: PII" .-> BLOCKED
+  BRONZE --> SILVER --> GOLD --> MARTS
+  MARTS --> PUB --> DATABRICKS
+  MARTS -. "not published" .-> BLOCKED
+
   AF -. triggers .-> ING
-  AF -. triggers .-> DBT
-  DBT -. "builds + tests" .-> MARTS
-  MARTS -. "metadata + audit" .-> CTRL
+  AF -. triggers .-> dbt
+  AF -. triggers .-> PUB
+
+  ING -. watermarks .-> CTRL
+  dbt -. invocations .-> CTRL
+  PUB -. reconciliation .-> CTRL
+  CTRL -. read only .-> STREAMLIT
+
   SPEED --> REALTIME
   SPEED -. health .-> STREAMHEALTH
-  style speed stroke-dasharray: 6 4
+
+  style speed stroke-dasharray:6 4
 ```
 
 The batch path above is the governed warehouse. Two observers run alongside it: the opt-in Kafka/Spark speed layer writes only `realtime.*` plus append-only health rows, and the Streamlit site reads only three `audit` views. Neither gates the daily batch. See the [Kafka runbook](kafka/README.md) and [architecture section 8](ARCHITECTURE.md#8-streamlit-project-site).
@@ -124,15 +138,13 @@ The batch path above is the governed warehouse. Two observers run alongside it: 
 |---|---|---|
 | blue | `src` | MySQL and MongoDB sources |
 | orange | `bronze` | Landed tables and ingestion |
-| purple | `silver` | Staging, build and tests |
+| purple | `silver` | Silver models |
 | green | `gold` | Seven dimensions, including `dim_date`, and six facts |
-| teal | `mart` | Six BI marts plus one reconciliation model |
-| amber | `bi` | Databricks and dashboards |
-| pink | `ctrl` | Control, audit and blocked PII paths |
-| light blue | `orch` | Airflow |
+| teal | `mart` | Six BI marts, one reconciliation model and the publisher |
+| amber | `bi` | Databricks Delta copy |
+| pink | `ctrl` | Control, audit and excluded PII paths |
+| light blue | `orch` | Airflow and Streamlit |
 | violet | `speed` | Kafka, Spark and `realtime.*` |
-
----
 
 ## Daily run
 
