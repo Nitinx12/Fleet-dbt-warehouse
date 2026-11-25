@@ -29,6 +29,8 @@ A daily analytics warehouse for fleet logistics operations. Contract-validated e
   <img src="https://img.shields.io/badge/tests-pytest%20%2B%20dbt-0A9EDC?logo=pytest&logoColor=white" alt="pytest and dbt tests">
 </p>
 
+**Live demo:** [YOUR-APP-NAME.streamlit.app](https://fleet-dbt-warehouse-vvdnyjnjo3z4k8gkrjqrhf.streamlit.app/) is a read-only view of the latest pipeline runs, dbt results and data-quality checks.
+
 ## Tech stack
 
 | Layer | Tools |
