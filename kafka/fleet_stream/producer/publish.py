@@ -60,13 +60,22 @@ class KafkaPublisher:
         self._errors += 1
         log.error("kafka delivery failed: %s", error)
 
+    def _enqueue(self, topic: str, value: bytes, key: bytes) -> None:
+        while True:
+            try:
+                self._producer.produce(
+                    topic, value=value, key=key, callback=self._on_delivery
+                )
+                break
+            except BufferError:
+                self._producer.poll(0.1)
+        self._producer.poll(0)
+
     def publish(self, event: Mapping[str, Any]) -> None:
         """Serialise one event as strict JSON and enqueue it by idempotency key."""
         key = "|".join(dedupe_key(event)).encode("utf-8")
         value = json.dumps(event, sort_keys=True, separators=(",", ":")).encode("utf-8")
-        self._producer.produce(
-            self.topic, value=value, key=key, callback=self._on_delivery
-        )
+        self._enqueue(self.topic, value, key)
         self._published += 1
 
     def publish_invalid(self, reason: str, payload: Mapping[str, Any]) -> None:
@@ -85,12 +94,7 @@ class KafkaPublisher:
             separators=(",", ":"),
             default=str,
         ).encode("utf-8")
-        self._producer.produce(
-            self.dlq_topic,
-            value=value,
-            key=reason.encode("utf-8"),
-            callback=self._on_delivery,
-        )
+        self._enqueue(self.dlq_topic, value, reason.encode("utf-8"))
 
     def flush(self) -> None:
         """Wait for delivery and fail closed on undelivered records."""

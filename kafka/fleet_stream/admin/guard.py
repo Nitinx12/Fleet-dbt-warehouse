@@ -12,13 +12,16 @@ class StreamGuardError(RuntimeError):
 
 
 def assert_safe_target(settings: StreamSettings) -> None:
-    """Refuse dev/CI writes to production-named databases or topics."""
+    """Refuse dev/CI writes to unapproved databases or topics."""
     database = os.getenv("PG_DBNAME", "")
     prefix = settings.topic_prefix
     if settings.env in {"dev", "ci"}:
-        if not database.startswith(("fleet_dev", "fleet_it")):
+        allowed = ("fleet_dev", "fleet_it")
+        if settings.env == "dev":
+            allowed += ("fleet_warehouse",)
+        if not database.startswith(allowed):
             raise StreamGuardError(
-                f"ENV={settings.env} may only write fleet_dev or fleet_it_* databases"
+                f"ENV={settings.env} may only write {', '.join(allowed)} databases"
             )
         expected = f"{settings.env}."
         if not prefix.startswith(expected):

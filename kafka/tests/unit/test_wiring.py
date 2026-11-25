@@ -18,6 +18,7 @@ def test_broker_advertises_internal_and_host_listeners() -> None:
     assert "INTERNAL://kafka:9092" in source
     assert "EXTERNAL://localhost:9094" in source
     assert "KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL" in source
+    assert "KAFKA_LOG_DIRS=/var/lib/kafka/data" in source
 
 
 def test_compose_uses_external_port_and_reachable_postgres() -> None:
@@ -28,6 +29,7 @@ def test_compose_uses_external_port_and_reachable_postgres() -> None:
     assert "PG_HOST: ${STREAM_PG_HOST:-host.docker.internal}" in source
     assert "host.docker.internal:host-gateway" in source
     assert "image: ${STREAM_IMAGE:-fleet-stream:local}" in source
+    assert "restart: unless-stopped" in source
 
 
 def test_stream_image_installs_live_source_clients_and_spark_config() -> None:
@@ -41,3 +43,17 @@ def test_stream_image_installs_live_source_clients_and_spark_config() -> None:
     assert "COPY kafka/config/spark-defaults.conf /opt/spark/conf/" in dockerfile
     assert "pymongo" in pyproject
     assert "pymysql" in pyproject
+
+
+def test_host_stream_scripts_load_environment_file() -> None:
+    """Host launchers read .env when dotenv is installed; containers skip it."""
+    for name in (
+        "stream_admin.py",
+        "stream_producer.py",
+        "stream_monitor.py",
+        "stream_reconcile.py",
+        "stream_job.py",
+    ):
+        source = (ROOT / "scripts" / name).read_text(encoding="utf-8")
+        assert 'load_dotenv(ROOT / ".env")' in source, name
+        assert "except ImportError" in source, name

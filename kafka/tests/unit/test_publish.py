@@ -14,10 +14,16 @@ pytestmark = pytest.mark.unit
 class FakeProducer:
     """Capture produce calls without contacting a broker."""
 
-    def __init__(self, remaining: int = 0) -> None:
+    def __init__(self, remaining: int = 0, fail_until_poll: int = 0) -> None:
         self.calls: list[dict[str, Any]] = []
         self.remaining = remaining
         self.flushed = False
+        self.polls = 0
+        self.fail_until_poll = fail_until_poll
+
+    def poll(self, timeout: float) -> int:
+        self.polls += 1
+        return 0
 
     def produce(
         self,
@@ -26,6 +32,8 @@ class FakeProducer:
         key: bytes,
         callback: Any,
     ) -> None:
+        if self.polls < self.fail_until_poll:
+            raise BufferError("Local: Queue full")
         self.calls.append(
             {"topic": topic, "value": value, "key": key, "callback": callback}
         )
@@ -83,3 +91,15 @@ def test_publisher_fails_on_undelivered_records() -> None:
 
     with pytest.raises(PublishError, match="delivery incomplete"):
         publisher.flush()
+
+
+def test_publisher_polls_when_the_local_queue_is_full() -> None:
+    """A full local queue is drained by poll and retried, not raised."""
+    producer = FakeProducer(fail_until_poll=1)
+    publisher = KafkaPublisher("topic", "broker:9092", producer)
+
+    publisher.publish({"event_id": "evt-1", "event_type": "ARRIVED"})
+
+    assert producer.polls >= 2
+    assert publisher.published == 1
+    assert len(producer.calls) == 1

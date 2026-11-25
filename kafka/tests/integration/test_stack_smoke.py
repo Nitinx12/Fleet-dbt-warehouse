@@ -17,11 +17,16 @@ pytestmark = [
 
 def test_topics_and_registration_are_ready() -> None:
     """The replay topic, DLQ and control registration must exist together."""
+    from pathlib import Path
+
     import psycopg2
     from confluent_kafka.admin import AdminClient
+    from dotenv import load_dotenv
     from fleet_stream.contract import load_contract
     from fleet_stream.settings import from_env
 
+    root = Path(__file__).resolve().parents[3]
+    load_dotenv(root / ".env")
     settings = from_env()
     contract = load_contract()
     admin = AdminClient({"bootstrap.servers": settings.bootstrap_servers})

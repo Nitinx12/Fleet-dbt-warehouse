@@ -27,6 +27,26 @@ def test_watermark_is_none_before_first_commit(tmp_path: Path) -> None:
     assert app.read_watermark(tmp_path) is None
 
 
+def test_as_utc_treats_naive_spark_timestamps_as_utc() -> None:
+    """Spark collect() returns naive datetimes; compare them as UTC."""
+    naive = datetime(2026, 1, 1, 8, 0)
+
+    assert app.as_utc(naive) == datetime(2026, 1, 1, 8, 0, tzinfo=UTC)
+    assert app.as_utc(datetime(2026, 1, 1, 8, 0, tzinfo=UTC)) == datetime(
+        2026, 1, 1, 8, 0, tzinfo=UTC
+    )
+
+
+def test_watermark_round_trip_accepts_naive_values(tmp_path: Path) -> None:
+    """A naive batch max can be persisted against an aware checkpoint value."""
+    app.write_watermark(tmp_path, datetime(2026, 1, 1, 8, 0))
+    previous = app.read_watermark(tmp_path)
+    batch_max = app.as_utc(datetime(2026, 1, 1, 9, 0))
+
+    assert previous is not None
+    assert max(previous, batch_max) == batch_max
+
+
 def test_kafka_source_options_use_prefixed_topic(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -28,13 +28,20 @@ class StreamJobError(RuntimeError):
     """Raised when the stream job is not registered or cannot start."""
 
 
+def as_utc(value: datetime) -> datetime:
+    """Spark may return naive timestamps; the session clock is UTC."""
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
 def read_watermark(path: Path) -> datetime | None:
     """Read the last committed event-time watermark from the checkpoint volume."""
     target = path / "watermark.json"
     if not target.exists():
         return None
     data = json.loads(target.read_text(encoding="utf-8"))
-    return datetime.fromisoformat(data["watermark"]).astimezone(UTC)
+    return as_utc(datetime.fromisoformat(data["watermark"]))
 
 
 def write_watermark(path: Path, value: datetime) -> None:
@@ -43,7 +50,7 @@ def write_watermark(path: Path, value: datetime) -> None:
     target = path / "watermark.json"
     temporary = path / "watermark.json.tmp"
     temporary.write_text(
-        json.dumps({"watermark": value.astimezone(UTC).isoformat()}), encoding="utf-8"
+        json.dumps({"watermark": as_utc(value).isoformat()}), encoding="utf-8"
     )
     temporary.replace(target)
 
@@ -138,7 +145,7 @@ def process_batch(
             .filter(F.col("_event_time").isNotNull())
         )
         rows = [row.asDict() for row in valid.collect()]
-        event_times = [row["_event_time"] for row in rows]
+        event_times = [as_utc(row["_event_time"]) for row in rows]
         if not event_times:
             write_health(
                 contract.stream,
@@ -159,7 +166,9 @@ def process_batch(
         window_rows = process_windows(spark, settings, start, end, cutoff)
         alert_rows = process_detention(spark, settings, start, end, cutoff)
 
-        loaded_at = max(parse_source_timestamp(row["loaded_at"]) for row in rows)
+        loaded_at = max(
+            as_utc(parse_source_timestamp(row["loaded_at"])) for row in rows
+        )
         age = max((datetime.now(UTC) - loaded_at).total_seconds(), 0.0)
         write_health(
             contract.stream,

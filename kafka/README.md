@@ -16,8 +16,13 @@ make stream-status
 `make stream-build` builds the local `fleet-stream:local` image. `make stream-up`
 starts the `streaming` Compose profile, creates topics from
 `kafka/config/topics.yml` and enables the row in `control.stream`. Host clients use
-`localhost:9094`; containers use `kafka:9092`. The job consumes only that prefixed
-topic and writes only `realtime.*` plus append-only `audit.stream_health` rows.
+`localhost:9094`; containers use `kafka:9092`. Broker segment data lives on the
+`kafka_data` volume at `/var/lib/kafka/data` (`KAFKA_LOG_DIRS`); both the broker
+and the stream job use `restart: unless-stopped` so a host restart brings the
+stack back without manual intervention. Host launchers load `.env` when
+`python-dotenv` is available; containers take PG and Kafka settings from Compose
+`env_file`. The job consumes only that prefixed topic and writes only `realtime.*`
+plus append-only `audit.stream_health` rows.
 
 `make stream-demo` replays the fixture samples into `fleet_dev` with no source
 credentials. It needs the external Compose network named by `WAREHOUSE_NETWORK`
