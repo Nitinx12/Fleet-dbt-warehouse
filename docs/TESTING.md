@@ -36,8 +36,8 @@ Actions” below.
 
 ## Python suite — `tests/`
 
-`make py-test` runs pytest from the repo root. Current collection is 73 tests:
-52 `unit`, 5 `integration` and 16 `smoke`. Markers are declared in
+`make py-test` runs pytest from the repo root. Current collection is 95 tests:
+71 `unit`, 8 `integration` and 16 `smoke`. Markers are declared in
 `pyproject.toml` and applied automatically from the folder by `tests/conftest.py`.
 
 ```text
@@ -63,7 +63,9 @@ database with `WITH (FORCE)`. Integration tests skip when Postgres is unreachabl
 | `unit/test_load_fixtures.py` | Fixture type mapping, fail-closed guard and source-spec construction. |
 | `unit/test_publish_marts.py` | PII exclusion, Databricks type mapping, SQL escaping, batching, char budgets and handled HTTP errors. |
 | `unit/test_run_notebooks.py` | Missing data directories before a kernel starts. |
+| `unit/test_site_numbers.py` | Fact formats, whole-value bindings, audit view parsing and injected drift. |
 | `integration/conftest.py` | Throwaway Postgres database built from `sql/scripts/01..07`. |
+| `integration/test_site_contract.py` | Site checker, stale facts and placeholder-free render. |
 | `integration/test_audit_db.py` | Audit helpers write only allowed rows and roll back cleanly. |
 | `integration/test_ingestion_fixture.py` | Bronze primary keys and fixture rows through the bronze write path. |
 | `integration/test_notebook_execution.py` | A small notebook runs through a real Jupyter kernel. |
@@ -85,11 +87,11 @@ with the stream stack running.
 
 ## Airflow suite — `airflow/tests/`
 
-`make airflow-test` runs 14 files with `PYTHONPATH=airflow`: 32 collected,
-27 passing and 5 skipped locally. The skips are DAG tests that require the
-Airflow Task SDK installed in the Airflow image, not in the local venv.
+`make airflow-test` runs the DAG and orchestration files with
+`PYTHONPATH=airflow`. Some DAG tests require the Airflow Task SDK installed in
+the Airflow image, not in the local venv.
 `airflow/tests/test_run_dbt.py` exists but is not in the Make target; running
-`PYTHONPATH=airflow pytest airflow/tests` collects all 33.
+`PYTHONPATH=airflow pytest airflow/tests` collects all 34.
 
 | File | Coverage |
 |---|---|

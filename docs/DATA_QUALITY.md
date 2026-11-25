@@ -9,7 +9,7 @@
 | Gate | Verified state | Command |
 |---|---|---|
 | dbt tests | 383 nodes: silver 134, gold 198, marts 51; 348 error and 35 warn | `make dbt-build ENV=ci` |
-| Python tests | 84 collected | `make py-test` |
+| Python tests | 95 collected | `make py-test` |
 | Airflow tests | 34 collected | `PYTHONPATH=airflow uv run --no-sync pytest airflow/tests` |
 | Contracts | 12 sources aligned by index, YAML and dbt source names | `make contracts-check` |
 | CI | 9 jobs in `ci.yml`, plus 1 secret-scan job in `leaks.yml` | `.github/workflows/ci.yml`, `.github/workflows/leaks.yml` |

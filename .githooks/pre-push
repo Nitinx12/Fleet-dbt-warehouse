@@ -35,4 +35,11 @@ for path in paths:
 print(f"  contracts JSON OK ({len(paths)} file(s))")
 PY
 
+# 3. Site numbers must still match the generated facts
+if command -v make >/dev/null 2>&1; then
+  make site-check
+else
+  echo "  (make not found - skipping site number check)" >&2
+fi
+
 echo "✔ pre-push checks passed"

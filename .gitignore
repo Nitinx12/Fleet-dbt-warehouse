@@ -18,7 +18,9 @@ __pycache__/
 .coverage.*
 
 # Project artifacts
+build/
 out/
+
 prod-state/
 *.log
 

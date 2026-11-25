@@ -909,9 +909,12 @@
               ><a class="btn" href="#runbook">Run the demo</a>
             </div>
             <div class="facts">
-              <span>12 contracts</span><span>32 dbt models</span
-              ><span>383 dbt tests</span><span>5 marts published</span
-              ><span>02:00 IST daily</span><span id="nxt">next run soon</span>
+              <span><span data-fact="contracts.total">12</span> contracts</span
+              ><span><span data-fact="dbt.models.total">32</span> dbt models</span
+              ><span><span data-fact="dbt.tests.total">383</span> dbt tests</span
+              ><span><span data-fact="publish.marts.count">5</span> marts published</span
+              ><span><span data-fact="airflow.schedule.time">02:00</span> IST daily</span
+              ><span id="nxt">next run soon</span>
             </div>
           </div>
           <div class="term" aria-label="Live Airflow run log">
@@ -976,7 +979,8 @@
           <p class="note">
             The log and step states come from <code>audit.*</code> views: a
             snapshot taken when the app renders. Production runs at
-            <code>0 2 * * *</code> Asia/Kolkata, <code>catchup=False</code>, one
+            <code data-fact="airflow.schedule.cron">0 2 * * *</code> Asia/Kolkata,
+            <code>catchup=False</code>, one
             active run at a time.
           </p>
         </div>
@@ -1107,16 +1111,26 @@
           </div>
           <div class="q">
             <div>
-              <b>383</b><span>dbt tests: 348 error, 35 warn severity</span>
+              <b data-fact="dbt.tests.total">383</b
+              ><span
+                >dbt tests: <span data-fact="dbt.tests.error">348</span> error,
+                <span data-fact="dbt.tests.warn">35</span> warn severity</span
+              >
             </div>
-            <div><b>104</b><span>Python and Airflow test cases</span></div>
             <div>
-              <b>12</b
+              <b data-fact="tests.collected.combined">129</b
+              ><span>Python and Airflow test cases</span>
+            </div>
+            <div>
+              <b data-fact="contracts.total">12</b
               ><span
                 >contracts checked by <code>make contracts-check</code></span
               >
             </div>
-            <div><b>9</b><span>CI jobs plus full-history Gitleaks</span></div>
+            <div>
+              <b data-fact="ci.jobs.total">9</b
+              ><span>CI jobs plus full-history Gitleaks</span>
+            </div>
           </div>
           <ul class="pii">
             <li>
@@ -1191,22 +1205,46 @@ make publish-marts ENV=dev</code></pre>
           </div>
           <div class="ins">
             <article>
-              <b>55.7%</b>
+              <b data-fact="report.delivery.on_time_rate">55.7%</b>
               <h3>On-time delivery overall</h3>
               <p>
-                170,820 delivery events with an estimated $19.5M detention cost
-                at $75/hour.
+                <span data-fact="report.delivery.events">170,820</span> delivery
+                events with an estimated
+                <span data-fact="report.delivery.total_estimated_detention_cost"
+                  >$19.5M</span
+                >
+                detention cost at
+                <span data-fact="report.delivery.detention_cost_per_hour_usd"
+                  >$75</span
+                >/hour.
               </p>
               <a href="reports/findings/02_delivery_service.json"
                 >Delivery findings →</a
               >
             </article>
             <article>
-              <b>53.4%</b>
+              <b data-fact="report.delivery.worst_facility.on_time_rate"
+                >53.4%</b
+              >
               <h3>Weakest high-volume facility</h3>
               <p>
-                Atlanta Distribution Center: 3,278 events and about $379K
-                detention. First Group carried $689K across 6,002 events.
+                Atlanta Distribution Center:
+                <span data-fact="report.delivery.worst_facility.events"
+                  >3,278</span
+                >
+                events and about
+                <span data-fact="report.delivery.worst_facility.detention_cost"
+                  >$379K</span
+                >
+                detention. First Group carried
+                <span data-fact="report.delivery.top_detention_customer.detention_cost"
+                  >$689K</span
+                >
+                across
+                <span data-fact="report.delivery.top_detention_customer.events"
+                  >6,002</span
+                >
+                events.
               </p>
               <a
                 href="reports/img/02_delivery_service_detention_cost_by_customer.png"
@@ -1214,11 +1252,16 @@ make publish-marts ENV=dev</code></pre>
               >
             </article>
             <article>
-              <b>37.6%</b>
+              <b data-fact="report.safety.preventable_share">37.6%</b>
               <h3>Preventable safety incidents</h3>
               <p>
-                170 incidents produced $2.65M in claims; 64 were marked
-                preventable.
+                <span data-fact="report.safety.incidents">170</span> incidents
+                produced <span data-fact="report.safety.total_claim_amount"
+                  >$2.65M</span
+                >
+                in claims;
+                <span data-fact="report.safety.preventable_incidents">64</span>
+                were marked preventable.
               </p>
               <a
                 href="reports/img/05_safety_preventable_share_by_experience.png"
@@ -1256,7 +1299,21 @@ make publish-marts ENV=dev</code></pre>
     <script id="live-data" type="application/json">
       __LIVE_DATA__
     </script>
+    <script id="site-facts-fallback" type="application/json">
+      {"contracts.total":12,"contracts.mysql":9,"contracts.mongodb":3,"dbt.models.silver":12,"dbt.models.gold":13,"dbt.models.marts":7,"dbt.tests.silver":134,"dbt.tests.gold":198,"dbt.tests.marts":51,"dbt.models.total":32,"dbt.tests.total":383,"dbt.tests.error":348,"dbt.tests.warn":35,"dbt.nodes.total":415,"dbt.sources.total":12,"dbt.gold.dims":7,"dbt.gold.facts":6,"dbt.marts.bi":6,"dbt.marts.reconcile":1,"airflow.version":"3.3.2","airflow.dag_ids":["fleet_daily_load","fleet_report_weekly","fleet_watchdog"],"airflow.schedule.cron":"0 2 * * *","airflow.schedule.timezone":"Asia/Kolkata","airflow.schedule.time":"02:00","airflow.schedule.utc_offset_ms":19800000,"airflow.catchup":false,"airflow.max_active_runs":1,"airflow.retries.ingest":2,"airflow.retries.dbt":0,"airflow.retries.publish":1,"airflow.retries.notify":2,"airflow.tasks.ingest":12,"airflow.tasks.ids":["ingest_done","ingest_mongo__delivery_events","ingest_mongo__maintenance_records","ingest_mongo__safety_incidents","ingest_mysql__customers","ingest_mysql__drivers","ingest_mysql__facilities","ingest_mysql__fuel_purchases","ingest_mysql__loads","ingest_mysql__routes","ingest_mysql__trailers","ingest_mysql__trips","ingest_mysql__trucks","notify_summary","preflight","publish_marts","reconcile_stream","start_batch"],"publish.marts.approved":["mart_sales_daily","mart_equipment_utilization_daily","mart_delivery_performance_daily","mart_customer_service_monthly","mart_truck_cost_monthly"],"publish.marts.blocked":["mart_driver_scorecard_monthly"],"publish.marts.total":6,"publish.marts.count":5,"tests.collected.total":95,"tests.collected.unit":71,"tests.collected.integration":8,"tests.collected.smoke":16,"tests.collected.combined":129,"airflow.tests.total":34,"ci.jobs.total":9,"ci.jobs.secret_scan":1,"report.delivery.detention_cost_per_hour_usd":75.0,"report.delivery.events":170820,"report.delivery.on_time_rate":0.556697108066971,"report.delivery.total_estimated_detention_cost":19545578.25,"report.delivery.worst_facility.on_time_rate":0.5341671751067725,"report.delivery.worst_facility.events":3278,"report.delivery.worst_facility.detention_cost":379248.75,"report.delivery.top_detention_customer.detention_cost":689352.0,"report.delivery.top_detention_customer.events":6002,"report.safety.incidents":170,"report.safety.preventable_incidents":64,"report.safety.preventable_share":0.3764705882352941,"report.safety.total_claim_amount":2653171.82,"report.revenue.top_customer_revenue":9136680.18,"report.revenue.top1_revenue_share":0.03480298001151558,"report.revenue.top10_revenue_share":0.1983382850084902,"streamlit.payload.keys":["batches","dbt","dq"],"streamlit.views.batches.columns":["batch_id","pipeline_name","airflow_dag_id","airflow_run_id","logical_date","status","attempt_number","triggered_by","started_at","finished_at","duration_seconds","error_message","tasks_total","tasks_failed","dbt_nodes_total","dbt_nodes_failed","dq_checks_total","dq_checks_failed","dq_failing_rows","recon_mismatches","errors_open"],"streamlit.views.dbt.columns":["result_id","batch_id","pipeline_name","airflow_dag_id","airflow_run_id","logical_date","batch_status","batch_started_at","dbt_invocation_id","dbt_command","dbt_target","invocation_started_at","exit_code","node_unique_id","node_name","resource_type","target_schema","materialization","status","execution_seconds","rows_affected","message","executed_at"],"streamlit.views.dq.columns":["dq_result_id","batch_id","pipeline_name","airflow_dag_id","airflow_run_id","logical_date","batch_status","batch_started_at","dbt_invocation_id","dbt_command","dbt_target","invocation_started_at","exit_code","check_name","check_type","layer","target_schema","target_table","column_name","severity","status","failing_rows","message","checked_at"]}
+    </script>
+    <script id="site-facts" type="application/json">
+      __SITE_FACTS__
+    </script>
     <script>
+      const FACTS = (() => {
+        try {
+          return JSON.parse(document.getElementById('site-facts').textContent)
+        } catch {
+          return JSON.parse(document.getElementById('site-facts-fallback').textContent)
+        }
+      })()
+      const num = (key) => Number(FACTS[key]).toLocaleString('en-US')
       const $ = (s) => document.querySelector(s),
         NS = 'http://www.w3.org/2000/svg'
       const V = (k) => `var(--${k})`,
@@ -1309,11 +1366,11 @@ make publish-marts ENV=dev</code></pre>
           X(6) + W + 24 - X(1),
           26,
           'air',
-          'Apache Airflow 3.3.2 · fleet_daily_load · 02:00 Asia/Kolkata',
+          `Apache Airflow ${FACTS['airflow.version']} · fleet_daily_load · ${FACTS['airflow.schedule.time']} ${FACTS['airflow.schedule.timezone']}`,
           '',
           'Orchestration',
-          'Apache Airflow 3.3.2',
-          'Airflow only schedules scripts: it triggers ingestion, runs dbt and triggers the publisher. It moves and transforms no data. Runs at 0 2 * * *, catchup=False, one active run at a time.'
+          `Apache Airflow ${FACTS['airflow.version']}`,
+          `Airflow only schedules scripts: it triggers ingestion, runs dbt and triggers the publisher. It moves and transforms no data. Runs at ${FACTS['airflow.schedule.cron']}, catchup=${FACTS['airflow.catchup'] ? 'True' : 'False'}, ${num('airflow.max_active_runs')} active run at a time.`
         ),
         B(
           'dbt',
@@ -1326,7 +1383,7 @@ make publish-marts ENV=dev</code></pre>
           '',
           'Transformation',
           'dbt Core + dbt-postgres',
-          'Models, tests and macros. Each layer is run, then tested. 383 tests: 348 error severity block the batch, 35 warn. No transformation lives in Python.'
+          `Models, tests and macros. Each layer is run, then tested. ${num('dbt.tests.total')} tests: ${num('dbt.tests.error')} error severity block the batch, ${num('dbt.tests.warn')} warn. No transformation lives in Python.`
         ),
         B(
           'ctl',
@@ -1363,11 +1420,11 @@ make publish-marts ENV=dev</code></pre>
           48,
           'src',
           'MySQL',
-          'fleet_registry|9 tables',
+          `fleet_registry|${num('contracts.mysql')} tables`,
           'lb',
           'Source system',
           'Application owner',
-          'Read-only extract of 9 fleet_registry tables. Ingestion never writes back to the source.'
+          `Read-only extract of ${num('contracts.mysql')} fleet_registry tables. Ingestion never writes back to the source.`
         ),
         nd(
           'mongo',
@@ -1375,11 +1432,11 @@ make publish-marts ENV=dev</code></pre>
           148,
           'src',
           'MongoDB',
-          'fleet_operations|3 collections',
+          `fleet_operations|${num('contracts.mongodb')} collections`,
           'lb',
           'Source system',
           'Application owner',
-          'Read-only extract of 3 fleet_operations collections. Delivery events here also feed the replay producer.'
+          `Read-only extract of ${num('contracts.mongodb')} fleet_operations collections. Delivery events here also feed the replay producer.`
         ),
         nd(
           'ingest',
@@ -1399,7 +1456,7 @@ make publish-marts ENV=dev</code></pre>
           95,
           'brz',
           'bronze',
-          '12 raw tables|immutable',
+          `${num('contracts.total')} raw tables|immutable`,
           'lb',
           'Raw landing layer',
           'Ingestion / fixture loader',
@@ -1411,7 +1468,7 @@ make publish-marts ENV=dev</code></pre>
           95,
           'slv',
           'silver',
-          '12 models|cast · dedupe',
+          `${num('dbt.models.silver')} models|cast · dedupe`,
           'lb',
           'Clean layer',
           'dbt',
@@ -1423,11 +1480,11 @@ make publish-marts ENV=dev</code></pre>
           95,
           'gld',
           'gold',
-          '7 dims + 6 facts|star schema',
+          `${num('dbt.gold.dims')} dims + ${num('dbt.gold.facts')} facts|star schema`,
           'lb',
           'Conformed analytics',
           'dbt',
-          'Seven SCD1 dimensions (including dim_date) and six incremental facts forming the conformed star schema.'
+          `${num('dbt.gold.dims')} SCD1 dimensions (including dim_date) and ${num('dbt.gold.facts')} incremental facts forming the conformed star schema.`
         ),
         nd(
           'marts',
@@ -1435,11 +1492,11 @@ make publish-marts ENV=dev</code></pre>
           95,
           'mrt',
           'marts',
-          '6 BI marts|guarded KPIs',
+          `${num('dbt.marts.bi')} BI marts|guarded KPIs`,
           'lb',
           'BI grains',
           'dbt',
-          'Six denormalised, ratio-safe BI marts plus assert_marts_reconcile_to_facts, which proves they tie back to the facts.'
+          `${num('dbt.marts.bi')} denormalised, ratio-safe BI marts plus assert_marts_reconcile_to_facts, which proves they tie back to the facts.`
         ),
         nd(
           'publish',
@@ -1459,11 +1516,11 @@ make publish-marts ENV=dev</code></pre>
           95,
           'mrt',
           'Databricks',
-          '5 Delta marts|non-PII',
+          `${num('publish.marts.count')} Delta marts|non-PII`,
           'lb',
           'Serving copy',
           'Publisher',
-          'Read-only Delta copy of the 5 approved non-PII marts, built for BI.'
+          `Read-only Delta copy of the ${num('publish.marts.count')} approved non-PII marts, built for BI.`
         ),
         nd(
           'bi',
@@ -1700,7 +1757,7 @@ make publish-marts ENV=dev</code></pre>
         [
           'brz',
           'bronze',
-          12,
+          FACTS['contracts.total'],
           'Ingestion',
           'Immutable record of what arrived, with _ingested_at.',
           0,
@@ -1708,7 +1765,7 @@ make publish-marts ENV=dev</code></pre>
         [
           'slv',
           'silver',
-          12,
+          FACTS['dbt.models.silver'],
           'dbt',
           'One model per source: rename, cast, dedupe, normalise flags, route rejects.',
           0,
@@ -1716,23 +1773,23 @@ make publish-marts ENV=dev</code></pre>
         [
           'gld',
           'gold',
-          13,
+          FACTS['dbt.models.gold'],
           'dbt',
-          'Seven SCD1 dimensions (incl. dim_date) and six incremental facts.',
-          7,
+          `${num('dbt.gold.dims')} SCD1 dimensions (incl. dim_date) and ${num('dbt.gold.facts')} incremental facts.`,
+          FACTS['dbt.gold.dims'],
         ],
         [
           'mrt',
           'marts',
-          7,
+          FACTS['dbt.models.marts'],
           'dbt',
-          'Six BI grains plus assert_marts_reconcile_to_facts.',
-          6,
+          `${num('dbt.marts.bi')} BI grains plus assert_marts_reconcile_to_facts.`,
+          FACTS['dbt.marts.bi'],
         ],
         [
           'air',
           'Databricks',
-          5,
+          FACTS['publish.marts.count'],
           'Publisher',
           'Read-only Delta copy of approved marts. Driver scorecard excluded.',
           0,
@@ -1753,12 +1810,12 @@ make publish-marts ENV=dev</code></pre>
         live = JSON.parse($('#live-data').textContent)
       } catch {
         isDemo = true
-        const t = new Date(Date.now() - 36e5).toISOString().slice(0, 19).replace('T', ' '),
-          d = (sc, ns) => ns.map((n) => ({ batch_id: 4821, node_name: n, status: 'SUCCESS', target_schema: sc }))
+        const t = new Date(Date.now() - 36e5).toISOString().slice(0, 19).replace('T', ' '), // data-illustrative
+          d = (sc, ns) => ns.map((n) => ({ batch_id: 4821, node_name: n, status: 'SUCCESS', target_schema: sc })) // data-illustrative
         live = {
-          batches: [{ batch_id: 4821, airflow_dag_id: 'fleet_daily_load', airflow_run_id: 'scheduled__demo', status: 'SUCCEEDED', started_at: t, finished_at: t, tasks_total: 12, tasks_failed: 0, dbt_nodes_total: 415, dbt_nodes_failed: 0, dq_checks_total: 383, dq_checks_failed: 0, dq_failing_rows: 0, recon_mismatches: 0, errors_open: 0 }],
+          batches: [{ batch_id: 4821, airflow_dag_id: 'fleet_daily_load', airflow_run_id: 'scheduled__demo', status: 'SUCCEEDED', started_at: t, finished_at: t, tasks_total: 12, tasks_failed: 0, dbt_nodes_total: 415, dbt_nodes_failed: 0, dq_checks_total: 383, dq_checks_failed: 0, dq_failing_rows: 0, recon_mismatches: 0, errors_open: 0 }], // data-illustrative
           dbt: [...d('silver', ['delivery_events', 'loads', 'drivers']), ...d('gold', ['fct_delivery_events', 'dim_facilities', 'dim_customers']), ...d('marts', ['mart_sales_daily', 'mart_delivery_performance_daily'])],
-          dq: [{ batch_id: 4821, check_name: 'assert_marts_reconcile_to_facts', status: 'PASS', failing_rows: 0 }],
+          dq: [{ batch_id: 4821, check_name: 'assert_marts_reconcile_to_facts', status: 'PASS', failing_rows: 0 }], // data-illustrative
         }
       }
       const batches = live.batches || [],
@@ -1847,8 +1904,8 @@ make publish-marts ENV=dev</code></pre>
         ],
         [
           'ingest_done',
-          'assert 12 task rows',
-          batch && batch.tasks_total >= 12 ? 'done' : 'idle',
+          `assert ${num('airflow.tasks.ingest')} task rows`,
+          batch && batch.tasks_total >= FACTS['airflow.tasks.ingest'] ? 'done' : 'idle',
           ['ingest'],
         ],
         ['Silver', 'run, then test', state('silver'), ['dbt', 'silver']],
@@ -1900,45 +1957,51 @@ make publish-marts ENV=dev</code></pre>
       /* end-to-end data flow replay */
       ;(() => {
         const F = [
-          { c: 'src', t: 'Sources', o: 'MySQL + MongoDB, read-only', u: 'rows read', r: 1, n: 12, ck: 'contracts' },
-          { c: 'brz', t: 'bronze', o: 'scripts/ingestion.py', u: 'rows landed', r: 1, n: 12, ck: 'ingest tasks' },
-          { c: 'slv', t: 'silver', o: 'dbt', u: 'rows cleaned', r: 0.996, n: 134, ck: 'tests' },
-          { c: 'gld', t: 'gold', o: 'dbt', u: 'fact + dim rows', r: 0.996, n: 198, ck: 'tests' },
-          { c: 'mrt', t: 'marts', o: 'dbt', u: 'mart rows', r: 0.021, n: 51, ck: 'tests' },
-          { c: 'air', t: 'Databricks', o: 'scripts/publish_marts.py', u: 'rows synced', r: 0.0175, n: 5, ck: 'marts matched' },
+          { c: 'src', t: 'Sources', o: 'MySQL + MongoDB, read-only', u: 'rows read', r: 1, // data-illustrative
+            n: FACTS['contracts.total'], ck: 'contracts' },
+          { c: 'brz', t: 'bronze', o: 'scripts/ingestion.py', u: 'rows landed', r: 1, // data-illustrative
+            n: FACTS['airflow.tasks.ingest'], ck: 'ingest tasks' },
+          { c: 'slv', t: 'silver', o: 'dbt', u: 'rows cleaned', r: 0.996, // data-illustrative
+            n: FACTS['dbt.tests.silver'], ck: 'tests' },
+          { c: 'gld', t: 'gold', o: 'dbt', u: 'fact + dim rows', r: 0.996, // data-illustrative
+            n: FACTS['dbt.tests.gold'], ck: 'tests' },
+          { c: 'mrt', t: 'marts', o: 'dbt', u: 'mart rows', r: 0.021, // data-illustrative
+            n: FACTS['dbt.tests.marts'], ck: 'tests' },
+          { c: 'air', t: 'Databricks', o: 'scripts/publish_marts.py', u: 'rows synced', r: 0.0175, // data-illustrative
+            n: FACTS['publish.marts.count'], ck: 'marts matched' },
         ]
-        const ist = new Date(Date.now() + 19800000),
+        const ist = new Date(Date.now() + FACTS['airflow.schedule.utc_offset_ms']),
           D = (o) => new Date(ist.getTime() - o * 864e5).toISOString().slice(0, 10),
           y = D(1), td = D(0)
         const R = [
-          { f: [['event_id', '"EVT-4F2A91"'], ['facility', '"Atlanta Distribution Center"'], ['event_type', '"DEPARTED"'], ['arrived_at', `"${y}T21:14:09Z"`], ['departed_at', `"${td}T00:26:09Z"`], ['driver_license', '"GA-5521907"']],
+          { f: [['event_id', '"EVT-4F2A91"'], ['facility', '"Atlanta Distribution Center"'], ['event_type', '"DEPARTED"'], ['arrived_at', `"${y}T21:14:09Z"`], ['departed_at', `"${td}T00:26:09Z"`], ['driver_license', '"GA-5521907"']], // data-illustrative
             n: 'Raw MongoDB document. Sources are read-only, so the pipeline never writes back.' },
-          { f: [['event_id', '"EVT-4F2A91"'], ['facility', '"Atlanta Distribution Center"'], ['arrived_at', `"${y}T21:14:09Z"`], ['departed_at', `"${td}T00:26:09Z"`], ['driver_license', '"GA-5521907"'], ['_batch_id', '4821', 1], ['_loaded_at', `"${td} 02:00:41"`, 1]],
+          { f: [['event_id', '"EVT-4F2A91"'], ['facility', '"Atlanta Distribution Center"'], ['arrived_at', `"${y}T21:14:09Z"`], ['departed_at', `"${td}T00:26:09Z"`], ['driver_license', '"GA-5521907"'], ['_batch_id', '4821', 1], ['_loaded_at', `"${td} 02:00:41"`, 1]], // data-illustrative
             n: 'Landed as received, plus a batch id and load time. Bronze keeps the history of what arrived.' },
-          { f: [['event_id', 'EVT-4F2A91'], ['facility_name', 'Atlanta Distribution Center'], ['arrived_at', `${y} 21:14:09+00`, 1], ['dwell_min', '192', 1], ['license_hash', '9f3c…e1d0', 1], ['rows_per_event_id', '1', 1]],
+          { f: [['event_id', 'EVT-4F2A91'], ['facility_name', 'Atlanta Distribution Center'], ['arrived_at', `${y} 21:14:09+00`, 1], ['dwell_min', '192', 1], ['license_hash', '9f3c…e1d0', 1], ['rows_per_event_id', '1', 1]], // data-illustrative
             n: 'dbt casts text to timestamps, drops duplicate events and hashes the licence number.' },
-          { f: [['facility_key', '17', 1], ['customer_key', '204', 1], ['date_key', y.replace(/-/g, ''), 1], ['dwell_hours', '3.2', 1], ['est_detention_usd', '240.00', 1]],
-            n: 'Joined to dimensions by key. Detention is estimated at $75 per hour.' },
-          { f: [['grain', `${y} · Atlanta DC · DEPARTED`, 1], ['events', '41', 1], ['on_time_events', '22', 1], ['detention_usd', '3,120.00', 1]],
+          { f: [['facility_key', '17', 1], ['customer_key', '204', 1], ['date_key', y.replace(/-/g, ''), 1], ['dwell_hours', '3.2', 1], ['est_detention_usd', '240.00', 1]], // data-illustrative
+            n: `Joined to dimensions by key. Detention is estimated at $${num('report.delivery.detention_cost_per_hour_usd')} per hour.` },
+          { f: [['grain', `${y} · Atlanta DC · DEPARTED`, 1], ['events', '41', 1], ['on_time_events', '22', 1], ['detention_usd', '3,120.00', 1]], // data-illustrative
             n: 'Facts roll up to one row per day, facility and event type. Counts, not ratios, so they stay safe to re-aggregate.' },
-          { f: [['table', 'marts.mart_delivery_performance_daily'], ['row_count_match', 'true', 1], ['pii_columns', '0', 1]],
-            n: 'Only the 5 approved marts sync. The driver scorecard stays in Postgres because it holds a driver name.' },
+          { f: [['table', 'marts.mart_delivery_performance_daily'], ['row_count_match', 'true', 1], ['pii_columns', '0', 1]], // data-illustrative
+            n: `Only the ${num('publish.marts.count')} approved marts sync. The driver scorecard stays in Postgres because it holds a driver name.` },
         ]
         const T = [
-          (c) => [`mysql.fleet_registry  watermark ${c.wm} → ${c.now}`, `mongo.delivery_events  ${c.f(0.31)} documents`, 'contract check  12/12 sources match', `extract  ${c.f(1)} rows across 12 tasks`],
-          (c) => [`bronze.delivery_events  +${c.f(0.31)} rows`, `bronze.loads  +${c.f(0.12)} rows`, `control.watermark  advanced to ${c.now}`, 'ingest_done  12 task rows recorded'],
-          (c) => ['dbt run silver  12 models', `dedupe  ${c.f(0.004)} duplicate rows dropped`, 'hash  licence numbers → license_hash', 'dbt test silver  134 passed'],
-          (c) => ['dbt run gold  13 models', `fct_delivery_events  ${c.f(0.31)} rows`, 'dim_facilities, dim_customers  keys resolved', 'dbt test gold  198 passed'],
-          (c) => ['dbt run marts  7 models', `mart_delivery_performance_daily  ${c.f(0.004)} rows`, 'assert_marts_reconcile_to_facts  0 rows', 'dbt test marts  51 passed'],
-          (c) => ['publish  5 approved marts, driver scorecard blocked', 'reconcile  5/5 row counts match', `audit.pipeline_run_log  batch #${c.id} SUCCEEDED`],
+          (c) => [`mysql.fleet_registry  watermark ${c.wm} → ${c.now}`, `mongo.delivery_events  ${c.f(0.31)} documents`, `contract check  ${num('contracts.total')}/${num('contracts.total')} sources match`, `extract  ${c.f(1)} rows across ${num('airflow.tasks.ingest')} tasks`],
+          (c) => [`bronze.delivery_events  +${c.f(0.31)} rows`, `bronze.loads  +${c.f(0.12)} rows`, `control.watermark  advanced to ${c.now}`, `ingest_done  ${num('airflow.tasks.ingest')} task rows recorded`],
+          (c) => [`dbt run silver  ${num('dbt.models.silver')} models`, `dedupe  ${c.f(0.004)} duplicate rows dropped`, 'hash  licence numbers → license_hash', `dbt test silver  ${num('dbt.tests.silver')} passed`],
+          (c) => [`dbt run gold  ${num('dbt.models.gold')} models`, `fct_delivery_events  ${c.f(0.31)} rows`, 'dim_facilities, dim_customers  keys resolved', `dbt test gold  ${num('dbt.tests.gold')} passed`],
+          (c) => [`dbt run marts  ${num('dbt.models.marts')} models`, `mart_delivery_performance_daily  ${c.f(0.004)} rows`, 'assert_marts_reconcile_to_facts  0 rows', `dbt test marts  ${num('dbt.tests.marts')} passed`],
+          (c) => [`publish  ${num('publish.marts.count')} approved marts, driver scorecard blocked`, `reconcile  ${num('publish.marts.count')}/${num('publish.marts.count')} row counts match`, `audit.pipeline_run_log  batch #${c.id} SUCCEEDED`],
         ]
         const flow = $('#flow'), rec = $('#rec'), feed = $('#feed'), pk = $('#pk')
         flow.innerHTML = F.map((s, j) => `<div class="fc" data-j="${j}" style="--c:${V(s.c)}" tabindex="0" role="button" aria-label="Show record at ${s.t}"><h3>${s.t}</h3><span class="num">0</span><small>${s.u}</small><div class="bar"><i></i></div><div class="mt"><span class="ck"></span><em class="st">waiting</em></div><small>${s.o}</small></div>`).join('')
         const cs = [...flow.children]
         let base, i, p, hold, fired, runs = 0, sp = 1, paused = false, pin = null, shown = -1
         const fmt = (n) => Math.round(n).toLocaleString('en-US')
-        const clock = () => new Date(Date.now() + 19800000).toISOString().slice(11, 19)
-        const ctx = () => ({ wm: y + ' 02:00', now: td + ' 02:00', id: (typeof bid === 'number' ? bid : 4821) + runs, f: (x) => fmt(base * x) })
+        const clock = () => new Date(Date.now() + FACTS['airflow.schedule.utc_offset_ms']).toISOString().slice(11, 19)
+        const ctx = () => ({ wm: y + ` ${FACTS['airflow.schedule.time']}`, now: td + ` ${FACTS['airflow.schedule.time']}`, id: (typeof bid === 'number' ? bid : 4821) + runs, f: (x) => fmt(base * x) }) // data-illustrative
         function push(t, c) {
           const d = document.createElement('div')
           d.innerHTML = `<span style="color:${V(c)}">${clock()}</span>  ${t}`
@@ -2007,10 +2070,11 @@ make publish-marts ENV=dev</code></pre>
         if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
           paused = true; $('#fp').textContent = '▶ Play'; i = F.length; p = 0; paint()
         }
-        /* hero countdown to the 02:00 IST schedule */
+        /* hero countdown to the daily schedule */
+        const [schedHour, schedMinute] = FACTS['airflow.schedule.time'].split(':').map(Number)
         const nxt = $('#nxt'), nextRun = () => {
-          const n = Date.now(), o = 19800000, t = new Date(n + o)
-          t.setUTCHours(2, 0, 0, 0)
+          const n = Date.now(), o = FACTS['airflow.schedule.utc_offset_ms'], t = new Date(n + o)
+          t.setUTCHours(schedHour, schedMinute, 0, 0)
           let r = t.getTime() - o
           if (r <= n) r += 864e5
           return Math.floor((r - n) / 1000)

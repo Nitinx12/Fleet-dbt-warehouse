@@ -51,7 +51,7 @@ A daily analytics warehouse for fleet logistics operations. Contract-validated e
 
 - 12 source tables (9 MySQL, 3 MongoDB) feed 32 dbt models: 12 silver, 13 gold and 7 marts.
 - 5 approved marts publish to Databricks; `mart_driver_scorecard_monthly` is excluded because it carries a driver display name.
-- 383 dbt tests and 118 collected Python/Airflow tests; 12 source contracts are checked by `make contracts-check`.
+- 383 dbt tests and 129 collected Python/Airflow tests; 12 source contracts are checked by `make contracts-check`.
 - `fleet_daily_load` runs at `0 2 * * *` in `Asia/Kolkata`, with batches and watermarks in `control.*` and `audit.*`.
 - PII is reduced early: licence numbers hashed, dates of birth banded, fuel cards masked, one driver mart excluded.
 - The opt-in Kafka/Spark speed layer writes only `realtime.*` and `audit.stream_health`.
@@ -199,12 +199,12 @@ DAG file: `airflow/dags/fleet_dbt_daliy.py`. Schedule: `0 2 * * *` in `Asia/Kolk
 | dbt models | 32 (12 silver, 13 gold, 7 marts) | `dbt/target/manifest.json` |
 | dbt tests | 383 (348 error, 35 warn) | `dbt/target/manifest.json` |
 | Published marts | 5 | `scripts/publish_marts.py` |
-| Python/Airflow tests | 118 collected (84 + 34) | pytest collection |
+| Python/Airflow tests | 129 collected (95 + 34) | pytest collection |
 | CI jobs | 9, plus 1 secret-scan job | `.github/workflows/` |
 
 ## Data quality and testing
 
-383 dbt tests split 134 silver, 198 gold and 51 marts. Python has 84 collected tests and Airflow 34; 12 contracts are checked and CI has 9 jobs plus Gitleaks. There are no enforced dbt contracts. Full gate table: [data quality](docs/DATA_QUALITY.md); inventory: [testing](docs/TESTING.md).
+383 dbt tests split 134 silver, 198 gold and 51 marts. Python has 95 collected tests and Airflow 34; 12 contracts are checked and CI has 9 jobs plus Gitleaks. There are no enforced dbt contracts. Full gate table: [data quality](docs/DATA_QUALITY.md); inventory: [testing](docs/TESTING.md); site numbers: [site facts](docs/SITE.md).
 
 ## Key design decisions
 
