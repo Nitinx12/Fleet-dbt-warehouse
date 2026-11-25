@@ -61,6 +61,8 @@ jobs:
         run: make install
       - name: Run Ruff
         run: make lint-fast
+      - name: Check site numbers
+        run: make site-browser-smoke
 
   unit-tests:
     name: Unit tests

@@ -18,6 +18,9 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
 
 ### Added
 
+- Provable project-site numbers: generated facts with provenance, a strict
+  HTML/JS checker, Streamlit fact injection, a standalone renderer, a
+  zero-dependency browser smoke check and `docs/SITE.md`.
 - Streaming foundation: strict `delivery_events.v1` contract, Kafka topic config,
   `realtime`/`control.stream`/`audit.stream_health` DDL, environment placeholders,
   locked Kafka/Spark dependency groups, Make targets and contract alignment checks.
