@@ -3,6 +3,7 @@
 import json
 import math
 from collections.abc import Callable
+from pathlib import Path
 
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -76,3 +77,14 @@ def inject_payload(html: str, payload: dict) -> str:
         "<", "\\u003c"
     )
     return html.replace("__LIVE_DATA__", data)
+
+
+def inject_facts(html: str, facts: dict | None = None) -> str:
+    """Replace the site-facts placeholder with the committed fact JSON."""
+    if facts is None:
+        path = Path(__file__).resolve().parents[1] / "site" / "facts.json"
+        facts = json.loads(path.read_text(encoding="utf-8"))
+    data = json.dumps(_json_safe(facts), default=str, allow_nan=False).replace(
+        "<", "\\u003c"
+    )
+    return html.replace("__SITE_FACTS__", data)

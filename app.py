@@ -16,6 +16,7 @@ ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT / ".streamlit"))
 _state = import_module("streamlit_state")
 audit_error = _state.audit_error
+inject_facts = _state.inject_facts
 inject_payload = _state.inject_payload
 live_payload = _state.live_payload
 
@@ -48,7 +49,7 @@ def load_site(live: dict) -> str:
         rf'href="{REPO}/blob/{BRANCH}/\1" target="_blank" rel="noreferrer"',
         html,
     )
-    return inject_payload(html, live)
+    return inject_payload(inject_facts(html), live)
 
 
 def db_configured() -> bool:
