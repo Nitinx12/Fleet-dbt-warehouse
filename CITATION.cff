@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this project, please cite it using the metadata below."
+type: software
+title: "Fleet dbt Warehouse"
+abstract: >-
+  A daily analytics warehouse for fleet logistics operations. Contract-validated
+  extracts from MySQL and MongoDB land in PostgreSQL bronze, dbt transforms them
+  through silver and gold into BI marts, and five approved non-PII marts are
+  published to Databricks. Airflow orchestrates the daily run, and a read-only
+  Streamlit site shows live run, dbt and data-quality audit status.
+authors:
+  - given-names: "Nitin"
+    alias: "Nitinx12"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+    # email: "you@example.com"
+repository-code: "https://github.com/Nitinx12/Fleet-dbt-warehouse"
+url: "https://fleet-dbt-warehouse-vvdnyjnjo3z4k8gkrjqrhf.streamlit.app/"
+license: MIT
+version: "1.0.0"
+date-released: "2026-11-25"
+keywords:
+  - data engineering
+  - data warehouse
+  - dbt
+  - Apache Airflow
+  - PostgreSQL
+  - Databricks
+  - Streamlit
+  - medallion architecture
+  - data contracts
+  - logistics
+  - fleet management
