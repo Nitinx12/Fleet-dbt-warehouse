@@ -1,0 +1,459 @@
+{
+  "contracts.total": {
+    "value": 12,
+    "source": "contracts/sources_index.json",
+    "how": "count contracts/sources_index.json entries by source prefix"
+  },
+  "contracts.mysql": {
+    "value": 9,
+    "source": "contracts/sources_index.json",
+    "how": "count contracts/sources_index.json entries by source prefix"
+  },
+  "contracts.mongodb": {
+    "value": 3,
+    "source": "contracts/sources_index.json",
+    "how": "count contracts/sources_index.json entries by source prefix"
+  },
+  "dbt.models.silver": {
+    "value": 12,
+    "source": "dbt/models/bronze/sources.yml",
+    "how": "count manifest.json nodes by resource_type, fqn layer and severity"
+  },
+  "dbt.models.gold": {
+    "value": 13,
+    "source": "dbt/models/bronze/sources.yml",
+    "how": "count manifest.json nodes by resource_type, fqn layer and severity"
+  },
+  "dbt.models.marts": {
+    "value": 7,
+    "source": "dbt/models/bronze/sources.yml",
+    "how": "count manifest.json nodes by resource_type, fqn layer and severity"
+  },
+  "dbt.tests.silver": {
+    "value": 134,
+    "source": "dbt/models/bronze/sources.yml",
+    "how": "count manifest.json nodes by resource_type, fqn layer and severity"
+  },
+  "dbt.tests.gold": {
+    "value": 198,
+    "source": "dbt/models/bronze/sources.yml",
+    "how": "count manifest.json nodes by resource_type, fqn layer and severity"
+  },
+  "dbt.tests.marts": {
+    "value": 51,
+    "source": "dbt/models/bronze/sources.yml",
+    "how": "count manifest.json nodes by resource_type, fqn layer and severity"
+  },
+  "dbt.models.total": {
+    "value": 32,
+    "source": "dbt/models/bronze/sources.yml",
+    "how": "count manifest.json nodes by resource_type, fqn layer and severity"
+  },
+  "dbt.tests.total": {
+    "value": 383,
+    "source": "dbt/models/bronze/sources.yml",
+    "how": "count manifest.json nodes by resource_type, fqn layer and severity"
+  },
+  "dbt.tests.error": {
+    "value": 348,
+    "source": "dbt/models/bronze/sources.yml",
+    "how": "count manifest.json nodes by resource_type, fqn layer and severity"
+  },
+  "dbt.tests.warn": {
+    "value": 35,
+    "source": "dbt/models/bronze/sources.yml",
+    "how": "count manifest.json nodes by resource_type, fqn layer and severity"
+  },
+  "dbt.nodes.total": {
+    "value": 415,
+    "source": "dbt/models/bronze/sources.yml",
+    "how": "count manifest.json nodes by resource_type, fqn layer and severity"
+  },
+  "dbt.sources.total": {
+    "value": 12,
+    "source": "dbt/models/bronze/sources.yml",
+    "how": "count tables in the only dbt source declaration"
+  },
+  "dbt.gold.dims": {
+    "value": 7,
+    "source": "dbt/models/gold/*.sql",
+    "how": "count gold dim models"
+  },
+  "dbt.gold.facts": {
+    "value": 6,
+    "source": "dbt/models/gold/*.sql",
+    "how": "count gold fact models"
+  },
+  "dbt.marts.bi": {
+    "value": 6,
+    "source": "dbt/models/marts/*.sql",
+    "how": "count mart_* models"
+  },
+  "dbt.marts.reconcile": {
+    "value": 1,
+    "source": "dbt/models/marts/*.sql",
+    "how": "count reconciliation models in the mart layer"
+  },
+  "airflow.version": {
+    "value": "3.3.2",
+    "source": "airflow/compose.yml",
+    "how": "read AIRFLOW_VERSION default"
+  },
+  "airflow.dag_ids": {
+    "value": [
+      "fleet_daily_load",
+      "fleet_report_weekly",
+      "fleet_watchdog"
+    ],
+    "source": "airflow/dags",
+    "how": "parse DAG() dag_id in every DAG file"
+  },
+  "airflow.schedule.cron": {
+    "value": "0 2 * * *",
+    "source": "airflow/dags/fleet_dbt_daliy.py",
+    "how": "read DAG schedule keyword"
+  },
+  "airflow.schedule.timezone": {
+    "value": "Asia/Kolkata",
+    "source": "airflow/dags/fleet_dbt_daliy.py",
+    "how": "read DAG start_date tz keyword"
+  },
+  "airflow.schedule.time": {
+    "value": "02:00",
+    "source": "airflow/dags/fleet_dbt_daliy.py",
+    "how": "format cron hour and minute"
+  },
+  "airflow.schedule.utc_offset_ms": {
+    "value": 19800000,
+    "source": "airflow/dags/fleet_dbt_daliy.py",
+    "how": "derive UTC offset from the DAG timezone"
+  },
+  "airflow.catchup": {
+    "value": false,
+    "source": "airflow/dags/fleet_dbt_daliy.py",
+    "how": "read DAG catchup keyword"
+  },
+  "airflow.max_active_runs": {
+    "value": 1,
+    "source": "airflow/dags/fleet_dbt_daliy.py",
+    "how": "read DAG max_active_runs keyword"
+  },
+  "airflow.retries.ingest": {
+    "value": 2,
+    "source": "airflow/dags/fleet_dbt_daliy.py",
+    "how": "read @task retries"
+  },
+  "airflow.retries.dbt": {
+    "value": 0,
+    "source": "airflow/dags/fleet_dbt_daliy.py",
+    "how": "read @task retries"
+  },
+  "airflow.retries.publish": {
+    "value": 1,
+    "source": "airflow/dags/fleet_dbt_daliy.py",
+    "how": "read @task retries"
+  },
+  "airflow.retries.notify": {
+    "value": 2,
+    "source": "airflow/dags/fleet_dbt_daliy.py",
+    "how": "read @task retries"
+  },
+  "airflow.tasks.ingest": {
+    "value": 12,
+    "source": "airflow/dags/fleet_dbt_daliy.py",
+    "how": "count tables in INGEST_TIERS"
+  },
+  "airflow.tasks.ids": {
+    "value": [
+      "ingest_done",
+      "ingest_mongo__delivery_events",
+      "ingest_mongo__maintenance_records",
+      "ingest_mongo__safety_incidents",
+      "ingest_mysql__customers",
+      "ingest_mysql__drivers",
+      "ingest_mysql__facilities",
+      "ingest_mysql__fuel_purchases",
+      "ingest_mysql__loads",
+      "ingest_mysql__routes",
+      "ingest_mysql__trailers",
+      "ingest_mysql__trips",
+      "ingest_mysql__trucks",
+      "notify_summary",
+      "preflight",
+      "publish_marts",
+      "reconcile_stream",
+      "start_batch"
+    ],
+    "source": "airflow/dags/fleet_dbt_daliy.py",
+    "how": "parse @task ids, overrides and INGEST_TIERS"
+  },
+  "publish.marts.approved": {
+    "value": [
+      "mart_sales_daily",
+      "mart_equipment_utilization_daily",
+      "mart_delivery_performance_daily",
+      "mart_customer_service_monthly",
+      "mart_truck_cost_monthly"
+    ],
+    "source": "scripts/publish_marts.py",
+    "how": "parse PUBLISHABLE_MARTS"
+  },
+  "publish.marts.blocked": {
+    "value": [
+      "mart_driver_scorecard_monthly"
+    ],
+    "source": "dbt/models/marts/*.sql",
+    "how": "mart models not in the allowlist"
+  },
+  "publish.marts.total": {
+    "value": 6,
+    "source": "dbt/models/marts/*.sql",
+    "how": "count mart_* models"
+  },
+  "publish.marts.count": {
+    "value": 5,
+    "source": "scripts/publish_marts.py",
+    "how": "parse PUBLISHABLE_MARTS"
+  },
+  "tests.collected.total": {
+    "value": 95,
+    "source": "python -m pytest --collect-only -q",
+    "how": "parse pytest collect-only totals"
+  },
+  "tests.collected.unit": {
+    "value": 71,
+    "source": "python -m pytest --collect-only -q",
+    "how": "parse pytest collect-only totals"
+  },
+  "tests.collected.integration": {
+    "value": 8,
+    "source": "python -m pytest --collect-only -q",
+    "how": "parse pytest collect-only totals"
+  },
+  "tests.collected.smoke": {
+    "value": 16,
+    "source": "python -m pytest --collect-only -q",
+    "how": "parse pytest collect-only totals"
+  },
+  "tests.collected.combined": {
+    "value": 129,
+    "source": "python -m pytest --collect-only -q",
+    "how": "add tests/ and airflow/tests collections"
+  },
+  "airflow.tests.total": {
+    "value": 34,
+    "source": "PYTHONPATH=airflow python -m pytest --collect-only -q airflow/tests",
+    "how": "parse pytest collect-only totals"
+  },
+  "ci.jobs.total": {
+    "value": 9,
+    "source": ".github/workflows/ci.yml",
+    "how": "count jobs keys in ci.yml"
+  },
+  "ci.jobs.secret_scan": {
+    "value": 1,
+    "source": ".github/workflows/leaks.yml",
+    "how": "count gitleaks jobs in leaks.yml"
+  },
+  "report.delivery.detention_cost_per_hour_usd": {
+    "value": 75.0,
+    "source": "reports/findings/02_delivery_service.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.delivery.events": {
+    "value": 170820,
+    "source": "reports/findings/02_delivery_service.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.delivery.on_time_rate": {
+    "value": 0.556697108066971,
+    "source": "reports/findings/02_delivery_service.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.delivery.total_estimated_detention_cost": {
+    "value": 19545578.25,
+    "source": "reports/findings/02_delivery_service.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.delivery.worst_facility.on_time_rate": {
+    "value": 0.5341671751067725,
+    "source": "reports/findings/02_delivery_service.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.delivery.worst_facility.events": {
+    "value": 3278,
+    "source": "reports/findings/02_delivery_service.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.delivery.worst_facility.detention_cost": {
+    "value": 379248.75,
+    "source": "reports/findings/02_delivery_service.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.delivery.top_detention_customer.detention_cost": {
+    "value": 689352.0,
+    "source": "reports/findings/02_delivery_service.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.delivery.top_detention_customer.events": {
+    "value": 6002,
+    "source": "reports/findings/02_delivery_service.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.safety.incidents": {
+    "value": 170,
+    "source": "reports/findings/05_safety.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.safety.preventable_incidents": {
+    "value": 64,
+    "source": "reports/findings/05_safety.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.safety.preventable_share": {
+    "value": 0.3764705882352941,
+    "source": "reports/findings/05_safety.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.safety.total_claim_amount": {
+    "value": 2653171.82,
+    "source": "reports/findings/05_safety.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.revenue.top_customer_revenue": {
+    "value": 9136680.18,
+    "source": "reports/findings/01_revenue_concentration.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.revenue.top1_revenue_share": {
+    "value": 0.03480298001151558,
+    "source": "reports/findings/01_revenue_concentration.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "report.revenue.top10_revenue_share": {
+    "value": 0.1983382850084902,
+    "source": "reports/findings/01_revenue_concentration.json",
+    "how": "read the named field from the committed findings JSON"
+  },
+  "streamlit.payload.keys": {
+    "value": [
+      "batches",
+      "dbt",
+      "dq"
+    ],
+    "source": ".streamlit/streamlit_state.py",
+    "how": "parse dict keys returned by live_payload"
+  },
+  "streamlit.views.batches.columns": {
+    "value": [
+      "batch_id",
+      "pipeline_name",
+      "airflow_dag_id",
+      "airflow_run_id",
+      "logical_date",
+      "status",
+      "attempt_number",
+      "triggered_by",
+      "started_at",
+      "finished_at",
+      "duration_seconds",
+      "error_message",
+      "tasks_total",
+      "tasks_failed",
+      "dbt_nodes_total",
+      "dbt_nodes_failed",
+      "dq_checks_total",
+      "dq_checks_failed",
+      "dq_failing_rows",
+      "recon_mismatches",
+      "errors_open"
+    ],
+    "source": "sql/scripts/06_audit_relationships.sql",
+    "how": "parse SELECT aliases of the audit view"
+  },
+  "streamlit.views.dbt.columns": {
+    "value": [
+      "result_id",
+      "batch_id",
+      "pipeline_name",
+      "airflow_dag_id",
+      "airflow_run_id",
+      "logical_date",
+      "batch_status",
+      "batch_started_at",
+      "dbt_invocation_id",
+      "dbt_command",
+      "dbt_target",
+      "invocation_started_at",
+      "exit_code",
+      "node_unique_id",
+      "node_name",
+      "resource_type",
+      "target_schema",
+      "materialization",
+      "status",
+      "execution_seconds",
+      "rows_affected",
+      "message",
+      "executed_at"
+    ],
+    "source": "sql/scripts/06_audit_relationships.sql",
+    "how": "parse SELECT aliases of the audit view"
+  },
+  "streamlit.views.dq.columns": {
+    "value": [
+      "dq_result_id",
+      "batch_id",
+      "pipeline_name",
+      "airflow_dag_id",
+      "airflow_run_id",
+      "logical_date",
+      "batch_status",
+      "batch_started_at",
+      "dbt_invocation_id",
+      "dbt_command",
+      "dbt_target",
+      "invocation_started_at",
+      "exit_code",
+      "check_name",
+      "check_type",
+      "layer",
+      "target_schema",
+      "target_table",
+      "column_name",
+      "severity",
+      "status",
+      "failing_rows",
+      "message",
+      "checked_at"
+    ],
+    "source": "sql/scripts/06_audit_relationships.sql",
+    "how": "parse SELECT aliases of the audit view"
+  },
+  "meta.inputs": {
+    "value": [
+      ".github/workflows/ci.yml",
+      ".github/workflows/leaks.yml",
+      ".streamlit/streamlit_state.py",
+      "airflow/compose.yml",
+      "airflow/dags/fleet_dbt_daliy.py",
+      "airflow/dags/fleet_report_weekly.py",
+      "airflow/dags/fleet_watchdog.py",
+      "airflow/tests",
+      "contracts/sources_index.json",
+      "dbt/models/marts/*.sql",
+      "dbt/target/manifest.json",
+      "index.html",
+      "pyproject.toml",
+      "reports/findings/01_revenue_concentration.json",
+      "reports/findings/02_delivery_service.json",
+      "reports/findings/05_safety.json",
+      "scripts/publish_marts.py",
+      "scripts/site_facts.py",
+      "sql/scripts/06_audit_relationships.sql",
+      "tests"
+    ],
+    "source": "scripts/site_facts.py",
+    "how": "files and commands read by this collector"
+  }
+}

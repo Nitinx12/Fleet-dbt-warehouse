@@ -1,0 +1,95 @@
+formats:
+  contracts.total: count
+  contracts.mysql: count
+  contracts.mongodb: count
+  dbt.models.total: count
+  dbt.models.silver: count
+  dbt.models.gold: count
+  dbt.models.marts: count
+  dbt.tests.total: count
+  dbt.tests.silver: count
+  dbt.tests.gold: count
+  dbt.tests.marts: count
+  dbt.tests.error: count
+  dbt.tests.warn: count
+  dbt.nodes.total: count
+  dbt.sources.total: count
+  dbt.gold.dims: count
+  dbt.gold.facts: count
+  dbt.marts.bi: count
+  dbt.marts.reconcile: count
+  airflow.version: string
+  airflow.dag_ids: list
+  airflow.schedule.cron: string
+  airflow.schedule.timezone: string
+  airflow.schedule.time: string
+  airflow.schedule.utc_offset_ms: count
+  airflow.catchup: bool
+  airflow.max_active_runs: count
+  airflow.retries.ingest: count
+  airflow.retries.dbt: count
+  airflow.retries.publish: count
+  airflow.retries.notify: count
+  airflow.tasks.ingest: count
+  airflow.tasks.ids: list
+  publish.marts.approved: list
+  publish.marts.blocked: list
+  publish.marts.total: count
+  publish.marts.count: count
+  ci.jobs.total: count
+  ci.jobs.secret_scan: count
+  tests.collected.total: count
+  tests.collected.unit: count
+  tests.collected.integration: count
+  tests.collected.smoke: count
+  tests.collected.combined: count
+  airflow.tests.total: count
+  report.delivery.detention_cost_per_hour_usd: usd_int
+  report.delivery.events: count
+  report.delivery.on_time_rate: percent1
+  report.delivery.total_estimated_detention_cost: usd_m1
+  report.delivery.worst_facility.on_time_rate: percent1
+  report.delivery.worst_facility.events: count
+  report.delivery.worst_facility.detention_cost: usd_k0
+  report.delivery.top_detention_customer.detention_cost: usd_k0
+  report.delivery.top_detention_customer.events: count
+  report.safety.incidents: count
+  report.safety.preventable_incidents: count
+  report.safety.preventable_share: percent1
+  report.safety.total_claim_amount: usd_m2
+  report.revenue.top_customer_revenue: usd_m2
+  report.revenue.top1_revenue_share: percent1
+  report.revenue.top10_revenue_share: percent1
+  streamlit.payload.keys: list
+  streamlit.views.batches.columns: list
+  streamlit.views.dbt.columns: list
+  streamlit.views.dq.columns: list
+  meta.inputs: list
+
+rules:
+  - reason: CSS declaration or media query
+    kinds: [css]
+  - reason: SVG geometry and marker path
+    pattern: 'viewBox=|class="e|marker|animateMotion|<svg|<path|stroke-dasharray|transform'
+  - reason: ARIA and tabindex value
+    pattern: 'tabindex=|aria-'
+  - reason: local UI port
+    pattern: 'localhost:8080'
+  - reason: copyright year
+    pattern: '© 2026'
+  - reason: replay speed control
+    pattern: 'data-sp=|×'
+  - reason: asset names, CSS classes and inline styles
+    kinds: [attr]
+    pattern: 'charset|viewport|initial-scale|github.com/Nitinx12|logo_1|box2|style=|tabindex|w3.org|aria-'
+  - reason: report filename prefixes
+    kinds: [attr]
+    pattern: 'reports/(findings|img)/\d\d_'
+  - reason: topic and SCD version names
+    pattern: 'delivery_events\.v\d|SCD\d'
+  - reason: ISO time slice indexes
+    kinds: [js]
+    pattern: '\.slice\(11, 19\)'
+  - reason: JavaScript presentation constants not sourced from facts
+    kinds: [js]
+    pattern: '^(?!.*FACTS\[).*$'
