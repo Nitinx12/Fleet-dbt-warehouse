@@ -81,11 +81,20 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
   schemas on `fleet_dev`.
 - Report scripts aggregate entirely in Postgres SQL and use pandas only for
   plotting and layout, with `make report` regenerating charts and findings JSON.
+- Streaming insight section (`reports/scripts/08_streaming.py`): six charts and a
+  findings JSON covering micro-batch throughput, contract-reject share, lifecycle
+  split, on-time share, detention alert status and monthly event volume from the
+  local Kafka replay; wired into `build_all` and `reports/INSIGHT.md`.
 - Focused documentation corrections in `contracts/README.md`, `dbt/README.md`,
   `docs/FINDING.md`, `reports/INSIGHT.md`, `ARCHITECTURE.md` and `DEPLOYMENT.md`.
 
 ### Changed
 
+- Kafka broker now persists segment data under `KAFKA_LOG_DIRS=/var/lib/kafka/data` so the Compose volume is actually used; the broker service uses `restart: unless-stopped` to match the stream job after host restarts.
+- Host stream launchers (`stream_admin`, `stream_producer`, `stream_monitor`, `stream_reconcile`, `stream_job`) load `.env` when `python-dotenv` is installed; containers rely on Compose `env_file` and skip the optional import.
+- The Kafka publisher polls after every enqueue and retries on a full local queue instead of raising `BufferError`.
+- The stream job normalises Spark's naive timestamps to UTC before watermark and lateness comparisons, so a batch max can be ordered against the checkpoint watermark.
+- Dev stream guard now accepts `fleet_warehouse` as an additional local database alongside `fleet_dev` and `fleet_it_*`; CI remains restricted to the prefixed databases.
 - Moved the Streamlit audit payload helper into `.streamlit/streamlit_state.py`; the app and tests now load it from the Streamlit config directory.
 - Added a Streamlit section to `ARCHITECTURE.md` covering the read-only project site, audit views, payload helper and secrets boundary.
 - Expanded the README tech stack with Kafka, Spark, Streamlit, source access, Redis and CI tooling; embedded `assets/screenshots/pipeline_flow.svg`; refreshed test counts and Makefile commands; aligned `docs/SCREENSHOTS.md`.
