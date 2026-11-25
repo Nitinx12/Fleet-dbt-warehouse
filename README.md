@@ -2,12 +2,31 @@
 
 <h1 align="center">Fleet dbt Warehouse</h1>
 
-A daily analytics warehouse for logistics operations: MySQL `fleet_registry` and MongoDB `fleet_operations` land in PostgreSQL `bronze`, dbt builds `silver`, `gold` and marts, and approved non-PII marts reach Databricks under Airflow orchestration.
+A daily analytics warehouse for fleet logistics operations. Contract-validated extracts from MySQL `fleet_registry` and MongoDB `fleet_operations` land in PostgreSQL `bronze`, dbt transforms them through `silver` and `gold` into BI marts, and five approved non-PII marts are published to Databricks. Airflow orchestrates the daily run, and a read-only Streamlit site shows live run, dbt and data-quality audit status.
 
 <p align="center">
   <a href="https://github.com/Nitinx12/Fleet-dbt-warehouse/actions/workflows/ci.yml"><img src="https://github.com/Nitinx12/Fleet-dbt-warehouse/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-blue.svg" alt="Licence: MIT"></a>
   <a href="https://github.com/Nitinx12/Fleet-dbt-warehouse/commits/main"><img src="https://img.shields.io/github/last-commit/Nitinx12/Fleet-dbt-warehouse.svg" alt="Last commit"></a>
+  <a href="https://github.com/Nitinx12/Fleet-dbt-warehouse/issues"><img src="https://img.shields.io/github/issues/Nitinx12/Fleet-dbt-warehouse.svg" alt="Open issues"></a>
+  <a href="https://github.com/Nitinx12/Fleet-dbt-warehouse"><img src="https://img.shields.io/github/repo-size/Nitinx12/Fleet-dbt-warehouse.svg" alt="Repo size"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.12%20%7C%203.13-3776AB?logo=python&logoColor=white" alt="Python 3.12 | 3.13">
+  <img src="https://img.shields.io/badge/dbt-Core-FF694B?logo=dbt&logoColor=white" alt="dbt Core">
+  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL 16">
+  <img src="https://img.shields.io/badge/Airflow-3.3.2-017CEE?logo=apacheairflow&logoColor=white" alt="Airflow 3.3.2">
+  <img src="https://img.shields.io/badge/Databricks-Delta-FF3621?logo=databricks&logoColor=white" alt="Databricks Delta">
+  <img src="https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white" alt="Streamlit">
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker Compose">
+</p>
+
+<p align="center">
+  <a href="https://docs.astral.sh/ruff/"><img src="https://img.shields.io/badge/lint-ruff-D7FF64?logo=ruff&logoColor=black" alt="Ruff"></a>
+  <a href="https://docs.astral.sh/uv/"><img src="https://img.shields.io/badge/packaging-uv-DE5FE9?logo=uv&logoColor=white" alt="uv"></a>
+  <img src="https://img.shields.io/badge/secret%20scan-gitleaks-C8302F?logo=git&logoColor=white" alt="Gitleaks">
+  <img src="https://img.shields.io/badge/tests-pytest%20%2B%20dbt-0A9EDC?logo=pytest&logoColor=white" alt="pytest and dbt tests">
 </p>
 
 ## Tech stack
