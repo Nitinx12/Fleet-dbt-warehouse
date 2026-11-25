@@ -59,7 +59,7 @@ A daily analytics warehouse for fleet logistics operations. Contract-validated e
 ## Architecture
 
 ```mermaid
-flowchart LR
+flowchart TD
   classDef src fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1
   classDef bronze fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#e65100
   classDef silver fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#4a148c
