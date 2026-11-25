@@ -293,6 +293,8 @@ Source: `audit.stream_health`, `realtime.*`, `control.stream`; chart generated b
 └── notebooks/                              # EDA notebooks
 ```
 
+</details>
+
 ## Makefile
 
 `make help` is the authoritative target list. Full list: [Make targets](docs/MAKEFILE.md). Configuration: `ENV=dev|ci|prod`, `SELECT=<dbt selector>`, `EXCLUDE=<resource type>`, `CONFIRM=yes`, `V=1`.
