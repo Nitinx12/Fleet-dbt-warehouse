@@ -138,31 +138,43 @@ The batch path above is the governed warehouse. Two observers run alongside it: 
 
 ```mermaid
 flowchart TD
-  classDef orchestration fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#01579b
-  classDef control fill:#fce4ec,stroke:#c62828,stroke-width:2px,color:#b71c1c
+  classDef orch fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#01579b
+  classDef ctrl fill:#fce4ec,stroke:#c62828,stroke-width:2px,color:#b71c1c
   classDef bronze fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#e65100
   classDef silver fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#4a148c
-  classDef bi fill:#fff8e1,stroke:#f9a825,stroke-width:2px,color:#f57f17
-  classDef speed fill:#ede7f6,stroke:#4527a0,stroke-width:2px,color:#311b92
+  classDef gold fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
+  classDef mart fill:#e0f7fa,stroke:#00838f,stroke-width:2px,color:#006064
 
-  PF["preflight"]:::orchestration
-  SB["start_batch"]:::control
-  ING["ingest_mysql.drivers<br/>ingest_mysql.trucks<br/>ingest_mysql.trailers<br/>ingest_mysql.customers<br/>ingest_mysql.routes<br/>ingest_mysql.facilities"]:::bronze
-  ING2["ingest_mysql.loads<br/>ingest_mysql.trips<br/>ingest_mysql.fuel_purchases<br/>ingest_mongo.delivery_events<br/>ingest_mongo.maintenance_records<br/>ingest_mongo.safety_incidents"]:::bronze
-  ID["ingest_done<br/>assert 12 task rows"]:::control
-  DBT["silver_run → silver_test<br/>gold_dims_run → gold_facts_run → gold_test<br/>marts_run → marts_test"]:::silver
-  PUB["publish_marts"]:::bi
-  REC["reconcile_stream"]:::speed
-  NS["notify_summary<br/>finish batch"]:::orchestration
-  FAIL["on_dag_failure<br/>FAILED + pg_notify"]:::control
+  PF["preflight<br/>env, connectivity, contracts"]:::orch
+  SB["start_batch"]:::ctrl
+
+  subgraph INGEST["Ingestion: 12 tables"]
+    M1["MySQL tier 1<br/>drivers, trucks, trailers,<br/>customers, routes, facilities"]:::bronze
+    M2["MySQL tier 2-4<br/>loads, trips, fuel_purchases"]:::bronze
+    MG["MongoDB tier 1<br/>delivery_events, maintenance_records,<br/>safety_incidents"]:::bronze
+    M1 --> M2
+  end
+
+  ID["ingest_done<br/>assert 12 task rows"]:::ctrl
+
+  subgraph DBT["dbt: run, then test, per stage"]
+    S["silver"]:::silver --> G["gold<br/>dims, then facts"]:::gold --> M["marts"]:::mart
+  end
+
+  PUB["publish_marts<br/>5 approved marts to Databricks"]:::mart
+  NS["notify_summary<br/>finish batch, send summary"]:::orch
+
+  ANY(("any task<br/>fails")):::ctrl
+  FAIL["on_dag_failure<br/>finish FAILED, pg_notify,<br/>redacted alert"]:::ctrl
 
   PF --> SB
-  SB --> ING & ING2
-  ING & ING2 --> ID
-  ID --> DBT
-  DBT --> PUB & REC
-  PUB & REC --> NS
-  NS -. "any failed task" .-> FAIL
+  SB --> M1
+  SB --> MG
+  M2 --> ID
+  MG --> ID
+  ID --> S
+  M --> PUB --> NS
+  ANY -.-> FAIL
 ```
 
 DAG file: `airflow/dags/fleet_dbt_daliy.py`. Schedule: `0 2 * * *` in `Asia/Kolkata`; `catchup=False`, `max_active_runs=1`, 6-hour timeout. Ingest: 2 retries, 5–30 minute backoff, 45-minute timeout, pools `mysql_pool`/`mongo_pool`; dbt: no retries; publish: 1 retry after 10 minutes, 90-minute timeout. `on_dag_failure` closes the batch as `FAILED` and sends one redacted alert; the database trigger emits `pg_notify`.
