@@ -823,6 +823,34 @@
           scroll-behavior: auto;
         }
       }
+
+      #dataflow .rail{position:relative;height:18px;margin:1rem 0 .3rem}
+      #dataflow .rail::before{content:'';position:absolute;left:8%;right:8%;top:8px;border-top:2px dashed var(--line)}
+      #dataflow .rail b{position:absolute;top:2px;left:8%;width:14px;height:14px;border-radius:50%;background:var(--mrt);box-shadow:0 0 16px var(--mrt);transform:translateX(-50%);transition:left .9s ease-in-out}
+      #dataflow .flow{display:grid;grid-template-columns:repeat(6,1fr);gap:.6rem}
+      .fc{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:.9rem;cursor:pointer;transition:border-color .3s,box-shadow .3s}
+      .fc h3{margin:0;font-size:1rem;color:var(--c)}
+      .fc .num{display:block;font:800 1.45rem var(--mono);letter-spacing:-.03em;margin-top:.3rem}
+      .fc small{display:block;color:var(--mut);font-size:.72rem;line-height:1.4}
+      .fc .bar{height:4px;background:var(--line);border-radius:2px;margin:.7rem 0 .4rem;overflow:hidden}
+      .fc .bar i{display:block;height:100%;width:0;background:var(--c)}
+      .fc .mt{display:flex;justify-content:space-between;gap:.4rem;font:.68rem var(--mono);color:var(--mut);margin-bottom:.5rem}
+      .fc .st{font-style:normal;font-weight:700}
+      .fc.run{border-color:var(--c);box-shadow:0 0 22px -8px var(--c)}
+      .fc.run .st{color:var(--c)}
+      .fc.pass .st{color:var(--mrt)}
+      .fc.sel{outline:1px dashed var(--c);outline-offset:3px}
+      .fgrid{display:grid;grid-template-columns:1.1fr 1fr;gap:.8rem;margin-top:.8rem}
+      .rec .kv{display:flex;justify-content:space-between;gap:1rem;padding:.38rem 0;border-bottom:1px dashed var(--line);font:.8rem var(--mono)}
+      .rec .kv span{color:var(--mut)}
+      .rec .kv code{text-align:right;overflow-wrap:anywhere}
+      .rec .kv.chg{box-shadow:inset 2px 0 var(--c);padding-left:.6rem}
+      .rec .kv.chg code{color:var(--c)}
+      .rec p{margin:.8rem 0 0;color:var(--mut);font-size:.85rem}
+      .feed{height:16rem;margin-top:.6rem;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;font:.76rem/1.75 var(--mono);color:#cbd5e1}
+      .feed div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      #nxt{color:var(--mrt)}
+      @media (max-width:900px){#dataflow .flow{grid-template-columns:1fr 1fr}#dataflow .rail{display:none}.fgrid{grid-template-columns:1fr}}
     </style>
   </head>
   <body>
@@ -839,6 +867,7 @@
         <nav aria-label="Primary">
           <ul id="menu">
             <li><a class="l" href="#architecture">Pipeline</a></li>
+            <li><a class="l" href="#dataflow">Data flow</a></li>
             <li><a class="l" href="#layers">dbt layers</a></li>
             <li><a class="l" href="#streaming">Streaming</a></li>
             <li><a class="l" href="#quality">Quality</a></li>
@@ -882,7 +911,7 @@
             <div class="facts">
               <span>12 contracts</span><span>32 dbt models</span
               ><span>383 dbt tests</span><span>5 marts published</span
-              ><span>02:00 IST daily</span>
+              ><span>02:00 IST daily</span><span id="nxt">next run soon</span>
             </div>
           </div>
           <div class="term" aria-label="Live Airflow run log">
@@ -1023,6 +1052,46 @@
               </ul>
             </div>
           </div>
+        </div>
+      </section>
+
+            <section id="dataflow">
+        <div class="wrap">
+          <div class="head">
+            <span class="tag">End to end</span>
+            <h2>One delivery event, from source to dashboard</h2>
+            <p>
+              A replay of one daily batch. Rows, tests and checks fill in as
+              each stage finishes, and the glowing dot marks where the batch
+              is now. Click any stage to see what the same record looks like
+              there.
+            </p>
+          </div>
+          <div class="ctl">
+            <button id="fp">❚❚ Pause</button><button id="fr">↺ Replay</button>
+            <button data-sp="1" aria-pressed="true">1×</button
+            ><button data-sp="2" aria-pressed="false">2×</button
+            ><button data-sp="4" aria-pressed="false">4×</button>
+            <span class="sp"></span><span class="tag" id="fclock"></span>
+          </div>
+          <div class="rail" aria-hidden="true"><b id="pk"></b></div>
+          <div class="flow" id="flow"></div>
+          <div class="fgrid">
+            <div class="box2">
+              <span class="tag" id="rect">Record</span>
+              <div class="rec" id="rec"></div>
+            </div>
+            <div class="box2">
+              <span class="tag">Live event feed</span>
+              <div class="feed" id="feed" aria-live="off"></div>
+            </div>
+          </div>
+          <p class="note">
+            Row counts and the sample record are illustrative. Contract, model
+            and test counts come from the repo. When the Streamlit host serves
+            this page, the run log in the hero shows real
+            <code>audit.*</code> data.
+          </p>
         </div>
       </section>
 
@@ -1678,7 +1747,20 @@ make publish-marts ENV=dev</code></pre>
           ).join('')}</div><p>${d}</p></div>`
       ).join('')
       /* live audit snapshot */
-      const live = JSON.parse($('#live-data').textContent)
+      let live,
+        isDemo = false
+      try {
+        live = JSON.parse($('#live-data').textContent)
+      } catch {
+        isDemo = true
+        const t = new Date(Date.now() - 36e5).toISOString().slice(0, 19).replace('T', ' '),
+          d = (sc, ns) => ns.map((n) => ({ batch_id: 4821, node_name: n, status: 'SUCCESS', target_schema: sc }))
+        live = {
+          batches: [{ batch_id: 4821, airflow_dag_id: 'fleet_daily_load', airflow_run_id: 'scheduled__demo', status: 'SUCCEEDED', started_at: t, finished_at: t, tasks_total: 12, tasks_failed: 0, dbt_nodes_total: 415, dbt_nodes_failed: 0, dq_checks_total: 383, dq_checks_failed: 0, dq_failing_rows: 0, recon_mismatches: 0, errors_open: 0 }],
+          dbt: [...d('silver', ['delivery_events', 'loads', 'drivers']), ...d('gold', ['fct_delivery_events', 'dim_facilities', 'dim_customers']), ...d('marts', ['mart_sales_daily', 'mart_delivery_performance_daily'])],
+          dq: [{ batch_id: 4821, check_name: 'assert_marts_reconcile_to_facts', status: 'PASS', failing_rows: 0 }],
+        }
+      }
       const batches = live.batches || [],
         dbtRows = live.dbt || [],
         dqRows = live.dq || []
@@ -1737,7 +1819,7 @@ make publish-marts ENV=dev</code></pre>
               r.status === 'PASS' ? 'mrt' : 'ctl'
             )
           )
-        $('#runlbl').textContent = `live · #${bid}`
+        $('#runlbl').textContent = `${isDemo ? 'demo' : 'live'} · #${bid}`
       } else {
         log('status  no batch in audit.v_batch_summary', 'mut')
         $('#runlbl').textContent = 'no live run'
@@ -1815,6 +1897,130 @@ make publish-marts ENV=dev</code></pre>
           location.reload()
         }
       })
+      /* end-to-end data flow replay */
+      ;(() => {
+        const F = [
+          { c: 'src', t: 'Sources', o: 'MySQL + MongoDB, read-only', u: 'rows read', r: 1, n: 12, ck: 'contracts' },
+          { c: 'brz', t: 'bronze', o: 'scripts/ingestion.py', u: 'rows landed', r: 1, n: 12, ck: 'ingest tasks' },
+          { c: 'slv', t: 'silver', o: 'dbt', u: 'rows cleaned', r: 0.996, n: 134, ck: 'tests' },
+          { c: 'gld', t: 'gold', o: 'dbt', u: 'fact + dim rows', r: 0.996, n: 198, ck: 'tests' },
+          { c: 'mrt', t: 'marts', o: 'dbt', u: 'mart rows', r: 0.021, n: 51, ck: 'tests' },
+          { c: 'air', t: 'Databricks', o: 'scripts/publish_marts.py', u: 'rows synced', r: 0.0175, n: 5, ck: 'marts matched' },
+        ]
+        const ist = new Date(Date.now() + 19800000),
+          D = (o) => new Date(ist.getTime() - o * 864e5).toISOString().slice(0, 10),
+          y = D(1), td = D(0)
+        const R = [
+          { f: [['event_id', '"EVT-4F2A91"'], ['facility', '"Atlanta Distribution Center"'], ['event_type', '"DEPARTED"'], ['arrived_at', `"${y}T21:14:09Z"`], ['departed_at', `"${td}T00:26:09Z"`], ['driver_license', '"GA-5521907"']],
+            n: 'Raw MongoDB document. Sources are read-only, so the pipeline never writes back.' },
+          { f: [['event_id', '"EVT-4F2A91"'], ['facility', '"Atlanta Distribution Center"'], ['arrived_at', `"${y}T21:14:09Z"`], ['departed_at', `"${td}T00:26:09Z"`], ['driver_license', '"GA-5521907"'], ['_batch_id', '4821', 1], ['_loaded_at', `"${td} 02:00:41"`, 1]],
+            n: 'Landed as received, plus a batch id and load time. Bronze keeps the history of what arrived.' },
+          { f: [['event_id', 'EVT-4F2A91'], ['facility_name', 'Atlanta Distribution Center'], ['arrived_at', `${y} 21:14:09+00`, 1], ['dwell_min', '192', 1], ['license_hash', '9f3c…e1d0', 1], ['rows_per_event_id', '1', 1]],
+            n: 'dbt casts text to timestamps, drops duplicate events and hashes the licence number.' },
+          { f: [['facility_key', '17', 1], ['customer_key', '204', 1], ['date_key', y.replace(/-/g, ''), 1], ['dwell_hours', '3.2', 1], ['est_detention_usd', '240.00', 1]],
+            n: 'Joined to dimensions by key. Detention is estimated at $75 per hour.' },
+          { f: [['grain', `${y} · Atlanta DC · DEPARTED`, 1], ['events', '41', 1], ['on_time_events', '22', 1], ['detention_usd', '3,120.00', 1]],
+            n: 'Facts roll up to one row per day, facility and event type. Counts, not ratios, so they stay safe to re-aggregate.' },
+          { f: [['table', 'marts.mart_delivery_performance_daily'], ['row_count_match', 'true', 1], ['pii_columns', '0', 1]],
+            n: 'Only the 5 approved marts sync. The driver scorecard stays in Postgres because it holds a driver name.' },
+        ]
+        const T = [
+          (c) => [`mysql.fleet_registry  watermark ${c.wm} → ${c.now}`, `mongo.delivery_events  ${c.f(0.31)} documents`, 'contract check  12/12 sources match', `extract  ${c.f(1)} rows across 12 tasks`],
+          (c) => [`bronze.delivery_events  +${c.f(0.31)} rows`, `bronze.loads  +${c.f(0.12)} rows`, `control.watermark  advanced to ${c.now}`, 'ingest_done  12 task rows recorded'],
+          (c) => ['dbt run silver  12 models', `dedupe  ${c.f(0.004)} duplicate rows dropped`, 'hash  licence numbers → license_hash', 'dbt test silver  134 passed'],
+          (c) => ['dbt run gold  13 models', `fct_delivery_events  ${c.f(0.31)} rows`, 'dim_facilities, dim_customers  keys resolved', 'dbt test gold  198 passed'],
+          (c) => ['dbt run marts  7 models', `mart_delivery_performance_daily  ${c.f(0.004)} rows`, 'assert_marts_reconcile_to_facts  0 rows', 'dbt test marts  51 passed'],
+          (c) => ['publish  5 approved marts, driver scorecard blocked', 'reconcile  5/5 row counts match', `audit.pipeline_run_log  batch #${c.id} SUCCEEDED`],
+        ]
+        const flow = $('#flow'), rec = $('#rec'), feed = $('#feed'), pk = $('#pk')
+        flow.innerHTML = F.map((s, j) => `<div class="fc" data-j="${j}" style="--c:${V(s.c)}" tabindex="0" role="button" aria-label="Show record at ${s.t}"><h3>${s.t}</h3><span class="num">0</span><small>${s.u}</small><div class="bar"><i></i></div><div class="mt"><span class="ck"></span><em class="st">waiting</em></div><small>${s.o}</small></div>`).join('')
+        const cs = [...flow.children]
+        let base, i, p, hold, fired, runs = 0, sp = 1, paused = false, pin = null, shown = -1
+        const fmt = (n) => Math.round(n).toLocaleString('en-US')
+        const clock = () => new Date(Date.now() + 19800000).toISOString().slice(11, 19)
+        const ctx = () => ({ wm: y + ' 02:00', now: td + ' 02:00', id: (typeof bid === 'number' ? bid : 4821) + runs, f: (x) => fmt(base * x) })
+        function push(t, c) {
+          const d = document.createElement('div')
+          d.innerHTML = `<span style="color:${V(c)}">${clock()}</span>  ${t}`
+          feed.appendChild(d)
+          while (feed.children.length > 12) feed.firstChild.remove()
+        }
+        function showRec(v) {
+          shown = v
+          const s = F[v]
+          $('#rect').textContent = `Record in ${s.t}`
+          rec.style.setProperty('--c', V(s.c))
+          rec.innerHTML = R[v].f.map(([k, x, c]) => `<div class="kv${c ? ' chg' : ''}"><span>${k}</span><code>${x}</code></div>`).join('') + `<p>${R[v].n}</p>`
+          cs.forEach((c, j) => c.classList.toggle('sel', pin === j))
+        }
+        function paint() {
+          F.forEach((s, j) => {
+            const e = j < i ? 1 : j === i ? p : 0,
+              ck = Math.max(0, (e - 0.3) / 0.7),
+              c = cs[j]
+            c.querySelector('.num').textContent = fmt(base * s.r * Math.min(1, e / 0.7))
+            c.querySelector('.ck').textContent = `${Math.round(s.n * ck)}/${s.n} ${s.ck}`
+            c.querySelector('.bar i').style.width = ck * 100 + '%'
+            c.classList.toggle('run', j === i)
+            c.classList.toggle('pass', j < i)
+            c.querySelector('.st').textContent = j < i ? 'passed' : j === i ? 'running' : 'waiting'
+          })
+          pk.style.left = 8 + (Math.min(i, 5) / 5) * 84 + '%'
+          const v = pin ?? Math.min(i, 5)
+          if (v !== shown) showRec(v)
+          $('#fclock').textContent = `IST ${clock()} · batch #${ctx().id}`
+        }
+        function reset() {
+          base = 7800 + Math.random() * 1800
+          i = 0; p = 0; hold = 0; fired = 0
+          runs++
+          push(`airflow  fleet_daily_load started, batch #${ctx().id}`, 'air')
+          paint()
+        }
+        function step(dt) {
+          if (i >= F.length) {
+            hold += dt
+            if (hold > 8) reset()
+            return
+          }
+          p += (dt * sp) / 4.2
+          const m = T[i](ctx())
+          while (fired < m.length && p >= (fired + 1) / (m.length + 1)) push(m[fired++], F[i].c)
+          if (p >= 1) { p = 0; fired = 0; i++; if (i === F.length) push(`airflow  batch #${ctx().id} finished, next run 02:00 IST`, 'mrt') }
+          paint()
+        }
+        setInterval(() => { if (!paused) step(0.1) }, 100)
+        setInterval(() => { $('#fclock').textContent = `IST ${clock()} · batch #${ctx().id}` }, 1000)
+        $('#fp').addEventListener('click', (e) => { paused = !paused; e.target.textContent = paused ? '▶ Play' : '❚❚ Pause' })
+        $('#fr').addEventListener('click', () => { runs--; feed.innerHTML = ''; reset() })
+        document.querySelectorAll('[data-sp]').forEach((b) => b.addEventListener('click', () => {
+          sp = +b.dataset.sp
+          document.querySelectorAll('[data-sp]').forEach((x) => x.setAttribute('aria-pressed', x === b))
+        }))
+        const pick = (c) => { const j = +c.dataset.j; pin = pin === j ? null : j; showRec(pin ?? Math.min(i, 5)) }
+        cs.forEach((c) => {
+          c.addEventListener('click', () => pick(c))
+          c.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(c) } })
+        })
+        runs = -1
+        reset()
+        if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          paused = true; $('#fp').textContent = '▶ Play'; i = F.length; p = 0; paint()
+        }
+        /* hero countdown to the 02:00 IST schedule */
+        const nxt = $('#nxt'), nextRun = () => {
+          const n = Date.now(), o = 19800000, t = new Date(n + o)
+          t.setUTCHours(2, 0, 0, 0)
+          let r = t.getTime() - o
+          if (r <= n) r += 864e5
+          return Math.floor((r - n) / 1000)
+        }
+        const tick = () => {
+          const s = nextRun()
+          nxt.textContent = 'next run in ' + [(s / 3600) | 0, ((s / 60) | 0) % 60, s % 60].map((n) => String(n).padStart(2, '0')).join(':')
+        }
+        tick(); setInterval(tick, 1000)
+      })()
       /* ui */
       const mb = $('#mb'),
         menu = $('#menu')
