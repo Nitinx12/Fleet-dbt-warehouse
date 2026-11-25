@@ -29,7 +29,7 @@ A daily analytics warehouse for fleet logistics operations. Contract-validated e
   <img src="https://img.shields.io/badge/tests-pytest%20%2B%20dbt-0A9EDC?logo=pytest&logoColor=white" alt="pytest and dbt tests">
 </p>
 
-**Live demo:** [YOUR-APP-NAME.streamlit.app](https://fleet-dbt-warehouse-vvdnyjnjo3z4k8gkrjqrhf.streamlit.app/) is a read-only view of the latest pipeline runs, dbt results and data-quality checks.
+**Live demo:** [fleet-dbt-warehouse.streamlit.app](https://fleet-dbt-warehouse-vvdnyjnjo3z4k8gkrjqrhf.streamlit.app/) is a read-only view of the latest pipeline runs, dbt results and data-quality checks.
 
 ## Tech stack
 
@@ -241,6 +241,9 @@ Source: `audit.stream_health`, `realtime.*`, `control.stream`; chart generated b
 - 35 `warn` tests are gold and mart `relationships` checks; Airflow assets and stale-batch cleanup are not implemented.
 
 ## Repository map
+
+<details>
+<summary>Repo Tree</summary>
 
 ```text
 ├── AGENTS.md / CLAUDE.md                   # agent rules and Claude-specific notes
