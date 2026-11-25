@@ -14,6 +14,7 @@ SCRIPTS = [
     "reports.scripts.05_safety",
     "reports.scripts.06_seasonality",
     "reports.scripts.07_data_quality",
+    "reports.scripts.08_streaming",
 ]
 
 ROOT = Path(__file__).resolve().parents[2]

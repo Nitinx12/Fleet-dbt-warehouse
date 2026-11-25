@@ -12,6 +12,7 @@
 - **Fuel efficiency varies little by age band in observed trips:** MPG ranged from 6.42 (3-5 years) to 6.45 (11+ years), a 0.42% gap; highest average fuel price among high-volume states was NE at $3.91/gallon.
 - **Maintenance cost per truck is highest in the 3-5 year band, but that band has only 1 truck:** 3-5 years cost $70,708/truck vs 11+ years $46,985/truck (0.66x). All age bands exceeded replacement thresholds ($15,000/truck or 80 downtime hours/truck).
 - **Safety risk is concentrated in mid-career cohorts:** 170 incidents produced $2,653,172 in claim amount; 37.6% were preventable. Highest claim-cost bands were 10-19 years experience ($1,207,645) and 6-10 years tenure ($1,167,470).
+- **Kafka speed layer drained a full replay with zero contract rejects:** 45 Spark micro-batches consumed 341,640 lifecycle events from `dev.fleet.delivery_events.v1` into `realtime.delivery_events_raw`; on-time share was 55.7% (matching gold), and the watchdog recorded a peak backlog of 147,517 messages while catching up.
 
 ## 1) Revenue concentration
 ![Bar chart of the top 10 customers by load revenue](img/01_revenue_concentration_top_customers.png)
@@ -86,6 +87,20 @@
 
 **Recommendation:** Investigate the unknown driver employment-consistency record; keep consistency filters in reporting scripts.
 
+## 8) Kafka speed layer
+![Line chart of raw, window and alert row counts across stream micro-batches](img/08_streaming_batch_throughput.png)
+![Bar chart of accepted, late-dropped and contract-rejected share of micro-batch reads](img/08_streaming_event_quality.png)
+![Bar chart of ARRIVED versus DEPARTED raw lifecycle rows](img/08_streaming_lifecycle_split.png)
+![Pie chart of on-time versus late share in realtime delivery events](img/08_streaming_on_time_share.png)
+![Bar chart of detention alert status after replay](img/08_streaming_detention_alert_status.png)
+![Line chart of lifecycle event volume by event month](img/08_streaming_monthly_event_volume.png)
+
+**Finding:** Stream `fleet.delivery_events` was `ENABLED` on topic `dev.fleet.delivery_events.v1`. The Spark job committed 45 micro-batches (≈10k offsets each) and landed **341,640** raw rows — **170,820 ARRIVED** and **170,820 DEPARTED** — covering event times 2022-01-01 to 2025-01-03. **Contract rejects were 0** across 441,640 micro-batch reads. Watermark lateness dropped 441,577 duplicate/replayed reads that already existed in the deduped raw table (idempotent `ON CONFLICT DO NOTHING`). On-time share in `realtime.delivery_events_raw` was **55.7%** (190,190 on time / 151,450 late), matching the gold `fct_delivery_events` rate. Detention alerts finished **147,978 RESOLVED** and **370 OPEN**. Window upserts reached 304,103 rows and alert writes 148,348 micro-batch touches. The watchdog recorded 6 probes with a peak partition lag of **147,517** messages while the backlog drained (threshold 1,000) and peak event age ~4.4M seconds because fixture event times are historical.
+
+**Why it matters:** Zero rejects and a balanced ARRIVED/DEPARTED split prove the strict contract, producer replay and Spark DLQ path stayed aligned end-to-end. High lag during drain is expected for a 341k fixture replay at `maxOffsetsPerTrigger=10000`; it is not a broker fault once throughput catches up. Late-dropped counts are watermark hygiene, not data loss — events remain in `realtime.delivery_events_raw`.
+
+**Recommendation:** Keep `audit.stream_health` as the primary lag/freshness evidence; after a large replay, wait for watchdog `OK topic-high-low` before treating the speed layer as current. Use the 370 OPEN detention alerts as the live operator queue. Refresh this section with `make report` after any new stream run.
+
 ## Data quality notes
 - `fct_trips`: filtered to `is_mpg_consistent=true` for MPG/idle aggregates; 0 inconsistent, 0 unknown of 85,410 rows.
 - `fct_fuel_purchases`: filtered to `is_total_cost_consistent=true` for fuel price aggregates; 0 inconsistent, 0 unknown of 196,442 rows.
@@ -95,7 +110,8 @@
 - `fct_loads`, `fct_safety_incidents`: no `*_consistent` columns; all rows included; null `preventable_flag` treated as not preventable in safety share.
 
 ## Methodology
-- **Tables:** `dim_date`, `dim_customers`, `dim_drivers`, `dim_trucks`, `dim_facilities`, `dim_routes`, `fct_loads`, `fct_trips`, `fct_delivery_events`, `fct_fuel_purchases`, `fct_maintenance`, `fct_safety_incidents` (gold schema).
+- **Tables:** `dim_date`, `dim_customers`, `dim_drivers`, `dim_trucks`, `dim_facilities`, `dim_routes`, `fct_loads`, `fct_trips`, `fct_delivery_events`, `fct_fuel_purchases`, `fct_maintenance`, `fct_safety_incidents` (gold schema); `audit.stream_health`, `realtime.delivery_events_raw`, `realtime.facility_service_window`, `realtime.detention_alert`, `control.stream` (speed layer).
 - **Date range (TODO):** no report script currently emits a date-range finding; load dates in the extracts are 2022-01-01 to 2024-12-31 (`fct_loads` joined to `dim_date`).
 - **Aggregation:** all aggregations are SQL in Postgres; only the aggregated results are used in pandas for plotting and layout.
 - **Filters/caveats:** Unknown dimension members (`*-1`) excluded where they would distort labels. High-volume facility/state thresholds used in scripts (>=100 events/purchases). Detention cost estimated at $75/hour. Maintenance 3-5 year band has 1 truck / 32 events and should not be over-interpreted. No DB writes; scripts emit PNGs and findings JSON only.
+- **Streaming section:** reads append-only `audit.stream_health` (JOB + WATCHDOG) and current `realtime.*` state after a local Kafka replay; does not query Kafka directly and does not write to the stream tables.
