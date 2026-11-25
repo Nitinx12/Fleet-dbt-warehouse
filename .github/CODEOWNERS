@@ -1,6 +1,7 @@
+# Default owner for every path in the repository.
 * @Nitinx12
 
-# Pipeline code and SQL need a second pair of eyes.
+# Ingestion, warehouse SQL, contracts and dbt models.
 /scripts/ @Nitinx12
 /sql/ @Nitinx12
 /contracts/ @Nitinx12
@@ -9,14 +10,22 @@
 # Orchestration and alerting.
 /airflow/ @Nitinx12
 
-# Quality gates and the CI/CD wiring itself.
+# Quality gates, CI/CD wiring and hooks.
 /tests/ @Nitinx12
 /.github/ @Nitinx12
 /.githooks/ @Nitinx12
 /Makefile @Nitinx12
 
-# Governance docs.
+# Governance and documentation.
 /AGENTS.md @Nitinx12
-/SECURITY.md @Nitinx12
+/CLAUDE.md @Nitinx12
+/README.md @Nitinx12
 /CONTRIBUTING.md @Nitinx12
+/CODE_OF_CONDUCT.md @Nitinx12
+/SECURITY.md @Nitinx12
+/ARCHITECTURE.md @Nitinx12
+/DEPLOYMENT.md @Nitinx12
+/CHANGELOG.md @Nitinx12
+/LICENSE @Nitinx12
+/CITATION.cff @Nitinx12
 /docs/ @Nitinx12
