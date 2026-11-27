@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import subprocess
 from decimal import Decimal
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
@@ -99,3 +101,43 @@ def test_stale_doc_claim_is_rejected(
     errors: list[str] = []
     checker.check_docs(errors, _facts(), _config())
     assert errors and any("dbt.models.total" in error for error in errors)
+
+
+def _stale_check_fixture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, last: str
+) -> ModuleType:
+    from scripts import site_facts
+
+    output = tmp_path / "facts.json"
+    output.write_text('{"meta.inputs": {"value": ["tests"]}}', encoding="utf-8")
+    monkeypatch.setattr(site_facts, "OUTPUT", output)
+    monkeypatch.setattr(
+        site_facts,
+        "_rel",
+        lambda path: "site/facts.json" if path == output else str(path),
+    )
+    monkeypatch.setattr(
+        site_facts,
+        "_last_commit",
+        lambda path: "base" if path == "site/facts.json" else last,
+    )
+    return site_facts
+
+
+def test_site_facts_accepts_current_commit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    site_facts = _stale_check_fixture(tmp_path, monkeypatch, "base")
+    assert site_facts.check_stale() == 0
+
+
+def test_site_facts_rejects_later_input_commit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    site_facts = _stale_check_fixture(tmp_path, monkeypatch, "new")
+
+    def fake_git(*args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(site_facts, "_git", fake_git)
+    assert site_facts.check_stale() == 1

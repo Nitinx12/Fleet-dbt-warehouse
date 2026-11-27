@@ -176,3 +176,5 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
   the best-effort audit loader can record the invocation.
 - CI supplies `DATABRICKS_SCHEMA`, and Makefile psql bootstrap targets connect
   with `PG_HOST`, `PG_PORT` and `PG_PASSWORD` instead of the local Unix socket.
+- Site fact freshness now compares committed file history instead of checkout
+  mtimes, so CI does not report generated facts as stale after checkout.

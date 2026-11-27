@@ -36,8 +36,8 @@ Actions” below.
 
 ## Python suite — `tests/`
 
-`make py-test` runs pytest from the repo root. Current collection is 95 tests:
-71 `unit`, 8 `integration` and 16 `smoke`. Markers are declared in
+`make py-test` runs pytest from the repo root. Current collection is 97 tests:
+73 `unit`, 8 `integration` and 16 `smoke`. Markers are declared in
 `pyproject.toml` and applied automatically from the folder by `tests/conftest.py`.
 
 ```text

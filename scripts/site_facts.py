@@ -535,20 +535,42 @@ def write_facts() -> dict[str, Any]:
     return facts
 
 
+def _git(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def _last_commit(path: str) -> str:
+    result = _git("log", "-1", "--format=%H", "--", path)
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def _changed_after(baseline: str, path: str) -> bool:
+    candidate = _last_commit(path)
+    if not candidate or candidate == baseline:
+        return False
+    return _git("merge-base", "--is-ancestor", baseline, candidate).returncode == 0
+
+
 def check_stale() -> int:
     if not OUTPUT.exists():
         print(f"missing {_rel(OUTPUT)}; run python scripts/site_facts.py")
         return 1
     facts = json.loads(OUTPUT.read_text(encoding="utf-8"))
     inputs = facts.get("meta.inputs", {}).get("value", [])
-    stale = []
-    for item in inputs:
-        path = ROOT / item
-        if path.exists() and path.stat().st_mtime > OUTPUT.stat().st_mtime:
-            stale.append(item)
+    baseline = _last_commit(_rel(OUTPUT))
+    if not baseline:
+        print(f"no committed baseline for {_rel(OUTPUT)}")
+        return 1
+    stale = [item for item in inputs if _changed_after(baseline, item)]
     if stale:
         for item in stale:
-            print(f"stale: {item} is newer than {_rel(OUTPUT)}")
+            print(f"stale: {item} changed after {_rel(OUTPUT)}")
         return 1
     print(f"{_rel(OUTPUT)} is current ({len(inputs)} inputs)")
     return 0
