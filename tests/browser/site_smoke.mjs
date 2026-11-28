@@ -36,7 +36,7 @@ const expected = Object.fromEntries(
 )
 assert.equal(JSON.stringify(sandbox.__facts), JSON.stringify(expected))
 
-const rendered = `${root}/build/site.html`
+const rendered = `${root}/site/build/site.html`
 if (existsSync(rendered)) {
   const output = readFileSync(rendered, 'utf8')
   assert.ok(!output.includes('__SITE_FACTS__'))

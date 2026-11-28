@@ -13,7 +13,7 @@ from sqlalchemy.engine import URL, Engine
 from sqlalchemy.exc import SQLAlchemyError
 
 ROOT = Path(__file__).parent
-sys.path.insert(0, str(ROOT / ".streamlit"))
+sys.path.insert(0, str(ROOT / "site" / "scripts"))
 _state = import_module("streamlit_state")
 audit_error = _state.audit_error
 inject_facts = _state.inject_facts

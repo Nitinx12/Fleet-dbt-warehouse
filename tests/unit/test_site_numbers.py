@@ -7,10 +7,9 @@ from decimal import Decimal
 from pathlib import Path
 from types import ModuleType
 
+import check_site_numbers as checker
 import pytest
-
-from scripts import check_site_numbers as checker
-from scripts.site_lib import facts, numbers, views
+from site_lib import facts, numbers, views
 
 
 def test_format_fact_uses_explicit_rounding() -> None:
@@ -106,7 +105,7 @@ def test_stale_doc_claim_is_rejected(
 def _stale_check_fixture(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, last: str
 ) -> ModuleType:
-    from scripts import site_facts
+    import site_facts
 
     output = tmp_path / "facts.json"
     output.write_text('{"meta.inputs": {"value": ["tests"]}}', encoding="utf-8")

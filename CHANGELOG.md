@@ -16,11 +16,16 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
 
 ## [Unreleased]
 
+### Changed
+
+- Moved the Streamlit audit payload helper to `site/scripts/streamlit_state.py`; `app.py`, pytest, ruff, site fact collection and site checks now load it from there.
+- Moved site-only scripts under `site/scripts/`: `render_site.py`, `site_facts.py`, `check_site_numbers.py`, `site_numbers_allowlist.yml` and `site_lib/`; Makefile, tests and docs now call the new paths.
+
 ### Added
 
 - Provable project-site numbers: generated facts with provenance, a strict
   HTML/JS checker, Streamlit fact injection, a standalone renderer, a
-  zero-dependency browser smoke check and `docs/SITE.md`.
+  zero-dependency browser smoke check and `site/SITE.md`.
 - Streaming foundation: strict `delivery_events.v1` contract, Kafka topic config,
   `realtime`/`control.stream`/`audit.stream_health` DDL, environment placeholders,
   locked Kafka/Spark dependency groups, Make targets and contract alignment checks.

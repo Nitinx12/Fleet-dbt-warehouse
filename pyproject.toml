@@ -59,7 +59,7 @@ known-first-party = ["streamlit_state"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = [".", ".streamlit"]
+pythonpath = [".", "site/scripts"]
 markers = [
     "unit: fast, isolated, no I/O",
     "integration: needs a real service",

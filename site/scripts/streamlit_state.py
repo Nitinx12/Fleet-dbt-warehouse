@@ -82,7 +82,7 @@ def inject_payload(html: str, payload: dict) -> str:
 def inject_facts(html: str, facts: dict | None = None) -> str:
     """Replace the site-facts placeholder with the committed fact JSON."""
     if facts is None:
-        path = Path(__file__).resolve().parents[1] / "site" / "facts.json"
+        path = Path(__file__).resolve().parents[1] / "facts.json"
         facts = json.loads(path.read_text(encoding="utf-8"))
     data = json.dumps(_json_safe(facts), default=str, allow_nan=False).replace(
         "<", "\\u003c"

@@ -180,13 +180,13 @@ ci: verify ## Run the checks supported by the tracked repository.
 ## Site
 .PHONY: site-facts site-check site-render site-browser-smoke
 site-facts: check-version ## Regenerate site/facts.json from repository sources.
-	$(Q)"$(UV)" run --no-sync python scripts/site_facts.py
+	$(Q)"$(UV)" run --no-sync python site/scripts/site_facts.py
 
 site-check: check-version ## Check every number on index.html against facts.
-	$(Q)"$(UV)" run --no-sync python scripts/check_site_numbers.py --strict
+	$(Q)"$(UV)" run --no-sync python site/scripts/check_site_numbers.py --strict
 
-site-render: site-check ## Render the standalone site into build/site.html.
-	$(Q)"$(UV)" run --no-sync python scripts/render_site.py
+site-render: site-check ## Render the standalone site into site/build/site.html.
+	$(Q)"$(UV)" run --no-sync python site/scripts/render_site.py
 
 site-browser-smoke: site-render ## Run the zero-dependency browser smoke check.
 	$(Q)node tests/browser/site_smoke.mjs

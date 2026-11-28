@@ -371,7 +371,7 @@ flowchart LR
 
     APP["app.py<br/>two tabs, 60s cache,<br/>allowlisted queries"]:::ui
     HTML["index.html<br/>project site<br/>__LIVE_DATA__ placeholder"]:::ui
-    STATE[".streamlit/streamlit_state.py<br/>payload builder + error guidance"]:::helper
+    STATE["site/scripts/streamlit_state.py<br/>payload builder + error guidance"]:::helper
     SECRETS["st.secrets['postgres']<br/>.streamlit/secrets.toml ignored"]:::ui
     VIEWS[("audit.v_batch_summary<br/>audit.v_dbt_results<br/>audit.v_data_quality_results")]:::audit
 
@@ -385,7 +385,7 @@ flowchart LR
 | Component | Location | Responsibility |
 |---|---|---|
 | Host | `app.py` | Renders the site and live tabs, validates the fixed `VIEWS` allowlist, caches reads for 60 seconds and redacts audit-read failures. |
-| Payload helper | `.streamlit/streamlit_state.py` | Builds the embedded JSON from the three rollup views, fails closed to empty data, escapes `<` and maps non-finite floats to `null`. |
+| Payload helper | `site/scripts/streamlit_state.py` | Builds the embedded JSON from the three rollup views, fails closed to empty data, escapes `<` and maps non-finite floats to `null`. |
 | Static site | `index.html`, `assets/logo/` | Holds the Mermaid pipeline diagram and documentation links; the placeholder is replaced at render time. |
 | Credentials | `st.secrets["postgres"]` | Supplies read-only Postgres credentials in Streamlit Cloud or the ignored `.streamlit/secrets.toml` locally. |
 
