@@ -51,7 +51,7 @@ A daily analytics warehouse for fleet logistics operations. Contract-validated e
 
 - 12 source tables (9 MySQL, 3 MongoDB) feed 32 dbt models: 12 silver, 13 gold and 7 marts.
 - 5 approved marts publish to Databricks; `mart_driver_scorecard_monthly` is excluded because it carries a driver display name.
-- 383 dbt tests and 131 collected Python/Airflow tests; 12 source contracts are checked by `make contracts-check`.
+- 391 dbt tests and 131 collected Python/Airflow tests; 12 source contracts are checked by `make contracts-check`.
 - `fleet_daily_load` runs at `0 2 * * *` in `Asia/Kolkata`, with batches and watermarks in `control.*` and `audit.*`.
 - PII is reduced early: licence numbers hashed, dates of birth banded, fuel cards masked, one driver mart excluded.
 - The opt-in Kafka/Spark speed layer writes only `realtime.*` and `audit.stream_health`.
@@ -197,14 +197,14 @@ DAG file: `airflow/dags/fleet_dbt_daliy.py`. Schedule: `0 2 * * *` in `Asia/Kolk
 |---|---|---|
 | Source tables / collections | 12 (9 MySQL, 3 MongoDB) | `contracts/sources/*.yml` |
 | dbt models | 32 (12 silver, 13 gold, 7 marts) | `dbt/target/manifest.json` |
-| dbt tests | 383 (348 error, 35 warn) | `dbt/target/manifest.json` |
+| dbt tests | 391 (357 error, 35 warn) | `dbt/target/manifest.json` |
 | Published marts | 5 | `scripts/publish_marts.py` |
 | Python/Airflow tests | 131 collected (97 + 34) | pytest collection |
 | CI jobs | 9, plus 1 secret-scan job | `.github/workflows/` |
 
 ## Data quality and testing
 
-383 dbt tests split 134 silver, 198 gold and 51 marts. Python has 97 collected tests and Airflow 34; 12 contracts are checked and CI has 9 jobs plus Gitleaks. There are no enforced dbt contracts. Full gate table: [data quality](docs/DATA_QUALITY.md); inventory: [testing](docs/TESTING.md); site numbers: [site facts](docs/SITE.md).
+391 dbt tests split 138 silver, 202 gold and 51 marts. Python has 97 collected tests and Airflow 34; 12 contracts are checked and CI has 9 jobs plus Gitleaks. There are no enforced dbt contracts. Full gate table: [data quality](docs/DATA_QUALITY.md); inventory: [testing](docs/TESTING.md); site numbers: [site facts](site/SITE.md).
 
 ## Key design decisions
 
@@ -278,8 +278,10 @@ Source: `audit.stream_health`, `realtime.*`, `control.stream`; chart generated b
 ├── requirements.txt                        # Streamlit runtime dependencies
 ├── .env.example                            # every config knob, placeholders only
 ├── .githooks/                              # commit-msg and pre-push guards
-├── .streamlit/                             # Streamlit config and live audit payload helper
-│   └── streamlit_state.py                  # builds the embedded audit JSON
+├── .streamlit/                             # Streamlit config (secrets template; secrets.toml ignored)
+├── site/                                   # project-site facts and scripts
+│   ├── facts.json                          # generated site facts with provenance
+│   └── scripts/                            # site render/check/facts + embedded audit JSON
 ├── assets/                                 # logo and committed screenshots
 │   ├── logo/
 │   └── screenshots/pipeline_flow.svg

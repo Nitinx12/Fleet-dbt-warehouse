@@ -24,7 +24,7 @@ def _run(script: str, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 def test_site_number_check_passes_json_contract() -> None:
-    result = _run("scripts/check_site_numbers.py", "--json", "--strict")
+    result = _run("site/scripts/check_site_numbers.py", "--json", "--strict")
     assert result.returncode == 0, result.stdout + result.stderr
     payload = json.loads(result.stdout)
     assert payload["ok"] is True
@@ -33,14 +33,14 @@ def test_site_number_check_passes_json_contract() -> None:
 
 
 def test_generated_facts_are_current() -> None:
-    result = _run("scripts/site_facts.py", "--check-stale")
+    result = _run("site/scripts/site_facts.py", "--check-stale")
     assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_render_removes_both_placeholders(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from scripts import render_site
+    import render_site
 
     output = tmp_path / "site.html"
     monkeypatch.setattr(render_site, "OUTPUT", output)

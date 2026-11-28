@@ -11,14 +11,14 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 INDEX = ROOT / "index.html"
 FACTS_FILE = ROOT / "site" / "facts.json"
-CONFIG_FILE = ROOT / "scripts" / "site_numbers_allowlist.yml"
+CONFIG_FILE = ROOT / "site" / "scripts" / "site_numbers_allowlist.yml"
 
 
 def _libs() -> tuple[Any, Any, Any]:
-    sys.path.insert(0, str(ROOT / "scripts"))
+    sys.path.insert(0, str(ROOT / "site" / "scripts"))
     from site_lib import facts as fact_lib
     from site_lib import numbers, views
 
@@ -146,6 +146,7 @@ def _display_path(path: Path) -> str:
 def _doc_paths() -> list[Path]:
     paths = [ROOT / "README.md", ROOT / "ARCHITECTURE.md", ROOT / "DEPLOYMENT.md"]
     paths.extend(sorted((ROOT / "docs").glob("*.md")))
+    paths.extend(sorted((ROOT / "site").glob("*.md")))
     paths.extend(sorted((ROOT / "airflow").glob("README.md")))
     paths.extend(sorted((ROOT / "reports").glob("*.md")))
     return [path for path in paths if path.exists()]
@@ -218,7 +219,7 @@ def check_docs(
 
 
 def _payload_keys() -> set[str]:
-    path = ROOT / ".streamlit" / "streamlit_state.py"
+    path = ROOT / "site" / "scripts" / "streamlit_state.py"
     tree = ast.parse(path.read_text(encoding="utf-8"))
     keys: set[str] = set()
     for node in ast.walk(tree):

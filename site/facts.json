@@ -30,12 +30,12 @@
     "how": "count manifest.json nodes by resource_type, fqn layer and severity"
   },
   "dbt.tests.silver": {
-    "value": 134,
+    "value": 138,
     "source": "dbt/models/bronze/sources.yml",
     "how": "count manifest.json nodes by resource_type, fqn layer and severity"
   },
   "dbt.tests.gold": {
-    "value": 198,
+    "value": 202,
     "source": "dbt/models/bronze/sources.yml",
     "how": "count manifest.json nodes by resource_type, fqn layer and severity"
   },
@@ -50,12 +50,12 @@
     "how": "count manifest.json nodes by resource_type, fqn layer and severity"
   },
   "dbt.tests.total": {
-    "value": 383,
+    "value": 391,
     "source": "dbt/models/bronze/sources.yml",
     "how": "count manifest.json nodes by resource_type, fqn layer and severity"
   },
   "dbt.tests.error": {
-    "value": 348,
+    "value": 357,
     "source": "dbt/models/bronze/sources.yml",
     "how": "count manifest.json nodes by resource_type, fqn layer and severity"
   },
@@ -65,7 +65,7 @@
     "how": "count manifest.json nodes by resource_type, fqn layer and severity"
   },
   "dbt.nodes.total": {
-    "value": 415,
+    "value": 423,
     "source": "dbt/models/bronze/sources.yml",
     "how": "count manifest.json nodes by resource_type, fqn layer and severity"
   },
@@ -341,7 +341,7 @@
       "dbt",
       "dq"
     ],
-    "source": ".streamlit/streamlit_state.py",
+    "source": "site/scripts/streamlit_state.py",
     "how": "parse dict keys returned by live_payload"
   },
   "streamlit.views.batches.columns": {
@@ -434,7 +434,6 @@
     "value": [
       ".github/workflows/ci.yml",
       ".github/workflows/leaks.yml",
-      ".streamlit/streamlit_state.py",
       "airflow/compose.yml",
       "airflow/dags/fleet_dbt_daliy.py",
       "airflow/dags/fleet_report_weekly.py",
@@ -449,11 +448,12 @@
       "reports/findings/02_delivery_service.json",
       "reports/findings/05_safety.json",
       "scripts/publish_marts.py",
-      "scripts/site_facts.py",
+      "site/scripts/site_facts.py",
+      "site/scripts/streamlit_state.py",
       "sql/scripts/06_audit_relationships.sql",
       "tests"
     ],
-    "source": "scripts/site_facts.py",
+    "source": "site/scripts/site_facts.py",
     "how": "files and commands read by this collector"
   }
 }

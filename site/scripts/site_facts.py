@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / "site" / "facts.json"
 DAG_FILE = ROOT / "airflow" / "dags" / "fleet_dbt_daliy.py"
 SQL_VIEWS = ROOT / "sql" / "scripts" / "06_audit_relationships.sql"
@@ -108,7 +108,8 @@ def collect_dbt(facts: dict[str, Any], inputs: list[str]) -> None:
             layer = layers and model_ids.get(
                 node.get("attached_node", ""), node["fqn"][1]
             )
-            test_layers[layer] += 1
+            if layer in test_layers:
+                test_layers[layer] += 1
             severity = node.get("config", {}).get("severity", "ERROR").lower()
             errors += severity == "error"
             warns += severity == "warn"
@@ -467,14 +468,14 @@ def collect_reports(facts: dict[str, Any], inputs: list[str]) -> None:
 
 
 def _view_columns(view: str) -> list[str]:
-    sys.path.insert(0, str(ROOT))
-    from scripts.site_lib.views import load_view_columns
+    sys.path.insert(0, str(ROOT / "site" / "scripts"))
+    from site_lib.views import load_view_columns
 
     return load_view_columns(SQL_VIEWS, view)
 
 
 def collect_streamlit(facts: dict[str, Any], inputs: list[str]) -> None:
-    state = ROOT / ".streamlit" / "streamlit_state.py"
+    state = ROOT / "site" / "scripts" / "streamlit_state.py"
     tree = ast.parse(state.read_text(encoding="utf-8"))
     keys: set[str] = set()
     for node in ast.walk(tree):
@@ -510,7 +511,7 @@ def build_facts() -> dict[str, Any]:
         "index.html",
         "contracts/sources_index.json",
         "scripts/publish_marts.py",
-        "scripts/site_facts.py",
+        "site/scripts/site_facts.py",
     ]
     collect_contracts(facts)
     collect_dbt(facts, inputs)
@@ -522,7 +523,7 @@ def build_facts() -> dict[str, Any]:
     collect_streamlit(facts, inputs)
     facts["meta.inputs"] = _fact(
         sorted(set(inputs)),
-        "scripts/site_facts.py",
+        "site/scripts/site_facts.py",
         "files and commands read by this collector",
     )
     return facts
@@ -559,7 +560,7 @@ def _changed_after(baseline: str, path: str) -> bool:
 
 def check_stale() -> int:
     if not OUTPUT.exists():
-        print(f"missing {_rel(OUTPUT)}; run python scripts/site_facts.py")
+        print(f"missing {_rel(OUTPUT)}; run python site/scripts/site_facts.py")
         return 1
     facts = json.loads(OUTPUT.read_text(encoding="utf-8"))
     inputs = facts.get("meta.inputs", {}).get("value", [])
