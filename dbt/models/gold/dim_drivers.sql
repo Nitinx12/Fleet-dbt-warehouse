@@ -10,7 +10,7 @@
 -- SCD Type 1: one current row per driver, attributes overwritten, no history kept.
 --
 -- PII handling:
---   * license_number  -> salted SHA-256 hash (license_number_hash), joinable but unreadable
+--   * license_number  -> SHA-256 hash (license_number_hash), salted with GOLD_PII_SALT, joinable but unreadable
 --   * date_of_birth   -> dropped; age_years / age_band are kept
 --   * first/last name -> dropped; full_name is kept as the display name
 --

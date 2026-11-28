@@ -174,7 +174,7 @@ models:
         tests:
           - not_in_future
       - name: license_number_hash
-        description: "Salted SHA-256 of the licence number. Set GOLD_PII_SALT in the environment."
+        description: "SHA-256 of the licence number, salted with GOLD_PII_SALT when set; the prod target refuses to run without the salt."
         data_type: text
       - name: license_state
         description: "US state code of the licence; NULL when unknown."

@@ -22,12 +22,18 @@
 
 
 {# One-way salted SHA-256 for PII that must stay joinable but not readable.
-   Set the salt with the GOLD_PII_SALT environment variable. #}
+   Set the salt with GOLD_PII_SALT; the prod target refuses to hash without one. #}
 {% macro gold_hash_pii(column) -%}
+    {%- set salt = env_var("GOLD_PII_SALT", "") -%}
+    {%- if target.name == "prod" and salt == "" -%}
+        {{ exceptions.raise_compiler_error(
+            "GOLD_PII_SALT is missing and target is prod: gold_hash_pii refuses to hash PII without a salt."
+        ) }}
+    {%- endif -%}
     CASE
         WHEN {{ column }} IS NULL THEN NULL
         ELSE ENCODE(
-            SHA256(CONVERT_TO(CAST({{ column }} AS TEXT) || '{{ env_var("GOLD_PII_SALT", "") }}', 'UTF8')),
+            SHA256(CONVERT_TO(CAST({{ column }} AS TEXT) || '{{ salt }}', 'UTF8')),
             'hex'
         )
     END
