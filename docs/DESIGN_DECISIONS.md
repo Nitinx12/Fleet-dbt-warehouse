@@ -11,5 +11,5 @@
 | dbt owns transformation; Python only moves data | SQL inside ingestion or stored procedures | One testable lineage, with more data landing in `bronze` before it is shaped. |
 | Watermark micro-batches with a lookback | Nightly full-table replacement | Handles late and changed rows without full reloads; watermarks and reprocessing windows need monitoring. |
 | One writer per layer | Multiple services patching shared schemas | Replay and incident triage stay deterministic; cross-layer convenience writes are blocked. |
-| Current-state SCD1 dimensions | SCD2 history on every dimension | Simple, fast BI; historical attribution is not available until snapshots are added. |
+| Current-state SCD1 dimensions with snapshots | SCD2 joins on every fact and mart | Simple, fast BI; snapshots capture history for customers, drivers and trucks without changing fact/mart grain. |
 | Five-mart publication allowlist | Publish every reviewed mart | Keeps PII and unreviewed models out of Databricks; new BI grains require a reviewed PR. |

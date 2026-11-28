@@ -201,9 +201,11 @@ flowchart LR
 
 | Layer | Models | Materialisation | Responsibility |
 |---|---:|---|---|
-| `silver` | 12 | `incremental` / `delete+insert`, `unique_key` = source PK, `on_schema_change: append_new_columns` | Rename, `try_cast` Mongo strings, normalise flags, dedupe by latest `_ingested_at`/`loaded_at`, clean blank text and invalid dates. No joins or business logic. |
-| `gold` | 13 | 7 dimension tables + 6 incremental facts | Conformed business keys via `gold_key()`/`gold_date_key()`, Unknown member `-1`, SCD1 overwrite, PII hash/mask, fact watermarks. No SCD2 history. |
+| `silver` | 12 | `incremental` / `delete+insert`, `unique_key` = source PK, `on_schema_change: fail` | Rename, `try_cast` Mongo strings, normalise flags, dedupe by latest `_ingested_at`/`loaded_at`, clean blank text and invalid dates. No joins or business logic. |
+| `gold` | 13 | 7 dimension tables + 6 incremental facts | Conformed business keys via `gold_key()`/`gold_date_key()`, Unknown member `-1`, SCD1 overwrite, PII hash/mask, fact watermarks. No SCD2 joins. |
 | `marts` | 7 | 6 incremental marts + 1 reconciliation table | Denormalised grains keyed by `mart_key`, additive measures, `NULLIF`-guarded ratios, `mart_hash` change detection, `mart_loaded_at` for publishing. |
+
+All 32 models enforce contracts, mart columns declare `data_type` explicitly, and every incremental model uses `on_schema_change: fail`. The manifest contains 391 schema tests (138 silver / 202 gold / 51 marts), 401 test nodes at 0 warn severity, and 3 dbt unit tests. Three snapshots (`snap_customers`, `snap_drivers`, `snap_trucks`) capture customer, driver and truck history; facts and marts still read the current-state `dim_*` rows and their grain is unchanged.
 
 `dim_date` is generated from `gold_date_start`/`gold_date_end` with an Unknown row. Facts join to the current SCD1 dimension row; there is no validity-date SCD2 join in the current implementation.
 
@@ -352,8 +354,9 @@ flowchart TD
 | dbt tasks | No automatic retry, 60 min timeout, strict `run` → `test` stage ordering. |
 | Publish task | 1 retry with 10 min delay, 90 min timeout. |
 | Failure handling | Task failures log to `audit.error_log` via SQL triggers; DAG failure closes the batch as `FAILED`, emits `pg_notify`, and sends one redacted notification. |
-| Other DAGs | `fleet_report_weekly` (weekly) and `fleet_watchdog` (every 15 min) are intentional skeletons that raise `NotImplementedError`. |
-| Design intent not yet wired | Airflow asset keys from the dbt manifest and scheduled `control.fail_stale_batches()` are not implemented; DAG dependency is task-based cron. |
+| Other DAGs | `fleet_watchdog` (every 15 min) is implemented and observational; `fleet_batch_cleanup` (every 15 min) calls `control.fail_stale_batches()` only when `FLEET_STALE_CLEANUP_ENABLED=true` (default `false`, max age 6 hours); `fleet_report_weekly` remains a skeleton. |
+| dbt assets | `silver_run`, `gold_dims_run`, `gold_facts_run` and `marts_run` publish manifest-keyed asset outlets loaded from committed `airflow/assets/dbt_asset_keys.json`. CI runs `make dbt-asset-keys-check` after `make dbt-parse ENV=ci`. |
+| Scheduling model | Cron and task dependencies still drive execution; assets publish lineage and are not event-driven triggers. |
 
 All commands are built as argv arrays (`uv run --no-sync python scripts/<name>.py …`) with identifier validation and no shell interpolation; dbt commands add `--target`, `--select`, `--indirect-selection cautious` and explicit exclusions.
 
@@ -418,10 +421,13 @@ flowchart LR
 | Gate | Tool / command | What it protects |
 |---|---|---|
 | Python lint/format | `make lint-fast` (ruff) | PEP 8, import and formatting consistency. |
-| Python tests | `make py-test`, `py-unit`, `py-integration`, `py-smoke` | Ingestion, fixture, publish, audit, connection and Makefile behaviour; integration tests use throwaway `fleet_it_*` databases built from `sql/scripts/01..07`. |
+| Python tests | `make py-test`, `py-unit`, `py-integration`, `py-smoke` | 186 root tests plus 44 Airflow tests (230 combined) covering ingestion, fixture, publish, audit, connection and Makefile behaviour; integration tests use throwaway `fleet_it_*` databases built from `sql/scripts/01..07`. |
+| Python coverage | `make py-cov` (`COV_MIN=80`) and `make py-cov-report` | pytest-cov on `scripts` and `utils`; measured TOTAL is 84.36%. |
 | Contract alignment | `make contracts-check` | Index ↔ contract file ↔ dbt source ↔ bronze table name alignment. |
 | dbt parse | `make dbt-parse ENV=dev` / `ENV=ci` | Project YAML, refs and macro resolution without querying the warehouse. |
-| dbt build | `make dbt-build ENV=ci` after fixtures | All models plus 383 tests in CI schema prefixes. |
+| dbt asset keys | `make dbt-asset-keys-check` after parse | Committed Airflow asset keys match the parsed dbt manifest. |
+| dbt unit tests | `make dbt-unit ENV=dev` | Three dbt unit tests run without warehouse data. |
+| dbt build | `make dbt-build ENV=ci` after fixtures | All 32 models and the parsed test suite (401 nodes, 0 warn) in CI schema prefixes. |
 | Airflow structure | `make airflow-test` | DAG graph, tiers, retries, pools, callbacks, redaction and command builders. |
 | Secret scan | `gitleaks git --redact -v --config .gitleaks.toml .` | Committed credentials and tokens. |
 | Database rules | SQL bootstrap triggers/constraints | Append-only audit tables, one RUNNING batch, valid statuses and watermark monotonicity. |
@@ -434,13 +440,14 @@ A failed contract or data test blocks the run; retries are for transient connect
 
 This document describes the implemented system. The following gaps are known and tracked rather than implied as working:
 
-- dbt model contracts are not enforced (0/32), marts declare no `data_type`, and incremental models use `append_new_columns` rather than `fail`.
-- All 35 gold/mart `relationships` tests are `severity: warn`; silver relationships are error-severity.
-- No dbt unit tests or snapshots are committed; `assert_marts_reconcile_to_facts` is a table model that must be queried or explicitly selected, not a dbt test node.
+- Snapshots exist for customers, drivers and trucks, but no fact or mart was rewired to SCD2; `dim_*` remains current-state SCD1 and the BI grain is unchanged.
 - `SOURCE_MODE=live|csv|fixture` is a stated design rule but is not implemented as a unified switch; fixture loading is a separate guarded script and there is no CSV path.
 - `contracts-check` validates names/index only, not column-level drift; runtime ingestion does check contract columns.
 - `generate_schema_name` uses the custom schema verbatim outside CI, so `dev` and `prod` both resolve `silver`/`gold`/`marts`; `DBT_DEV_SCHEMA` only applies to nodes without a custom schema. Use a throwaway `PG_DBNAME` for local experiments.
-- Airflow assets, scheduled stale-batch cleanup and the weekly/watchdog DAG bodies are not implemented.
+- `fleet_watchdog`, `fleet_batch_cleanup` and manifest-keyed dbt assets are implemented; `fleet_report_weekly` remains a skeleton pending payload approval.
+- There is no production data rollback: an image rollback redeploys code but does not rewind warehouse, `audit`/`control` or Databricks state.
+- There is no scheduled backup/restore process with defined retention and a tested restore.
+- CI tests on Python 3.12 while the image and production run Python 3.13.
 - The committed `.devcontainer/devcontainer.json` points at a non-existent root compose file, service and requirements file; use `make airflow-up` instead.
 
 ---

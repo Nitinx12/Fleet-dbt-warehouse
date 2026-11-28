@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'load_key',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [
         {'columns': ['load_key'], 'unique': true},
         {'columns': ['load_date_key']},
@@ -18,7 +18,21 @@
 -- NULL measures stay NULL (unknown), never 0.
 
 WITH loads AS (
-    SELECT *
+    SELECT
+        load_id,
+        customer_id,
+        route_id,
+        load_date,
+        load_type,
+        load_status,
+        booking_type,
+        weight_lbs,
+        pieces,
+        revenue,
+        fuel_surcharge,
+        accessorial_charges,
+        total_charges,
+        silver_loaded_at
     FROM {{ ref('loads') }}
     {% if is_incremental() %}
     WHERE silver_loaded_at > {{ gold_watermark() }}

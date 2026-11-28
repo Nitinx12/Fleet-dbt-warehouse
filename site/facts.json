@@ -55,12 +55,12 @@
     "how": "count manifest.json nodes by resource_type, fqn layer and severity"
   },
   "dbt.tests.error": {
-    "value": 357,
+    "value": 401,
     "source": "dbt/models/bronze/sources.yml",
     "how": "count manifest.json nodes by resource_type, fqn layer and severity"
   },
   "dbt.tests.warn": {
-    "value": 35,
+    "value": 0,
     "source": "dbt/models/bronze/sources.yml",
     "how": "count manifest.json nodes by resource_type, fqn layer and severity"
   },
@@ -101,6 +101,7 @@
   },
   "airflow.dag_ids": {
     "value": [
+      "fleet_batch_cleanup",
       "fleet_daily_load",
       "fleet_report_weekly",
       "fleet_watchdog"
@@ -216,32 +217,32 @@
     "how": "parse PUBLISHABLE_MARTS"
   },
   "tests.collected.total": {
-    "value": 97,
+    "value": 186,
     "source": "python -m pytest --collect-only -q",
     "how": "parse pytest collect-only totals"
   },
   "tests.collected.unit": {
-    "value": 73,
+    "value": 157,
     "source": "python -m pytest --collect-only -q",
     "how": "parse pytest collect-only totals"
   },
   "tests.collected.integration": {
-    "value": 8,
+    "value": 9,
     "source": "python -m pytest --collect-only -q",
     "how": "parse pytest collect-only totals"
   },
   "tests.collected.smoke": {
-    "value": 16,
+    "value": 20,
     "source": "python -m pytest --collect-only -q",
     "how": "parse pytest collect-only totals"
   },
   "tests.collected.combined": {
-    "value": 131,
+    "value": 230,
     "source": "python -m pytest --collect-only -q",
     "how": "add tests/ and airflow/tests collections"
   },
   "airflow.tests.total": {
-    "value": 34,
+    "value": 44,
     "source": "PYTHONPATH=airflow python -m pytest --collect-only -q airflow/tests",
     "how": "parse pytest collect-only totals"
   },
@@ -435,6 +436,7 @@
       ".github/workflows/ci.yml",
       ".github/workflows/leaks.yml",
       "airflow/compose.yml",
+      "airflow/dags/fleet_batch_cleanup.py",
       "airflow/dags/fleet_dbt_daliy.py",
       "airflow/dags/fleet_report_weekly.py",
       "airflow/dags/fleet_watchdog.py",

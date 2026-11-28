@@ -78,6 +78,8 @@ jobs:
         run: make install
       - name: Run unit tests
         run: make py-unit
+      - name: Enforce coverage gate
+        run: make py-cov COV_MIN=80
 
   contracts:
     name: Contracts
@@ -110,6 +112,8 @@ jobs:
         run: make dbt-deps
       - name: Parse dbt project
         run: make dbt-parse ENV=ci
+      - name: Check dbt asset keys
+        run: make dbt-asset-keys-check
 
   airflow-test:
     name: Airflow tests
@@ -178,7 +182,7 @@ jobs:
       - name: Load contract fixtures
         run: make load-fixtures ENV=ci
       - name: Build dbt with fixtures
-        run: make dbt-build ENV=ci EXCLUDE=unit_test
+        run: make dbt-build ENV=ci
 
   image-build:
     name: Build and smoke image

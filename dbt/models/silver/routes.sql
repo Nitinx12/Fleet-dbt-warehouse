@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'route_id',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [{'columns': ['route_id'], 'unique': true}],
     tags                 = ['silver', 'incremental']
 ) }}
@@ -12,7 +12,18 @@
 -- Cast data types and standardise text, validate lane values
 
 WITH source AS (
-    SELECT *
+    SELECT
+        route_id,
+        origin_city,
+        origin_state,
+        destination_city,
+        destination_state,
+        typical_distance_miles,
+        base_rate_per_mile,
+        fuel_surcharge_rate,
+        typical_transit_days,
+        loaded_at,
+        _ingested_at
     FROM {{ source('bronze', 'mysql__routes') }}
     {{ bronze_incremental_filter() }}
 ),

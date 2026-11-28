@@ -12,5 +12,5 @@ Airflow's `fleet_daily_load` runs at `0 2 * * *` in `Asia/Kolkata` and sequences
 
 ## Consequences
 - Local, CI, and orchestrated runs use the same scripts and Make targets.
-- Schedules are cron and task dependencies; asset keys from the dbt manifest are not wired.
+- Schedules are cron and task dependencies; dbt run tasks publish manifest-keyed asset outlets, and opt-in stale-batch cleanup calls `control.fail_stale_batches()`.
 - DAG tests cover structure, tiers, callbacks, redaction, and command builders without moving data.

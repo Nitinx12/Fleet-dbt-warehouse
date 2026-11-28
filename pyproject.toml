@@ -22,6 +22,7 @@ dev = [
     "nbconvert>=7.17.2",
     "pandas>=3.1.1",
     "pytest>=9.0",
+    "pytest-cov>=7.1",
     "ruff>=0.16",
     "seaborn>=0.13.2",
 ]
@@ -58,6 +59,7 @@ known-first-party = ["streamlit_state"]
 "fleet_stream" = { msg = "streaming code must live under kafka/" }
 
 [tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
 testpaths = ["tests"]
 pythonpath = [".", "site/scripts"]
 markers = [
@@ -67,3 +69,13 @@ markers = [
     "smoke: fast post-build or post-deploy liveness checks",
     "smoke_prod: read-only checks against production",
 ]
+
+[tool.coverage.run]
+branch = true
+relative_files = true
+omit = ["tests/*", "**/tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+precision = 2

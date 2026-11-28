@@ -1,13 +1,8 @@
 version: 2
 
-# Gold marts: pre-aggregated, denormalised, incremental tables for BI.
-# Every mart has a single-column surrogate key (mart_key) over its grain, the dimension keys it was built from
-# (so BI can still join to the dim_* tables), denormalised dimension attributes, additive measures and a few
-# row-level ratios. Ratios are NOT additive: roll up from the additive columns named in each model's header.
-# Relationship tests are severity: warn, same convention as the facts.
+# Contracted gold marts and their reconciliation check.
 
 models:
-
   - name: mart_sales_daily
     description: >
       Revenue mart. Grain: load date x customer x route (lane). Source: fct_loads.
@@ -16,37 +11,175 @@ models:
     columns:
       - name: mart_key
         description: "Primary key, MD5 over (load_date_key, customer_key, route_key)."
+        data_type: text
         tests: [unique, not_null]
       - name: load_date_key
+        description: "FK to dim_date for the load date."
+        data_type: integer
         tests:
           - not_null
-          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: error}}
       - name: customer_key
+        description: "FK to dim_customers for the billed customer."
+        data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_customers')", field: customer_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_customers')", field: customer_key, config: {severity: error}}
       - name: route_key
+        description: "FK to dim_routes for the lane."
+        data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_routes')", field: route_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_routes')", field: route_key, config: {severity: error}}
+      - name: load_date
+        description: "Calendar date of the load."
+        data_type: date
+      - name: year_number
+        description: "Calendar year of the load date."
+        data_type: integer
+      - name: quarter_number
+        description: "Calendar quarter of the load date, 1-4."
+        data_type: integer
+      - name: month_number
+        description: "Month of year of the load date, 1-12."
+        data_type: integer
+      - name: month_name
+        description: "Full month name of the load date."
+        data_type: text
+      - name: year_month
+        description: "YYYY-MM label of the load date."
+        data_type: text
+      - name: iso_year_number
+        description: "ISO-8601 year of the load date."
+        data_type: integer
+      - name: iso_week_number
+        description: "ISO-8601 week of the load date, 1-53."
+        data_type: integer
+      - name: day_name
+        description: "Weekday name of the load date."
+        data_type: text
+      - name: is_weekend
+        description: "TRUE when the load date is a Saturday or Sunday."
+        data_type: boolean
+      - name: week_start_date
+        description: "Monday of the ISO week containing the load date."
+        data_type: date
+      - name: month_start_date
+        description: "First day of the month containing the load date."
+        data_type: date
+      - name: customer_id
+        description: "Natural key of the billed customer."
+        data_type: text
+      - name: customer_name
+        description: "Customer display name, Unknown when missing."
+        data_type: text
+      - name: customer_type
+        description: "Customer type band, Unknown when missing."
+        data_type: text
+      - name: credit_terms_band
+        description: "Banded credit terms, Unknown when missing."
+        data_type: text
+      - name: primary_freight_type
+        description: "Primary freight category, Unknown when missing."
+        data_type: text
+      - name: account_status
+        description: "Customer account status, Unknown when missing."
+        data_type: text
+      - name: customer_is_active
+        description: "TRUE when the customer account is Active."
+        data_type: boolean
+      - name: route_id
+        description: "Natural key of the lane."
+        data_type: text
+      - name: lane_name
+        description: "Lane display name, Unknown when missing."
+        data_type: text
+      - name: origin_city
+        description: "Origin city of the lane, Unknown when missing."
+        data_type: text
+      - name: origin_state
+        description: "Origin state code of the lane."
+        data_type: text
+      - name: destination_city
+        description: "Destination city of the lane, Unknown when missing."
+        data_type: text
+      - name: destination_state
+        description: "Destination state code of the lane."
+        data_type: text
+      - name: is_intrastate
+        description: "TRUE when origin and destination states match."
+        data_type: boolean
+      - name: haul_type
+        description: "Haul length band of the lane, Unknown when missing."
+        data_type: text
+      - name: typical_distance_miles
+        description: "Typical lane distance in miles."
+        data_type: integer
       - name: loads_count
         description: "Number of loads in the group."
+        data_type: bigint
         tests: [non_negative]
+      - name: cancelled_loads
+        description: "Loads with Cancelled status."
+        data_type: bigint
+      - name: delivered_loads
+        description: "Loads with Completed or Delivered status."
+        data_type: bigint
+      - name: in_transit_loads
+        description: "Loads with In Transit status."
+        data_type: bigint
+      - name: booked_loads
+        description: "Loads with Booked status."
+        data_type: bigint
+      - name: loads_with_unknown_charges
+        description: "Loads whose total_charges component is unknown."
+        data_type: bigint
+      - name: weight_lbs
+        description: "Sum of load weight in pounds."
+        data_type: bigint
+      - name: pieces
+        description: "Sum of pieces across loads."
+        data_type: bigint
       - name: revenue
-        description: "Sum of load revenue (includes cancelled loads; see revenue_excl_cancelled)."
+        description: "Sum of load revenue, including cancelled loads."
+        data_type: numeric
         tests: [non_negative]
+      - name: fuel_surcharge
+        description: "Sum of fuel surcharges across loads."
+        data_type: numeric
+      - name: accessorial_charges
+        description: "Sum of accessorial charges across loads."
+        data_type: numeric
       - name: total_charges
-        description: "Sum of total_charges. Loads with an unknown component are excluded from the sum (counted in loads_with_unknown_charges)."
+        description: "Sum of total charges where every component is known."
+        data_type: numeric
+      - name: revenue_excl_cancelled
+        description: "Sum of revenue on loads that are not cancelled."
+        data_type: numeric
+      - name: total_charges_excl_cancelled
+        description: "Sum of total charges on loads that are not cancelled."
+        data_type: numeric
       - name: total_typical_miles
-        description: "loads_count x the lane's typical distance. Denominator for revenue_per_typical_mile."
+        description: "loads_count x the lane's typical distance; denominator for revenue_per_typical_mile."
+        data_type: bigint
       - name: avg_revenue_per_load
         description: "Non-additive. SUM(revenue) / SUM(loads_count) when rolling up."
+        data_type: numeric
       - name: cancellation_rate
         description: "Non-additive. SUM(cancelled_loads) / SUM(loads_count) when rolling up."
+        data_type: numeric
+      - name: revenue_per_typical_mile
+        description: "Non-additive. SUM(revenue) / SUM(total_typical_miles) when rolling up."
+        data_type: numeric
       - name: source_gold_loaded_at
         description: "Latest fct_loads.gold_loaded_at in the group. Incremental watermark."
+        data_type: timestamp with time zone
       - name: dim_hash
-        description: "Fingerprint of the denormalised customer / lane attributes. A change triggers a re-compute of the row."
+        description: "Fingerprint of the denormalised customer and lane attributes."
+        data_type: text
+      - name: mart_loaded_at
+        description: "UTC timestamp when this mart row was built."
+        data_type: timestamp with time zone
 
   - name: mart_equipment_utilization_daily
     description: >
@@ -56,160 +189,882 @@ models:
     columns:
       - name: mart_key
         description: "Primary key, MD5 over (dispatch_date_key, truck_key, trailer_key)."
+        data_type: text
         tests: [unique, not_null]
       - name: dispatch_date_key
+        description: "FK to dim_date for the dispatch date."
+        data_type: integer
         tests:
           - not_null
-          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: error}}
       - name: truck_key
+        description: "FK to dim_trucks for the truck on the trip."
+        data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: error}}
       - name: trailer_key
+        description: "FK to dim_trailers for the trailer on the trip."
+        data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_trailers')", field: trailer_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_trailers')", field: trailer_key, config: {severity: error}}
+      - name: dispatch_date
+        description: "Calendar date of trip dispatch."
+        data_type: date
+      - name: year_number
+        description: "Calendar year of the dispatch date."
+        data_type: integer
+      - name: quarter_number
+        description: "Calendar quarter of the dispatch date, 1-4."
+        data_type: integer
+      - name: month_number
+        description: "Month of year of the dispatch date, 1-12."
+        data_type: integer
+      - name: month_name
+        description: "Full month name of the dispatch date."
+        data_type: text
+      - name: year_month
+        description: "YYYY-MM label of the dispatch date."
+        data_type: text
+      - name: iso_year_number
+        description: "ISO-8601 year of the dispatch date."
+        data_type: integer
+      - name: iso_week_number
+        description: "ISO-8601 week of the dispatch date, 1-53."
+        data_type: integer
+      - name: day_name
+        description: "Weekday name of the dispatch date."
+        data_type: text
+      - name: is_weekend
+        description: "TRUE when the dispatch date is a Saturday or Sunday."
+        data_type: boolean
+      - name: week_start_date
+        description: "Monday of the ISO week containing the dispatch date."
+        data_type: date
+      - name: month_start_date
+        description: "First day of the month containing the dispatch date."
+        data_type: date
+      - name: truck_id
+        description: "Natural key of the truck."
+        data_type: text
+      - name: unit_number
+        description: "Fleet unit number of the truck."
+        data_type: integer
+      - name: truck_make
+        description: "Truck make, Unknown when missing."
+        data_type: text
+      - name: truck_model_year
+        description: "Model year of the truck."
+        data_type: integer
+      - name: truck_fuel_type
+        description: "Truck fuel type, Unknown when missing."
+        data_type: text
+      - name: truck_status
+        description: "Truck availability status, Unknown when missing."
+        data_type: text
+      - name: truck_is_available
+        description: "TRUE when the truck status is Active."
+        data_type: boolean
+      - name: truck_age_band
+        description: "Truck age band, Unknown when missing."
+        data_type: text
+      - name: truck_home_terminal
+        description: "Truck home terminal, Unknown when missing."
+        data_type: text
+      - name: trailer_id
+        description: "Natural key of the trailer."
+        data_type: text
+      - name: trailer_number
+        description: "Fleet trailer number."
+        data_type: integer
+      - name: trailer_type
+        description: "Trailer body type, Unknown when missing."
+        data_type: text
+      - name: trailer_length_feet
+        description: "Trailer length in feet."
+        data_type: integer
+      - name: trailer_status
+        description: "Trailer status, Unknown when missing."
+        data_type: text
+      - name: trailer_age_band
+        description: "Trailer age band, Unknown when missing."
+        data_type: text
       - name: trips_count
+        description: "Number of trips in the group."
+        data_type: bigint
         tests: [non_negative]
       - name: distance_miles
+        description: "Sum of actual trip distance in miles."
+        data_type: bigint
         tests: [non_negative]
+      - name: duration_hours
+        description: "Sum of actual trip duration in hours."
+        data_type: numeric
+      - name: fuel_gallons_used
+        description: "Sum of fuel gallons used across trips."
+        data_type: numeric
+      - name: idle_hours
+        description: "Sum of engine idle hours across trips."
+        data_type: numeric
       - name: mpg_miles
-        description: "Miles on trips where fuel and distance are both known. Numerator for fleet_mpg."
+        description: "Miles on trips where fuel and distance are both known; numerator for fleet_mpg."
+        data_type: bigint
       - name: mpg_gallons
-        description: "Gallons on the same trips as mpg_miles. Denominator for fleet_mpg."
+        description: "Gallons on the same trips as mpg_miles; denominator for fleet_mpg."
+        data_type: numeric
       - name: speed_miles
-        description: "Miles on trips with known distance and duration > 0. Numerator for avg_speed_mph."
+        description: "Miles on trips with known distance and positive duration; numerator for avg_speed_mph."
+        data_type: bigint
       - name: speed_hours
-        description: "Hours on the same trips as speed_miles. Denominator for avg_speed_mph."
+        description: "Hours on the same trips as speed_miles; denominator for avg_speed_mph."
+        data_type: numeric
+      - name: mpg_inconsistent_trips
+        description: "Trips whose reported and calculated MPG disagree."
+        data_type: bigint
       - name: fleet_mpg
         description: "Non-additive. SUM(mpg_miles) / SUM(mpg_gallons) when rolling up."
+        data_type: numeric
       - name: avg_speed_mph
         description: "Non-additive. SUM(speed_miles) / SUM(speed_hours) when rolling up."
+        data_type: numeric
       - name: idle_share
         description: "Non-additive. SUM(idle_hours) / SUM(duration_hours) when rolling up."
+        data_type: numeric
+      - name: avg_trip_miles
+        description: "Non-additive. SUM(distance_miles) / SUM(trips_count) when rolling up."
+        data_type: numeric
+      - name: avg_trip_hours
+        description: "Non-additive. SUM(duration_hours) / SUM(trips_count) when rolling up."
+        data_type: numeric
       - name: source_gold_loaded_at
         description: "Latest fct_trips.gold_loaded_at in the group. Incremental watermark."
+        data_type: timestamp with time zone
+      - name: dim_hash
+        description: "Fingerprint of the denormalised truck and trailer attributes."
+        data_type: text
+      - name: mart_loaded_at
+        description: "UTC timestamp when this mart row was built."
+        data_type: timestamp with time zone
 
   - name: mart_delivery_performance_daily
     description: >
-      Delivery / on-time performance mart. Grain: scheduled date x facility x event type.
-      Source: fct_delivery_events. Use for OTIF, delay, dwell and detention dashboards by facility.
+      Delivery and on-time performance mart. Grain: scheduled date x facility x event type.
+      Source: fct_delivery_events. Use for OTIF, delay, dwell and detention dashboards.
     meta: {owner: data-engineering, tier: gold, serve: true, contains_pii: false, bi_domain: service}
     columns:
       - name: mart_key
         description: "Primary key, MD5 over (scheduled_date_key, facility_key, event_type)."
+        data_type: text
         tests: [unique, not_null]
       - name: scheduled_date_key
+        description: "FK to dim_date for the scheduled date."
+        data_type: integer
         tests:
           - not_null
-          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: error}}
       - name: facility_key
+        description: "FK to dim_facilities for the event facility."
+        data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_facilities')", field: facility_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_facilities')", field: facility_key, config: {severity: error}}
+      - name: event_type
+        description: "Delivery event type, PICKUP or DELIVERY."
+        data_type: text
+      - name: scheduled_date
+        description: "Scheduled calendar date of the events."
+        data_type: date
+      - name: year_number
+        description: "Calendar year of the scheduled date."
+        data_type: integer
+      - name: quarter_number
+        description: "Calendar quarter of the scheduled date, 1-4."
+        data_type: integer
+      - name: month_number
+        description: "Month of year of the scheduled date, 1-12."
+        data_type: integer
+      - name: month_name
+        description: "Full month name of the scheduled date."
+        data_type: text
+      - name: year_month
+        description: "YYYY-MM label of the scheduled date."
+        data_type: text
+      - name: iso_year_number
+        description: "ISO-8601 year of the scheduled date."
+        data_type: integer
+      - name: iso_week_number
+        description: "ISO-8601 week of the scheduled date, 1-53."
+        data_type: integer
+      - name: day_name
+        description: "Weekday name of the scheduled date."
+        data_type: text
+      - name: is_weekend
+        description: "TRUE when the scheduled date is a Saturday or Sunday."
+        data_type: boolean
+      - name: week_start_date
+        description: "Monday of the ISO week containing the scheduled date."
+        data_type: date
+      - name: month_start_date
+        description: "First day of the month containing the scheduled date."
+        data_type: date
+      - name: facility_id
+        description: "Natural key of the facility."
+        data_type: text
+      - name: facility_name
+        description: "Facility display name, Unknown when missing."
+        data_type: text
+      - name: facility_type
+        description: "Facility type, Unknown when missing."
+        data_type: text
+      - name: facility_city
+        description: "Facility city, Unknown when missing."
+        data_type: text
+      - name: facility_state
+        description: "Facility state code."
+        data_type: text
+      - name: facility_city_state
+        description: "Facility city and state for display, Unknown when missing."
+        data_type: text
+      - name: facility_latitude
+        description: "Facility latitude in decimal degrees."
+        data_type: numeric
+      - name: facility_longitude
+        description: "Facility longitude in decimal degrees."
+        data_type: numeric
+      - name: facility_dock_doors
+        description: "Number of dock doors at the facility."
+        data_type: integer
+      - name: facility_operating_hours
+        description: "Facility operating hours text, Unknown when missing."
+        data_type: text
       - name: events_count
+        description: "Number of delivery events in the group."
+        data_type: bigint
         tests: [non_negative]
+      - name: completed_events
+        description: "Events with an actual time recorded."
+        data_type: bigint
       - name: open_events
         description: "Events with no actual time yet."
+        data_type: bigint
+      - name: on_time_events
+        description: "Events with a known TRUE on-time flag."
+        data_type: bigint
+      - name: late_events
+        description: "Events with a known FALSE on-time flag."
+        data_type: bigint
       - name: on_time_known_events
-        description: "Events where on_time_flag is known. Denominator for on_time_rate."
+        description: "Events where on_time_flag is known; denominator for on_time_rate."
+        data_type: bigint
+      - name: delay_minutes_sum
+        description: "Sum of signed delay minutes; numerator for avg_delay_minutes."
+        data_type: numeric
+      - name: delay_minutes_count
+        description: "Number of known delay values; denominator for avg_delay_minutes."
+        data_type: bigint
+      - name: max_delay_minutes
+        description: "Largest signed delay minute value in the group."
+        data_type: numeric
+      - name: detention_events
+        description: "Events that recorded detention."
+        data_type: bigint
+      - name: detention_minutes
+        description: "Sum of detention minutes."
+        data_type: numeric
+        tests: [non_negative]
+      - name: detention_hours
+        description: "Sum of detention hours."
+        data_type: numeric
       - name: on_time_rate
         description: "Non-additive. SUM(on_time_events) / SUM(on_time_known_events) when rolling up."
+        data_type: numeric
       - name: avg_delay_minutes
         description: "Non-additive. SUM(delay_minutes_sum) / SUM(delay_minutes_count) when rolling up."
-      - name: detention_minutes
-        tests: [non_negative]
+        data_type: numeric
+      - name: detention_rate
+        description: "Non-additive. SUM(detention_events) / SUM(events_count) when rolling up."
+        data_type: numeric
+      - name: avg_detention_minutes
+        description: "Non-additive. SUM(detention_minutes) / SUM(detention_events) when rolling up."
+        data_type: numeric
       - name: source_gold_loaded_at
         description: "Latest fct_delivery_events.gold_loaded_at in the group. Incremental watermark."
+        data_type: timestamp with time zone
+      - name: dim_hash
+        description: "Fingerprint of the denormalised facility attributes."
+        data_type: text
+      - name: mart_loaded_at
+        description: "UTC timestamp when this mart row was built."
+        data_type: timestamp with time zone
 
   - name: mart_driver_scorecard_monthly
     description: >
-      Driver scorecard. Grain: month x driver. Sources: fct_trips, fct_delivery_events, fct_fuel_purchases,
-      fct_safety_incidents. Use for safety, on-time, fuel-efficiency and productivity leaderboards.
-      Carries the driver display name (PII) from dim_drivers.
-    meta: {owner: data-engineering, tier: gold, serve: true, contains_pii: true, bi_domain: drivers}
+      Driver scorecard. Grain: month x driver. Sources: fct_trips, fct_delivery_events,
+      fct_fuel_purchases and fct_safety_incidents. Carries a PII display name, so it is not served.
+    meta: {owner: data-engineering, tier: gold, serve: false, contains_pii: true, bi_domain: drivers}
     columns:
       - name: mart_key
         description: "Primary key, MD5 over (month_key, driver_key)."
+        data_type: text
         tests: [unique, not_null]
       - name: month_key
         description: "YYYYMM integer. -1 = facts with an Unknown date."
+        data_type: integer
         tests: [not_null]
       - name: driver_key
+        description: "FK to dim_drivers for the scored driver."
+        data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_drivers')", field: driver_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_drivers')", field: driver_key, config: {severity: error}}
+      - name: month_start_date
+        description: "First day of the month represented by month_key."
+        data_type: date
+      - name: year_number
+        description: "Calendar year of the bucketed month."
+        data_type: integer
+      - name: quarter_number
+        description: "Calendar quarter of the bucketed month, 1-4."
+        data_type: integer
+      - name: month_number
+        description: "Month of year of the bucketed month, 1-12."
+        data_type: integer
+      - name: month_name
+        description: "Full month name, Unknown when the month is unknown."
+        data_type: text
+      - name: year_month
+        description: "YYYY-MM label, Unknown when the month is unknown."
+        data_type: text
+      - name: driver_id
+        description: "Natural key of the driver."
+        data_type: text
       - name: driver_name
         description: "Display name from dim_drivers (PII)."
+        data_type: text
+        meta: {contains_pii: true}
+      - name: home_terminal
+        description: "Driver home terminal, Unknown when missing."
+        data_type: text
+      - name: employment_status
+        description: "Driver employment status, Unknown when missing."
+        data_type: text
+      - name: driver_is_active
+        description: "TRUE when the driver employment status is Active."
+        data_type: boolean
+      - name: cdl_class
+        description: "Driver commercial licence class, Unknown when missing."
+        data_type: text
+      - name: license_state
+        description: "US state code of the driver's licence."
+        data_type: text
+      - name: age_band
+        description: "Driver age band, Unknown when missing."
+        data_type: text
+      - name: experience_band
+        description: "Driver experience band, Unknown when missing."
+        data_type: text
+      - name: tenure_band
+        description: "Driver tenure band, Unknown when missing."
+        data_type: text
+      - name: trips_count
+        description: "Number of trips dispatched in the month."
+        data_type: bigint
+        tests: [non_negative]
       - name: distance_miles
-        tests: [non_negative]
+        description: "Sum of trip distance in miles."
+        data_type: bigint
+      - name: duration_hours
+        description: "Sum of trip duration in hours."
+        data_type: numeric
+      - name: trip_fuel_gallons
+        description: "Sum of fuel used on trips."
+        data_type: numeric
+      - name: idle_hours
+        description: "Sum of engine idle hours on trips."
+        data_type: numeric
+      - name: mpg_miles
+        description: "Miles on trips with known positive fuel use; numerator for fleet_mpg."
+        data_type: bigint
+      - name: mpg_gallons
+        description: "Gallons on the same trips as mpg_miles; denominator for fleet_mpg."
+        data_type: numeric
+      - name: delivery_events_count
+        description: "Number of delivery events scheduled in the month."
+        data_type: bigint
+      - name: on_time_events
+        description: "Events with a known TRUE on-time flag."
+        data_type: bigint
+      - name: late_events
+        description: "Events with a known FALSE on-time flag."
+        data_type: bigint
+      - name: on_time_known_events
+        description: "Events where on_time_flag is known; denominator for on_time_rate."
+        data_type: bigint
+      - name: delay_minutes_sum
+        description: "Sum of signed delay minutes; numerator for avg_delay_minutes."
+        data_type: numeric
+      - name: delay_minutes_count
+        description: "Number of known delay values; denominator for avg_delay_minutes."
+        data_type: bigint
+      - name: detention_events
+        description: "Events that recorded detention."
+        data_type: bigint
+      - name: detention_minutes
+        description: "Sum of detention minutes."
+        data_type: numeric
+      - name: detention_hours
+        description: "Sum of detention hours."
+        data_type: numeric
+      - name: fuel_purchases_count
+        description: "Number of fuel purchases in the month."
+        data_type: bigint
+      - name: fuel_gallons_purchased
+        description: "Sum of gallons purchased."
+        data_type: numeric
       - name: fuel_cost
+        description: "Sum of fuel purchase cost."
+        data_type: numeric
         tests: [non_negative]
+      - name: fuel_cost_inconsistent_purchases
+        description: "Purchases whose reported and calculated totals disagree."
+        data_type: bigint
       - name: incidents_count
+        description: "Number of safety incidents in the month."
+        data_type: bigint
         tests: [non_negative]
-      - name: on_time_rate
-        description: "Non-additive. SUM(on_time_events) / SUM(on_time_known_events) when rolling up."
+      - name: at_fault_incidents
+        description: "Incidents where the driver was at fault."
+        data_type: bigint
+      - name: injury_incidents
+        description: "Incidents where someone was injured."
+        data_type: bigint
+      - name: preventable_incidents
+        description: "Incidents marked preventable."
+        data_type: bigint
+      - name: claims_count
+        description: "Incidents with a recorded claim."
+        data_type: bigint
+      - name: damage_cost
+        description: "Sum of incident damage cost."
+        data_type: numeric
+      - name: claim_amount
+        description: "Sum of insurance claim amounts."
+        data_type: numeric
       - name: fleet_mpg
         description: "Non-additive. SUM(mpg_miles) / SUM(mpg_gallons) when rolling up."
+        data_type: numeric
+      - name: on_time_rate
+        description: "Non-additive. SUM(on_time_events) / SUM(on_time_known_events) when rolling up."
+        data_type: numeric
+      - name: avg_delay_minutes
+        description: "Non-additive. SUM(delay_minutes_sum) / SUM(delay_minutes_count) when rolling up."
+        data_type: numeric
+      - name: avg_fuel_price_per_gallon
+        description: "Non-additive. SUM(fuel_cost) / SUM(fuel_gallons_purchased) when rolling up."
+        data_type: numeric
       - name: incidents_per_million_miles
-        description: "Non-additive. SUM(incidents_count) * 1,000,000 / SUM(distance_miles) when rolling up."
+        description: "Non-additive. SUM(incidents_count) * 1000000 / SUM(distance_miles) when rolling up."
+        data_type: numeric
       - name: source_gold_loaded_at
         description: "Latest gold_loaded_at across the four source facts for the row. Incremental watermark."
+        data_type: timestamp with time zone
+      - name: dim_hash
+        description: "Fingerprint of the denormalised driver attributes."
+        data_type: text
+      - name: mart_loaded_at
+        description: "UTC timestamp when this mart row was built."
+        data_type: timestamp with time zone
 
   - name: mart_customer_service_monthly
     description: >
-      Customer 360. Grain: month x customer. Sources: fct_loads, fct_trips, fct_delivery_events.
-      Each fact is bucketed by its own date. Use for account health, revenue, on-time and detention dashboards.
+      Customer 360. Grain: month x customer. Sources: fct_loads, fct_trips and fct_delivery_events.
+      Each fact is bucketed by its own date. Use for account health, revenue and service dashboards.
     meta: {owner: data-engineering, tier: gold, serve: true, contains_pii: false, bi_domain: customers}
     columns:
       - name: mart_key
         description: "Primary key, MD5 over (month_key, customer_key)."
+        data_type: text
         tests: [unique, not_null]
       - name: month_key
         description: "YYYYMM integer. -1 = facts with an Unknown date."
+        data_type: integer
         tests: [not_null]
       - name: customer_key
+        description: "FK to dim_customers for the customer."
+        data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_customers')", field: customer_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_customers')", field: customer_key, config: {severity: error}}
+      - name: month_start_date
+        description: "First day of the month represented by month_key."
+        data_type: date
+      - name: year_number
+        description: "Calendar year of the bucketed month."
+        data_type: integer
+      - name: quarter_number
+        description: "Calendar quarter of the bucketed month, 1-4."
+        data_type: integer
+      - name: month_number
+        description: "Month of year of the bucketed month, 1-12."
+        data_type: integer
+      - name: month_name
+        description: "Full month name, Unknown when the month is unknown."
+        data_type: text
+      - name: year_month
+        description: "YYYY-MM label, Unknown when the month is unknown."
+        data_type: text
+      - name: customer_id
+        description: "Natural key of the customer."
+        data_type: text
+      - name: customer_name
+        description: "Customer display name, Unknown when missing."
+        data_type: text
+      - name: customer_type
+        description: "Customer type band, Unknown when missing."
+        data_type: text
+      - name: credit_terms_band
+        description: "Banded credit terms, Unknown when missing."
+        data_type: text
+      - name: primary_freight_type
+        description: "Primary freight category, Unknown when missing."
+        data_type: text
+      - name: account_status
+        description: "Customer account status, Unknown when missing."
+        data_type: text
+      - name: customer_is_active
+        description: "TRUE when the customer account is Active."
+        data_type: boolean
+      - name: annual_revenue_potential
+        description: "Estimated annual revenue potential from dim_customers."
+        data_type: numeric
       - name: loads_count
+        description: "Number of loads bucketed in the month."
+        data_type: bigint
         tests: [non_negative]
+      - name: cancelled_loads
+        description: "Loads with Cancelled status."
+        data_type: bigint
+      - name: delivered_loads
+        description: "Loads with Completed or Delivered status."
+        data_type: bigint
+      - name: weight_lbs
+        description: "Sum of load weight in pounds."
+        data_type: bigint
+      - name: pieces
+        description: "Sum of pieces across loads."
+        data_type: bigint
       - name: revenue
+        description: "Sum of load revenue bucketed by load month."
+        data_type: numeric
         tests: [non_negative]
+      - name: fuel_surcharge
+        description: "Sum of fuel surcharges across loads."
+        data_type: numeric
+      - name: accessorial_charges
+        description: "Sum of accessorial charges across loads."
+        data_type: numeric
+      - name: total_charges
+        description: "Sum of total charges where every component is known."
+        data_type: numeric
+      - name: revenue_excl_cancelled
+        description: "Sum of revenue on loads that are not cancelled."
+        data_type: numeric
+      - name: trips_count
+        description: "Number of trips dispatched in the month."
+        data_type: bigint
+      - name: distance_miles
+        description: "Sum of actual trip distance in miles."
+        data_type: bigint
+      - name: duration_hours
+        description: "Sum of actual trip duration in hours."
+        data_type: numeric
+      - name: idle_hours
+        description: "Sum of engine idle hours across trips."
+        data_type: numeric
+      - name: delivery_events_count
+        description: "Number of delivery events scheduled in the month."
+        data_type: bigint
+      - name: on_time_events
+        description: "Events with a known TRUE on-time flag."
+        data_type: bigint
+      - name: late_events
+        description: "Events with a known FALSE on-time flag."
+        data_type: bigint
+      - name: on_time_known_events
+        description: "Events where on_time_flag is known; denominator for on_time_rate."
+        data_type: bigint
+      - name: delay_minutes_sum
+        description: "Sum of signed delay minutes; numerator for avg_delay_minutes."
+        data_type: numeric
+      - name: delay_minutes_count
+        description: "Number of known delay values; denominator for avg_delay_minutes."
+        data_type: bigint
+      - name: detention_events
+        description: "Events that recorded detention."
+        data_type: bigint
+      - name: detention_minutes
+        description: "Sum of detention minutes."
+        data_type: numeric
+      - name: detention_hours
+        description: "Sum of detention hours."
+        data_type: numeric
       - name: on_time_rate
         description: "Non-additive. SUM(on_time_events) / SUM(on_time_known_events) when rolling up."
+        data_type: numeric
       - name: cancellation_rate
         description: "Non-additive. SUM(cancelled_loads) / SUM(loads_count) when rolling up."
+        data_type: numeric
+      - name: detention_rate
+        description: "Non-additive. SUM(detention_events) / SUM(delivery_events_count) when rolling up."
+        data_type: numeric
+      - name: avg_revenue_per_load
+        description: "Non-additive. SUM(revenue) / SUM(loads_count) when rolling up."
+        data_type: numeric
+      - name: avg_delay_minutes
+        description: "Non-additive. SUM(delay_minutes_sum) / SUM(delay_minutes_count) when rolling up."
+        data_type: numeric
       - name: revenue_per_trip_mile
-        description: "Non-additive indicator. Revenue is bucketed by load month and miles by dispatch month, so this is not a per-load margin."
+        description: "Non-additive monthly indicator; revenue is bucketed by load month and miles by dispatch month."
+        data_type: numeric
       - name: source_gold_loaded_at
         description: "Latest gold_loaded_at across the three source facts for the row. Incremental watermark."
+        data_type: timestamp with time zone
+      - name: dim_hash
+        description: "Fingerprint of the denormalised customer attributes."
+        data_type: text
+      - name: mart_loaded_at
+        description: "UTC timestamp when this mart row was built."
+        data_type: timestamp with time zone
 
   - name: mart_truck_cost_monthly
     description: >
       Truck operating-cost mart. Grain: month x truck. Sources: fct_fuel_purchases, fct_maintenance,
-      fct_safety_incidents, fct_trips. Use for cost per mile, maintenance burden and downtime dashboards.
+      fct_safety_incidents and fct_trips. Use for cost per mile and maintenance dashboards.
     meta: {owner: data-engineering, tier: gold, serve: true, contains_pii: false, bi_domain: fleet}
     columns:
       - name: mart_key
         description: "Primary key, MD5 over (month_key, truck_key)."
+        data_type: text
         tests: [unique, not_null]
       - name: month_key
         description: "YYYYMM integer. -1 = facts with an Unknown date."
+        data_type: integer
         tests: [not_null]
       - name: truck_key
+        description: "FK to dim_trucks for the truck."
+        data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: error}}
+      - name: month_start_date
+        description: "First day of the month represented by month_key."
+        data_type: date
+      - name: year_number
+        description: "Calendar year of the bucketed month."
+        data_type: integer
+      - name: quarter_number
+        description: "Calendar quarter of the bucketed month, 1-4."
+        data_type: integer
+      - name: month_number
+        description: "Month of year of the bucketed month, 1-12."
+        data_type: integer
+      - name: month_name
+        description: "Full month name, Unknown when the month is unknown."
+        data_type: text
+      - name: year_month
+        description: "YYYY-MM label, Unknown when the month is unknown."
+        data_type: text
+      - name: truck_id
+        description: "Natural key of the truck."
+        data_type: text
+      - name: unit_number
+        description: "Fleet unit number of the truck."
+        data_type: integer
+      - name: truck_make
+        description: "Truck make, Unknown when missing."
+        data_type: text
+      - name: truck_model_year
+        description: "Model year of the truck."
+        data_type: integer
+      - name: truck_fuel_type
+        description: "Truck fuel type, Unknown when missing."
+        data_type: text
+      - name: truck_tank_capacity_gallons
+        description: "Fuel tank capacity of the truck in gallons."
+        data_type: integer
+      - name: truck_status
+        description: "Truck availability status, Unknown when missing."
+        data_type: text
+      - name: truck_is_available
+        description: "TRUE when the truck status is Active."
+        data_type: boolean
+      - name: truck_age_band
+        description: "Truck age band, Unknown when missing."
+        data_type: text
+      - name: truck_home_terminal
+        description: "Truck home terminal, Unknown when missing."
+        data_type: text
+      - name: trips_count
+        description: "Number of trips dispatched in the month."
+        data_type: bigint
+      - name: distance_miles
+        description: "Sum of actual trip distance in miles."
+        data_type: bigint
+      - name: duration_hours
+        description: "Sum of actual trip duration in hours."
+        data_type: numeric
+      - name: mpg_miles
+        description: "Miles on trips with known positive fuel use; numerator for fleet_mpg."
+        data_type: bigint
+      - name: mpg_gallons
+        description: "Gallons on the same trips as mpg_miles; denominator for fleet_mpg."
+        data_type: numeric
+      - name: fuel_purchases_count
+        description: "Number of fuel purchases in the month."
+        data_type: bigint
+      - name: fuel_gallons
+        description: "Sum of gallons purchased."
+        data_type: numeric
       - name: fuel_cost
+        description: "Sum of fuel purchase cost."
+        data_type: numeric
         tests: [non_negative]
+      - name: maintenance_orders
+        description: "Number of maintenance work orders in the month."
+        data_type: bigint
+      - name: labour_hours
+        description: "Sum of maintenance labour hours."
+        data_type: numeric
+      - name: labour_cost
+        description: "Sum of maintenance labour cost."
+        data_type: numeric
+      - name: parts_cost
+        description: "Sum of maintenance parts cost."
+        data_type: numeric
       - name: maintenance_cost
+        description: "Sum of maintenance work-order cost."
+        data_type: numeric
         tests: [non_negative]
       - name: downtime_hours
+        description: "Sum of maintenance downtime hours."
+        data_type: numeric
         tests: [non_negative]
+      - name: max_odometer_reading
+        description: "Highest odometer reading recorded at maintenance."
+        data_type: numeric
+      - name: incidents_count
+        description: "Number of safety incidents in the month."
+        data_type: bigint
+      - name: damage_cost
+        description: "Sum of incident damage cost."
+        data_type: numeric
+      - name: claim_amount
+        description: "Sum of insurance claim amounts."
+        data_type: numeric
       - name: total_operating_cost
-        description: "fuel_cost + maintenance_cost + damage_cost, unknown components treated as 0."
+        description: "fuel_cost + maintenance_cost + damage_cost, with unknown components treated as 0."
+        data_type: numeric
       - name: operating_cost_per_mile
-        description: "Non-additive. SUM(total_operating_cost) / SUM(distance_miles) when rolling up. NULL when the truck has no trip miles in the month."
+        description: "Non-additive. SUM(total_operating_cost) / SUM(distance_miles) when rolling up."
+        data_type: numeric
+      - name: fuel_cost_per_mile
+        description: "Non-additive. SUM(fuel_cost) / SUM(distance_miles) when rolling up."
+        data_type: numeric
+      - name: maintenance_cost_per_mile
+        description: "Non-additive. SUM(maintenance_cost) / SUM(distance_miles) when rolling up."
+        data_type: numeric
+      - name: fleet_mpg
+        description: "Non-additive. SUM(mpg_miles) / SUM(mpg_gallons) when rolling up."
+        data_type: numeric
+      - name: avg_fuel_price_per_gallon
+        description: "Non-additive. SUM(fuel_cost) / SUM(fuel_gallons) when rolling up."
+        data_type: numeric
       - name: source_gold_loaded_at
         description: "Latest gold_loaded_at across the four source facts for the row. Incremental watermark."
+        data_type: timestamp with time zone
+      - name: dim_hash
+        description: "Fingerprint of the denormalised truck attributes."
+        data_type: text
+      - name: mart_loaded_at
+        description: "UTC timestamp when this mart row was built."
+        data_type: timestamp with time zone
+
+  - name: assert_marts_reconcile_to_facts
+    description: >
+      Reconciliation output: one row per mart measure that does not add back to its source fact.
+      Returns no rows when every check passes.
+    meta: {owner: data-engineering, tier: gold, serve: false, contains_pii: false}
+    columns:
+      - name: check_name
+        description: "Identifier of the mart measure check that failed."
+        data_type: text
+      - name: fact_value
+        description: "Additive measure computed from the source fact model."
+        data_type: numeric
+      - name: mart_value
+        description: "Additive measure computed from the mart model."
+        data_type: numeric
+      - name: difference
+        description: "fact_value minus mart_value; non-zero rows are the failures."
+        data_type: numeric
+
+unit_tests:
+  - name: test_assert_marts_reconcile_to_facts_flags_revenue_drift
+    model: assert_marts_reconcile_to_facts
+    given:
+      - input: ref('fct_loads')
+        format: sql
+        rows: |
+          select 100::numeric as revenue
+      - input: ref('mart_sales_daily')
+        format: sql
+        rows: |
+          select 1::bigint as loads_count, 90::numeric as revenue
+      - input: ref('mart_customer_service_monthly')
+        format: sql
+        rows: |
+          select 1::bigint as loads_count, 100::numeric as revenue
+      - input: ref('fct_trips')
+        format: sql
+        rows: |
+          select 250::integer as actual_distance_miles
+      - input: ref('mart_equipment_utilization_daily')
+        format: sql
+        rows: |
+          select 1::bigint as trips_count, 250::bigint as distance_miles
+      - input: ref('mart_driver_scorecard_monthly')
+        format: sql
+        rows: |
+          select 1::bigint as trips_count, 1::bigint as incidents_count, 40::numeric as fuel_cost
+      - input: ref('fct_delivery_events')
+        format: sql
+        rows: |
+          select 15::numeric as detention_minutes
+      - input: ref('mart_delivery_performance_daily')
+        format: sql
+        rows: |
+          select 1::bigint as events_count, 15::numeric as detention_minutes
+      - input: ref('fct_safety_incidents')
+        format: sql
+        rows: |
+          select 'INC1'::text as incident_id
+      - input: ref('fct_fuel_purchases')
+        format: sql
+        rows: |
+          select 40::numeric as total_cost
+      - input: ref('fct_maintenance')
+        format: sql
+        rows: |
+          select 60::numeric as total_cost
+      - input: ref('mart_truck_cost_monthly')
+        format: sql
+        rows: |
+          select 40::numeric as fuel_cost, 60::numeric as maintenance_cost
+    expect:
+      format: sql
+      rows: |
+        select 'mart_sales_daily.revenue'::text as check_name,
+               100::numeric as fact_value,
+               90::numeric as mart_value,
+               10::numeric as difference

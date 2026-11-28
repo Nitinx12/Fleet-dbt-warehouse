@@ -60,6 +60,7 @@ flowchart LR
 | `bronze` | Ingestion and fixture loader | Raw landed rows must remain unchanged before silver. |
 | `silver` | dbt | One typed model per bronze table; no business joins. |
 | `gold` | dbt | Business keys, conformed dimensions, facts, and PII rules. |
+| `snapshots` | dbt | Daily history for customers, drivers and trucks; facts and marts are not wired to it. |
 | `marts` | dbt | Denormalised grains for BI and publication. |
 | Databricks `marts` copy | `scripts/publish_marts.py` | Read-only serving copy. |
 | `control`, `audit` | `control.*` functions, Python, SQL triggers, Airflow | Run state and evidence cannot be edited by dbt. |
@@ -70,7 +71,7 @@ flowchart LR
 |---|---|
 | dbt owns transformations; Python only moves data | One testable lineage; more data lands in `bronze` before it is shaped. |
 | Watermark micro-batches with lookback | Handles late and changed rows without full reloads; watermark resets and reprocessing windows need monitoring. |
-| SCD1 current-state dimensions | Simple, fast BI; no historical attribution until snapshots/SCD2 are added. |
+| Current-state SCD1 dimensions with snapshots | Simple, fast BI; snapshots capture customer, driver and truck history without rewiring fact/mart grain. |
 | Published-mart allowlist | Prevents PII or unreviewed models reaching Databricks; new grains require a reviewed PR. |
 | Airflow decides when, scripts decide what | Local, CI, and DAG runs use the same commands; DAG code holds no transformation logic. |
 
@@ -92,11 +93,16 @@ flowchart LR
 - `control.batch` keeps run state, while `audit.*` stores task, dbt, quality, reconciliation, and error evidence.
 - Failed batches emit `pg_notify('pipeline_failure', …)` and a redacted operator notification.
 
-## Current gaps
+## Current state and gaps
 
-- dbt model contracts are not enforced, and incremental models use `append_new_columns`.
-- There are no dbt unit tests or snapshots committed.
-- Airflow assets, scheduled stale-batch cleanup, and weekly/watchdog DAG bodies are not implemented.
+All 32 dbt models enforce contracts, mart columns declare `data_type`, incremental models use `on_schema_change: fail`, and every relationships test is error severity. The manifest has 401 test nodes with 0 warn, including 391 schema tests (138 silver, 202 gold, 51 marts) and 3 unit tests. Watchdog and opt-in stale-batch cleanup are implemented; dbt run tasks publish manifest-keyed assets.
+
+Remaining gaps:
+
+- Snapshots exist for customers, drivers and trucks, but facts and marts still read current-state SCD1 dimensions.
+- `fleet_report_weekly` remains a skeleton; no approved weekly payload exists yet.
+- There is no production data rollback beyond code redeploy, and no scheduled backup/restore with a tested restore.
+- CI uses Python 3.12 while the image uses Python 3.13.
 - `SOURCE_MODE` is not a unified switch; fixture loading is a separate guarded script.
 
 Related: [deployment guide](DEPLOYMENT.md), [dbt guide](DBT.md), [testing guide](TESTING.md), [decision records](adr/).

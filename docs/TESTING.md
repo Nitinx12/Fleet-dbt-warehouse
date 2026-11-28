@@ -16,6 +16,8 @@ without explicit approval.
 ```bash
 make lint-fast                 # Ruff lint + format check
 make py-test                   # full root pytest suite
+make py-cov                    # pytest with the COV_MIN=80 gate
+make py-cov-report             # coverage report without the gate
 make py-unit                   # fast isolated unit tests
 make py-integration            # throwaway Postgres integration tests
 make py-smoke                  # post-build liveness checks
@@ -27,7 +29,10 @@ make airflow-test              # orchestration tests with PYTHONPATH=airflow
 make stream-test               # Kafka-free stream and static Spark tests
 make stream-test-integration   # Kafka container + fleet_it_* database
 make dbt-parse ENV=dev         # static dbt parse, no warehouse queries
+make dbt-asset-keys-check      # committed Airflow asset keys match the manifest
+make dbt-unit ENV=dev          # dbt unit tests without warehouse data
 make dbt-test ENV=dev          # DB-backed dbt tests
+make pipeline-stats ENV=dev    # read-only run time and largest loaded table
 ```
 
 `make ci` still aliases `verify` for local use. The full pipeline lives in
@@ -36,9 +41,11 @@ Actions” below.
 
 ## Python suite — `tests/`
 
-`make py-test` runs pytest from the repo root. Current collection is 97 tests:
-73 `unit`, 8 `integration` and 16 `smoke`. Markers are declared in
+`make py-test` runs pytest from the repo root. Current collection is 186 tests
+across `unit`, `integration` and `smoke`. Markers are declared in
 `pyproject.toml` and applied automatically from the folder by `tests/conftest.py`.
+`make py-cov` uses pytest-cov on `scripts` and `utils` with `COV_MIN=80` and
+reports a measured TOTAL of 84.36%; `make py-cov-report` skips the gate.
 
 ```text
 tests/
@@ -49,7 +56,7 @@ tests/
 ```
 
 `tests/integration/conftest.py` creates a uniquely named scratch database,
-applies `sql/scripts/01..08` in order, yields a SQLAlchemy engine, then drops the
+applies `sql/scripts/01..07` in order, yields a SQLAlchemy engine, then drops the
 database with `WITH (FORCE)`. Integration tests skip when Postgres is unreachable.
 
 | File | Coverage |
@@ -57,18 +64,25 @@ database with `WITH (FORCE)`. Integration tests skip when Postgres is unreachabl
 | `conftest.py` | Default env vars so modules import without a real `.env`; folder marker hook. |
 | `unit/test_audit.py` | Audit labels, required columns, `TaskHandle` and sanitised errors. |
 | `unit/test_connection.py` | Connection getters, quiet logger and Databricks retry configuration. |
+| `unit/test_dbt_asset_keys.py` | Manifest-derived asset groups, deterministic writes and fail-closed key checks. |
 | `unit/test_dbt_audit.py` | dbt artifact parsing, invocation rows, stale/missing artifacts and batch linkage. |
 | `unit/test_engine.py` | Required env names, fail-closed settings, port casting and loaded config. |
 | `unit/test_ingestion.py` | Ingestion CLI defaults and contract selection. |
+| `unit/test_ingestion_behaviour.py` | Contract parsing, bronze writes, extraction bounds, reconciliation and batch ownership. |
 | `unit/test_load_fixtures.py` | Fixture type mapping, fail-closed guard and source-spec construction. |
+| `unit/test_pipeline_stats.py` | Read-only stats queries, bound values, rendering and the production guard. |
 | `unit/test_publish_marts.py` | PII exclusion, Databricks type mapping, SQL escaping, batching, char budgets and handled HTTP errors. |
+| `unit/test_publish_marts_behaviour.py` | Publisher snapshot, MERGE, rollback, batch and audit behaviour with fakes. |
 | `unit/test_run_notebooks.py` | Missing data directories before a kernel starts. |
 | `unit/test_site_numbers.py` | Fact formats, whole-value bindings, audit view parsing and injected drift. |
+| `unit/test_stream_scripts.py` | Stream launcher guards, UTC defaults and batch context forwarding. |
+| `unit/test_streamlit_state.py` | Site payload builder and safe audit-view parsing. |
 | `integration/conftest.py` | Throwaway Postgres database built from `sql/scripts/01..07`. |
 | `integration/test_site_contract.py` | Site checker, stale facts and placeholder-free render. |
 | `integration/test_audit_db.py` | Audit helpers write only allowed rows and roll back cleanly. |
 | `integration/test_ingestion_fixture.py` | Bronze primary keys and fixture rows through the bronze write path. |
 | `integration/test_notebook_execution.py` | A small notebook runs through a real Jupyter kernel. |
+| `integration/test_pipeline_stats.py` | Stats report reads audit timings, ingest rows and relation sizes from Postgres. |
 | `integration/test_pipeline_triggers.py` | Failure triggers write one deduplicated `audit.error_log` row per failed task/batch. |
 | `smoke/test_env_and_connectivity.py` | Required env settings and a Postgres reachability query. |
 | `smoke/test_imports.py` | Production modules import cleanly. |
@@ -89,9 +103,10 @@ with the stream stack running.
 
 `make airflow-test` runs the DAG and orchestration files with
 `PYTHONPATH=airflow`. Some DAG tests require the Airflow Task SDK installed in
-the Airflow image, not in the local venv.
+the Airflow image, not in the local venv. Direct collection finds 44 tests;
+combined with the root suite this is 230 collected Python tests.
 `airflow/tests/test_run_dbt.py` exists but is not in the Make target; running
-`PYTHONPATH=airflow pytest airflow/tests` collects all 34.
+`PYTHONPATH=airflow pytest airflow/tests` collects all 44.
 
 | File | Coverage |
 |---|---|
@@ -113,23 +128,30 @@ the Airflow image, not in the local venv.
 
 ## dbt tests — `dbt/`
 
-The parsed manifest currently has 12 sources, 32 models and 383 tests:
-348 at `error` severity and 35 at `warn` severity.
+The parsed manifest has 12 sources and 32 models. It contains 391 schema tests
+(138 silver, 202 gold, 51 marts), 401 test nodes at 0 warn severity, and 3 dbt
+unit tests. All 32 models enforce contracts, mart columns declare `data_type`,
+incremental models use `on_schema_change: fail`, and every relationships test is
+error severity.
 
-| Layer | Tests | Main test types |
+| Layer | Schema tests | Main test types |
 |---|---:|---|
-| `silver` | 134 | `unique`, `not_null`, `accepted_values`, `relationships`, `non_negative`, `within_range`, `not_in_future`, `max_scale`, `is_us_state_code`, `is_clean_text`, `is_true`, `date_not_before`. |
-| `gold` | 198 | Same family as silver, with 24 `relationships` tests at `warn` severity. |
-| `marts` | 51 | `unique`, `not_null`, `relationships`, `non_negative`; all relationships are `severity: warn`. |
+| `silver` | 138 | `unique`, `not_null`, `accepted_values`, `relationships`, `non_negative`, `within_range`, `not_in_future`, `max_scale`, `is_us_state_code`, `is_clean_text`, `is_true`, `date_not_before`. |
+| `gold` | 202 | Same family as silver; relationships are error severity. |
+| `marts` | 51 | `unique`, `not_null`, `relationships`, `non_negative`; relationships are error severity. |
 
-Project-specific generic tests live in `dbt/tests/generic/silver/`. There are no
-dbt unit tests committed yet. `assert_marts_reconcile_to_facts` is a table model
-that returns mart/fact mismatches, not a dbt test node; `dbt test` will not
-execute it as a test.
+Project-specific generic tests live in `dbt/tests/generic/silver/`. Three unit
+tests and three snapshots (`snap_customers`, `snap_drivers`, `snap_trucks`) are
+committed; snapshots capture history but facts and marts still use current-state
+SCD1 dimensions. `assert_marts_reconcile_to_facts` is a table model that returns
+mart/fact mismatches, not a dbt test node; `dbt test` will not execute it as a
+test.
 
-Run static parse checks with `make dbt-parse ENV=dev`. Run warehouse-backed
-checks with `make dbt-silver-tests ENV=dev`, `make dbt-gold-tests ENV=dev`,
-`make dbt-marts-tests ENV=dev` or `make dbt-test ENV=dev`.
+Run static parse checks with `make dbt-parse ENV=dev` and asset-key checks with
+`make dbt-asset-keys-check`. Run unit tests with `make dbt-unit ENV=dev` and
+warehouse-backed checks with `make dbt-silver-tests ENV=dev`,
+`make dbt-gold-tests ENV=dev`, `make dbt-marts-tests ENV=dev` or
+`make dbt-test ENV=dev`.
 
 ## Contracts and fixtures
 
@@ -173,9 +195,11 @@ secrets. None of these helpers is wired into `make verify` yet.
 ## GitHub Actions
 
 `ci.yml` runs on pull requests and pushes to `main`. PR and push runs perform
-lint, unit tests, contract checks, `dbt parse`, Airflow tests, broker-free stream
-tests, integration tests against a throwaway Postgres service, audit/control
-bootstrap, and a dbt fixture build in `ci_pr_<n>_*` schemas. The image jobs build
+lint, unit tests with the `COV_MIN=80` coverage gate, contract checks,
+`dbt parse` followed by `make dbt-asset-keys-check`, Airflow tests, broker-free
+stream tests, integration tests against a throwaway Postgres service,
+audit/control bootstrap, and a dbt fixture build that includes unit tests in
+`ci_pr_<n>_*` schemas. The image jobs build
 the Airflow image with `GIT_SHA` and the stream image with the same commit tag
 plus a `-stream` suffix, run in-image smoke checks and push
 `ghcr.io/<owner>/<repo>:sha-<commit>` and `...:sha-<commit>-stream` only on
@@ -215,9 +239,11 @@ GHCR. The compose file reads `AIRFLOW_IMAGE` so the deploy can pin a digest.
 
 - `make ci` is a local alias for `verify`; the full pipeline runs in GitHub Actions.
 - `smoke` tests exist under `tests/smoke/`; no `smoke_prod` tests exist yet.
-- No coverage plugin, `[tool.coverage.*]` config or enforced `COV_MIN` gate is
-  implemented.
-- No dbt unit tests, snapshots or full column-level contract enforcement yet.
+- `make contracts-check` aligns index, YAML source names and bronze table names,
+  but does not compare column-level drift.
+- `fleet_report_weekly` is still a skeleton; there are no production data
+  rollback or tested backup/restore procedures, and CI uses Python 3.12 while
+  the image uses 3.13.
 - No release or cleanup workflow is tracked yet.
 
 ## Adding tests

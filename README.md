@@ -197,14 +197,14 @@ DAG file: `airflow/dags/fleet_dbt_daliy.py`. Schedule: `0 2 * * *` in `Asia/Kolk
 |---|---|---|
 | Source tables / collections | 12 (9 MySQL, 3 MongoDB) | `contracts/sources/*.yml` |
 | dbt models | 32 (12 silver, 13 gold, 7 marts) | `dbt/target/manifest.json` |
-| dbt tests | 391 (357 error, 35 warn) | `dbt/target/manifest.json` |
+| dbt tests | 391 schema tests (401 manifest nodes, 0 warn), including 3 unit tests | `dbt/target/manifest.json` |
 | Published marts | 5 | `scripts/publish_marts.py` |
-| Python/Airflow tests | 131 collected (97 + 34) | pytest collection |
+| Python/Airflow tests | 230 collected (186 + 44) | pytest collection |
 | CI jobs | 9, plus 1 secret-scan job | `.github/workflows/` |
 
 ## Data quality and testing
 
-391 dbt tests split 138 silver, 202 gold and 51 marts. Python has 97 collected tests and Airflow 34; 12 contracts are checked and CI has 9 jobs plus Gitleaks. There are no enforced dbt contracts. Full gate table: [data quality](docs/DATA_QUALITY.md); inventory: [testing](docs/TESTING.md); site numbers: [site facts](site/SITE.md).
+391 dbt schema tests split 138 silver, 202 gold and 51 marts, expanded to 401 manifest nodes with 0 warn; 3 dbt unit tests and 3 snapshots are committed, all contracts are enforced and all relationships are error severity. Python has 186 collected tests and Airflow 44; coverage is gated at `COV_MIN=80`. 12 source contracts are checked and CI has 9 jobs plus Gitleaks. Full gate table: [data quality](docs/DATA_QUALITY.md); inventory: [testing](docs/TESTING.md); site numbers: [site facts](site/SITE.md).
 
 ## Key design decisions
 
@@ -260,9 +260,9 @@ Source: `audit.stream_health`, `realtime.*`, `control.stream`; chart generated b
 
 ## Limitations and known gaps
 
-- Coverage: Not configured; typical run time and largest table loaded: Not measured.
-- dbt contracts are not enforced (0 of 32); there are no dbt unit tests or snapshots.
-- 35 `warn` tests are gold and mart `relationships` checks; Airflow assets and stale-batch cleanup are not implemented.
+- Coverage is gated at `COV_MIN=80` with `make py-cov`; `make pipeline-stats ENV=dev` reports typical run time and largest loaded table read-only from `audit.*` and catalog metadata.
+- All 32 dbt models enforce contracts; 3 unit tests and 3 snapshots are committed.
+- All dbt `relationships` tests are error severity; Airflow dbt run tasks publish manifest-keyed assets and `fleet_batch_cleanup` fails stale batches when enabled.
 
 ## Repository map
 

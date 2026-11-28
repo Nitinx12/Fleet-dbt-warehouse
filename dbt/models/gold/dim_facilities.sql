@@ -10,7 +10,18 @@
 -- One current row per facility (Type 1) plus an Unknown member.
 
 WITH facilities AS (
-    SELECT * FROM {{ ref('facilities') }}
+    SELECT
+        facility_id,
+        facility_name,
+        facility_type,
+        city,
+        state,
+        latitude,
+        longitude,
+        dock_doors,
+        operating_hours,
+        silver_loaded_at
+    FROM {{ ref('facilities') }}
 ),
 modelled AS (
     SELECT
@@ -32,7 +43,21 @@ modelled AS (
         CURRENT_TIMESTAMP                                           AS gold_loaded_at
     FROM facilities
 )
-SELECT * FROM modelled
+SELECT
+    facility_key,
+    facility_id,
+    facility_name,
+    facility_type,
+    city,
+    state,
+    city_state,
+    latitude,
+    longitude,
+    dock_doors,
+    operating_hours,
+    silver_loaded_at,
+    gold_loaded_at
+FROM modelled
 
 UNION ALL
 

@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'fuel_purchase_key',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [
         {'columns': ['fuel_purchase_key'], 'unique': true},
         {'columns': ['purchase_date_key']},
@@ -19,7 +19,21 @@
 -- (use SUM(total_cost) / SUM(gallons) for an average price).
 
 WITH purchases AS (
-    SELECT *
+    SELECT
+        fuel_purchase_id,
+        trip_id,
+        truck_id,
+        driver_id,
+        purchase_date,
+        location_city,
+        location_state,
+        fuel_card_number,
+        gallons,
+        price_per_gallon,
+        total_cost,
+        calculated_total_cost,
+        is_total_cost_consistent,
+        silver_loaded_at
     FROM {{ ref('fuel_purchases') }}
     {% if is_incremental() %}
     WHERE silver_loaded_at > {{ gold_watermark() }}

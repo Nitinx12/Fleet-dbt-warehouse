@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'event_key',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [
         {'columns': ['event_key'], 'unique': true},
         {'columns': ['scheduled_date_key']},
@@ -21,7 +21,20 @@
 
 WITH events AS (
     SELECT
-        e.*,
+        e.event_id,
+        e.trip_id,
+        e.load_id,
+        e.facility_id,
+        e.event_type,
+        e.scheduled_datetime,
+        e.actual_datetime,
+        e.location_city,
+        e.location_state,
+        e.on_time_flag,
+        e.delay_minutes,
+        e.detention_minutes,
+        e.detention_hours,
+        e.silver_loaded_at,
         COALESCE(e.load_id, t.load_id)                              AS resolved_load_id,
         t.driver_id                                                 AS trip_driver_id,
         t.truck_id                                                  AS trip_truck_id,

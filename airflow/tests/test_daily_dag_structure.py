@@ -7,6 +7,7 @@ from itertools import pairwise
 from pathlib import Path
 
 import pytest
+from helpers.scripts.dbt_assets import load_asset_keys
 
 ROOT = Path(__file__).resolve().parents[1]
 DAG_FILE = ROOT / "dags" / "fleet_dbt_daliy.py"
@@ -145,3 +146,25 @@ def test_daily_dag_preserves_contract_gating_and_stage_order() -> None:
         "reconcile_stream",
     ):
         assert task(name).retries == 0
+
+
+@pytest.mark.unit
+def test_daily_dag_declares_assets_only_on_dbt_run_tasks() -> None:
+    """Expose dbt outputs as assets while tests stay plain cron tasks."""
+    dag = _dag()
+    keys = load_asset_keys()
+    producers = {
+        "silver_run": "silver",
+        "gold_dims_run": "gold_dim",
+        "gold_facts_run": "gold_fact",
+        "marts_run": "mart",
+    }
+
+    for task_id, group in producers.items():
+        outlets = dag.get_task(task_id).outlets
+        assert {asset.name for asset in outlets} == set(keys[group])
+        assert all(asset.uri == asset.name for asset in outlets)
+
+    for task_id in dag.task_ids:
+        if task_id not in producers:
+            assert not dag.get_task(task_id).outlets

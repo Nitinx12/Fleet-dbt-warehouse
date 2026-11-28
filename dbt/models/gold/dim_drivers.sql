@@ -18,11 +18,41 @@
 -- so its stored values only refresh when a row is re-ingested and would drift for unchanged rows.
 
 WITH drivers AS (
-    SELECT * FROM {{ ref('drivers') }}
+    SELECT
+        driver_id,
+        full_name,
+        hire_date,
+        termination_date,
+        license_number,
+        license_state,
+        date_of_birth,
+        home_terminal,
+        employment_status,
+        is_active,
+        is_employment_consistent,
+        cdl_class,
+        years_experience,
+        tenure_years,
+        silver_loaded_at
+    FROM {{ ref('drivers') }}
 ),
 derived AS (
     SELECT
-        *,
+        driver_id,
+        full_name,
+        hire_date,
+        termination_date,
+        license_number,
+        license_state,
+        date_of_birth,
+        home_terminal,
+        employment_status,
+        is_active,
+        is_employment_consistent,
+        cdl_class,
+        years_experience,
+        tenure_years,
+        silver_loaded_at,
         EXTRACT(YEAR FROM AGE(CURRENT_DATE, date_of_birth))::INT    AS age_years_current,
         -- a terminated driver with no valid termination date has unknown tenure
         CASE
@@ -79,7 +109,28 @@ modelled AS (
         CURRENT_TIMESTAMP                                           AS gold_loaded_at
     FROM derived
 )
-SELECT * FROM modelled
+SELECT
+    driver_key,
+    driver_id,
+    full_name,
+    hire_date,
+    termination_date,
+    license_number_hash,
+    license_state,
+    age_years,
+    age_band,
+    home_terminal,
+    employment_status,
+    is_active,
+    is_employment_consistent,
+    cdl_class,
+    years_experience,
+    experience_band,
+    tenure_years,
+    tenure_band,
+    silver_loaded_at,
+    gold_loaded_at
+FROM modelled
 
 UNION ALL
 

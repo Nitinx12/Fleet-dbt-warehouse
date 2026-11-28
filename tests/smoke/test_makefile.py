@@ -63,6 +63,23 @@ def test_verify_dry_run_contains_only_quality_checks() -> None:
     assert "psql" not in dry_run
 
 
+def test_help_documents_python_test_targets() -> None:
+    """Expose the unit, integration, smoke and full test commands in help."""
+    help_output = _make("help")
+
+    for target in ("py-test", "py-unit", "py-integration", "py-smoke"):
+        assert target in help_output
+
+
+def test_py_test_dry_run_runs_the_full_suite() -> None:
+    """Keep the default Python test target read-only."""
+    dry_run = _make("--dry-run", "py-test")
+
+    assert "pytest" in dry_run
+    assert "--cov" not in dry_run
+    assert "psql" not in dry_run
+
+
 def test_notebooks_dry_run_executes_the_runner() -> None:
     """Keep notebook execution behind its own non-mutating target."""
     dry_run = _make("--dry-run", "notebooks")

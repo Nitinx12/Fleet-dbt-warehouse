@@ -42,7 +42,29 @@ modelled AS (
         DATE_TRUNC('year',  date_day)::DATE                         AS year_start_date
     FROM calendar
 )
-SELECT * FROM modelled
+SELECT
+    date_key,
+    date_day,
+    year_number,
+    quarter_number,
+    quarter_name,
+    month_number,
+    month_name,
+    month_short_name,
+    year_month,
+    iso_year_number,
+    iso_week_number,
+    day_of_month,
+    day_of_year,
+    day_of_week_number,
+    day_name,
+    is_weekend,
+    week_start_date,
+    month_start_date,
+    month_end_date,
+    quarter_start_date,
+    year_start_date
+FROM modelled
 
 UNION ALL
 

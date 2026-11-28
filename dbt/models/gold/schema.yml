@@ -2,7 +2,7 @@ version: 2
 
 # Gold layer: star schema.
 # Every dimension has an "Unknown" member (natural id '-1'); facts point at it instead of NULL.
-# Relationship tests are severity: warn because an orphan means a source reference with no dimension row.
+# Relationship tests are severity: error because an orphan means a source reference with no dimension row.
 # Column tests mirror silver: same vocabulary, thresholds and null semantics (tests skip NULLs).
 
 models:
@@ -139,7 +139,7 @@ models:
         data_type: numeric
       - name: annual_revenue_potential
         description: "Estimated annual revenue potential."
-        data_type: numeric
+        data_type: numeric(14,2)
         tests:
           - non_negative
           - max_scale:
@@ -223,7 +223,7 @@ models:
               values: ['A', 'B', 'C', 'Unknown']
       - name: years_experience
         description: "Years of driving experience."
-        data_type: numeric
+        data_type: numeric(4,1)
         tests:
           - non_negative
       - name: experience_band
@@ -426,14 +426,14 @@ models:
           - is_clean_text
       - name: latitude
         description: "Latitude in decimal degrees."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - within_range:
               min_value: -90
               max_value: 90
       - name: longitude
         description: "Longitude in decimal degrees."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - within_range:
               min_value: -180
@@ -506,12 +506,12 @@ models:
               values: ['Short Haul', 'Medium Haul', 'Long Haul', 'Unknown']
       - name: base_rate_per_mile
         description: "Base rate per mile."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: fuel_surcharge_rate
         description: "Fuel surcharge per mile."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: typical_transit_days
@@ -550,19 +550,19 @@ models:
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_customers')", field: customer_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_customers')", field: customer_key, config: {severity: error}}
       - name: route_key
         description: "FK into dim_routes; -1 when the lane is unknown."
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_routes')", field: route_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_routes')", field: route_key, config: {severity: error}}
       - name: load_date_key
         description: "FK into dim_date (load date)."
         data_type: integer
         tests:
           - not_null
-          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: error}}
       - name: load_type
         description: "Trailer type used for the load."
         data_type: text
@@ -596,19 +596,19 @@ models:
           - non_negative
       - name: revenue
         description: "Line-haul revenue."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
               max_digits: 2
       - name: fuel_surcharge
         description: "Fuel surcharge amount."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: accessorial_charges
         description: "Extra charges (detention, waiting time, extras)."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
       - name: total_charges
@@ -648,43 +648,43 @@ models:
           - relationships:
               to: ref('fct_loads')
               field: load_key
-              config: {severity: warn, where: "load_id IS NOT NULL"}
+              config: {severity: error, where: "load_id IS NOT NULL"}
       - name: driver_key
         description: "FK into dim_drivers; -1 when the driver is unknown."
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_drivers')", field: driver_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_drivers')", field: driver_key, config: {severity: error}}
       - name: truck_key
         description: "FK into dim_trucks; -1 when the truck is unknown."
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: error}}
       - name: trailer_key
         description: "FK into dim_trailers; -1 when the trailer is unknown."
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_trailers')", field: trailer_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_trailers')", field: trailer_key, config: {severity: error}}
       - name: customer_key
         description: "FK into dim_customers, inherited from the parent load."
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_customers')", field: customer_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_customers')", field: customer_key, config: {severity: error}}
       - name: route_key
         description: "FK into dim_routes, inherited from the parent load."
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_routes')", field: route_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_routes')", field: route_key, config: {severity: error}}
       - name: dispatch_date_key
         description: "FK into dim_date (dispatch date)."
         data_type: integer
         tests:
           - not_null
-          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: error}}
       - name: trip_status
         description: "Trip lifecycle status."
         data_type: text
@@ -698,22 +698,22 @@ models:
           - non_negative
       - name: actual_duration_hours
         description: "Actual trip duration in hours."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: fuel_gallons_used
         description: "Fuel used on the trip."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: idle_time_hours
         description: "Engine idle time in hours."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: average_mpg
         description: "Average miles per gallon reported by the truck."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: calculated_mpg
@@ -770,37 +770,37 @@ models:
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_facilities')", field: facility_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_facilities')", field: facility_key, config: {severity: error}}
       - name: driver_key
         description: "FK into dim_drivers, inherited from the trip."
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_drivers')", field: driver_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_drivers')", field: driver_key, config: {severity: error}}
       - name: truck_key
         description: "FK into dim_trucks, inherited from the trip."
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: error}}
       - name: customer_key
         description: "FK into dim_customers, inherited from the load."
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_customers')", field: customer_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_customers')", field: customer_key, config: {severity: error}}
       - name: scheduled_date_key
         description: "Role-playing key into dim_date (scheduled)."
         data_type: integer
         tests:
           - not_null
-          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: error}}
       - name: actual_date_key
         description: "Role-playing key into dim_date (actual). -1 when no actual time."
         data_type: integer
         tests:
           - not_null
-          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: error}}
       - name: event_type
         description: "PICKUP or DELIVERY; Unknown when missing."
         data_type: text
@@ -837,7 +837,7 @@ models:
         data_type: numeric
       - name: detention_minutes
         description: "Detention minutes at the facility."
-        data_type: numeric
+        data_type: numeric(10,2)
         tests:
           - non_negative
       - name: detention_hours
@@ -875,19 +875,19 @@ models:
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: error}}
       - name: driver_key
         description: "FK into dim_drivers, inherited from the trip."
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_drivers')", field: driver_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_drivers')", field: driver_key, config: {severity: error}}
       - name: purchase_date_key
         description: "FK into dim_date (purchase date)."
         data_type: integer
         tests:
           - not_null
-          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: error}}
       - name: purchase_datetime
         description: "Purchase timestamp (UTC)."
         data_type: timestamp without time zone
@@ -909,17 +909,17 @@ models:
         data_type: text
       - name: gallons
         description: "Fuel volume purchased."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: price_per_gallon
         description: "Unit price per gallon."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: total_cost
         description: "Reported total cost of the purchase."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
@@ -959,13 +959,13 @@ models:
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: error}}
       - name: maintenance_date_key
         description: "FK into dim_date (maintenance date)."
         data_type: integer
         tests:
           - not_null
-          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: error}}
       - name: maintenance_type
         description: "Service category; Unknown when missing."
         data_type: text
@@ -980,31 +980,31 @@ models:
         data_type: text
       - name: odometer_reading
         description: "Odometer at service time."
-        data_type: numeric
+        data_type: numeric(12,1)
         tests:
           - non_negative
       - name: labour_hours
         description: "Billable labour hours."
-        data_type: numeric
+        data_type: numeric(8,2)
         tests:
           - non_negative
       - name: labour_cost
         description: "Labour cost."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
               max_digits: 2
       - name: parts_cost
         description: "Parts cost."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
               max_digits: 2
       - name: total_cost
         description: "Reported total cost of the work order."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
@@ -1029,7 +1029,7 @@ models:
               max_digits: 2
       - name: downtime_hours
         description: "Hours the truck was out of service."
-        data_type: numeric
+        data_type: numeric(8,2)
         tests:
           - non_negative
       - name: silver_loaded_at
@@ -1062,19 +1062,19 @@ models:
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_drivers')", field: driver_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_drivers')", field: driver_key, config: {severity: error}}
       - name: truck_key
         description: "FK into dim_trucks, inherited from the trip."
         data_type: text
         tests:
           - not_null
-          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_trucks')", field: truck_key, config: {severity: error}}
       - name: incident_date_key
         description: "FK into dim_date (incident date)."
         data_type: integer
         tests:
           - not_null
-          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: warn}}
+          - relationships: {to: "ref('dim_date')", field: date_key, config: {severity: error}}
       - name: incident_type
         description: "Incident category; Unknown when missing."
         data_type: text
@@ -1105,14 +1105,14 @@ models:
         data_type: boolean
       - name: vehicle_damage_cost
         description: "Vehicle damage cost."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
               max_digits: 2
       - name: cargo_damage_cost
         description: "Cargo damage cost."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
@@ -1125,7 +1125,7 @@ models:
               max_digits: 2
       - name: claim_amount
         description: "Insurance claim amount."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
@@ -1136,3 +1136,189 @@ models:
       - name: gold_loaded_at
         description: "Timestamp this gold row was built (UTC)."
         data_type: timestamp with time zone
+
+unit_tests:
+  - name: test_dim_customers_credit_terms_boundaries
+    description: "Credit terms 15/30/31/45/46/60 map to the expected bands with the Unknown member."
+    model: dim_customers
+    overrides:
+      macros:
+        gold_build_timestamp: "'2026-01-01 00:00:00+00'::timestamptz"
+    given:
+      - input: ref('customers')
+        format: sql
+        rows: |
+          select
+              'C015'::text as customer_id,
+              'Customer C015'::text as customer_name,
+              'Direct'::text as customer_type,
+              15::integer as credit_terms_days,
+              'Dry Van'::text as primary_freight_type,
+              'Active'::text as account_status,
+              NULL::date as contract_start_date,
+              100000.00::numeric(14,2) as annual_revenue_potential,
+              '2026-01-01 00:00:00+00'::timestamptz as silver_loaded_at
+          union all
+          select
+              'C030'::text, 'Customer C030'::text, 'Direct'::text, 30::integer,
+              'Dry Van'::text, 'Active'::text, NULL::date,
+              100000.00::numeric(14,2), '2026-01-01 00:00:00+00'::timestamptz
+          union all
+          select
+              'C031'::text, 'Customer C031'::text, 'Direct'::text, 31::integer,
+              'Dry Van'::text, 'Active'::text, NULL::date,
+              100000.00::numeric(14,2), '2026-01-01 00:00:00+00'::timestamptz
+          union all
+          select
+              'C045'::text, 'Customer C045'::text, 'Direct'::text, 45::integer,
+              'Dry Van'::text, 'Active'::text, NULL::date,
+              100000.00::numeric(14,2), '2026-01-01 00:00:00+00'::timestamptz
+          union all
+          select
+              'C046'::text, 'Customer C046'::text, 'Direct'::text, 46::integer,
+              'Dry Van'::text, 'Active'::text, NULL::date,
+              100000.00::numeric(14,2), '2026-01-01 00:00:00+00'::timestamptz
+          union all
+          select
+              'C060'::text, 'Customer C060'::text, 'Direct'::text, 60::integer,
+              'Dry Van'::text, 'Active'::text, NULL::date,
+              100000.00::numeric(14,2), '2026-01-01 00:00:00+00'::timestamptz
+    expect:
+      format: sql
+      rows: |
+        select
+            '070b9fb7d8561a9c207469a93bec8eb6'::text as customer_key,
+            'C015'::text as customer_id,
+            'Customer C015'::text as customer_name,
+            'Direct'::text as customer_type,
+            15::integer as credit_terms_days,
+            '15-30 days'::text as credit_terms_band,
+            'Dry Van'::text as primary_freight_type,
+            'Active'::text as account_status,
+            true::boolean as is_active,
+            NULL::date as contract_start_date,
+            NULL::numeric as contract_tenure_years,
+            100000.00::numeric(14,2) as annual_revenue_potential,
+            '2026-01-01 00:00:00+00'::timestamptz as silver_loaded_at,
+            '2026-01-01 00:00:00+00'::timestamptz as gold_loaded_at
+        union all
+        select
+            '92573b2c52ede78b25b9965350fd5d2c'::text, 'C030'::text, 'Customer C030'::text,
+            'Direct'::text, 30::integer, '15-30 days'::text, 'Dry Van'::text, 'Active'::text,
+            true::boolean, NULL::date, NULL::numeric, 100000.00::numeric(14,2),
+            '2026-01-01 00:00:00+00'::timestamptz, '2026-01-01 00:00:00+00'::timestamptz
+        union all
+        select
+            '64a10b59bf72e118cc554feb2d96b957'::text, 'C031'::text, 'Customer C031'::text,
+            'Direct'::text, 31::integer, '31-45 days'::text, 'Dry Van'::text, 'Active'::text,
+            true::boolean, NULL::date, NULL::numeric, 100000.00::numeric(14,2),
+            '2026-01-01 00:00:00+00'::timestamptz, '2026-01-01 00:00:00+00'::timestamptz
+        union all
+        select
+            '8bb84465a36254150e2f8143df223f4e'::text, 'C045'::text, 'Customer C045'::text,
+            'Direct'::text, 45::integer, '31-45 days'::text, 'Dry Van'::text, 'Active'::text,
+            true::boolean, NULL::date, NULL::numeric, 100000.00::numeric(14,2),
+            '2026-01-01 00:00:00+00'::timestamptz, '2026-01-01 00:00:00+00'::timestamptz
+        union all
+        select
+            'bcbea809d6838047d0c7959c805175d0'::text, 'C046'::text, 'Customer C046'::text,
+            'Direct'::text, 46::integer, '46-60 days'::text, 'Dry Van'::text, 'Active'::text,
+            true::boolean, NULL::date, NULL::numeric, 100000.00::numeric(14,2),
+            '2026-01-01 00:00:00+00'::timestamptz, '2026-01-01 00:00:00+00'::timestamptz
+        union all
+        select
+            '3c25fd4e5aa1a0ab093406c7063cfbfb'::text, 'C060'::text, 'Customer C060'::text,
+            'Direct'::text, 60::integer, '46-60 days'::text, 'Dry Van'::text, 'Active'::text,
+            true::boolean, NULL::date, NULL::numeric, 100000.00::numeric(14,2),
+            '2026-01-01 00:00:00+00'::timestamptz, '2026-01-01 00:00:00+00'::timestamptz
+        union all
+        select
+            '6bb61e3b7bce0931da574d19d1d82c88'::text, '-1'::text, 'Unknown'::text,
+            'Unknown'::text, NULL::integer, 'Unknown'::text, 'Unknown'::text, 'Unknown'::text,
+            NULL::boolean, NULL::date, NULL::numeric, NULL::numeric(14,2),
+            NULL::timestamptz, '2026-01-01 00:00:00+00'::timestamptz
+
+  - name: test_dim_routes_haul_type_boundaries
+    description: "Route distances 249/250/999/1000 map to short/medium/medium/long with the Unknown member."
+    model: dim_routes
+    overrides:
+      macros:
+        gold_build_timestamp: "'2026-01-01 00:00:00+00'::timestamptz"
+    given:
+      - input: ref('routes')
+        format: sql
+        rows: |
+          select
+              'R249'::text as route_id,
+              'Chicago'::text as origin_city,
+              'IL'::text as origin_state,
+              'Dallas'::text as destination_city,
+              'TX'::text as destination_state,
+              249::integer as typical_distance_miles,
+              2.5000::numeric(10,4) as base_rate_per_mile,
+              0.2500::numeric(10,4) as fuel_surcharge_rate,
+              3::integer as typical_transit_days,
+              1000.00::numeric(12,2) as base_lane_revenue,
+              '2026-01-01 00:00:00+00'::timestamptz as silver_loaded_at
+          union all
+          select
+              'R250'::text, 'Chicago'::text, 'IL'::text, 'Chicago'::text, 'IL'::text,
+              250::integer, 2.5000::numeric(10,4), 0.2500::numeric(10,4), 3::integer,
+              1000.00::numeric(12,2), '2026-01-01 00:00:00+00'::timestamptz
+          union all
+          select
+              'R999'::text, 'Dallas'::text, 'TX'::text, 'Oklahoma City'::text, 'OK'::text,
+              999::integer, 2.5000::numeric(10,4), 0.2500::numeric(10,4), 3::integer,
+              1000.00::numeric(12,2), '2026-01-01 00:00:00+00'::timestamptz
+          union all
+          select
+              'R1000'::text, 'Los Angeles'::text, 'CA'::text, 'New York'::text, 'NY'::text,
+              1000::integer, 2.5000::numeric(10,4), 0.2500::numeric(10,4), 3::integer,
+              1000.00::numeric(12,2), '2026-01-01 00:00:00+00'::timestamptz
+    expect:
+      format: sql
+      rows: |
+        select
+            'd58cdfd1ed327c5e4acefd4ea6277395'::text as route_key,
+            'R249'::text as route_id,
+            'Chicago'::text as origin_city,
+            'IL'::text as origin_state,
+            'Dallas'::text as destination_city,
+            'TX'::text as destination_state,
+            'Chicago, IL to Dallas, TX'::text as lane_name,
+            false::boolean as is_intrastate,
+            249::integer as typical_distance_miles,
+            'Short Haul'::text as haul_type,
+            2.5000::numeric(10,4) as base_rate_per_mile,
+            0.2500::numeric(10,4) as fuel_surcharge_rate,
+            3::integer as typical_transit_days,
+            1000.00::numeric(12,2) as base_lane_revenue,
+            '2026-01-01 00:00:00+00'::timestamptz as silver_loaded_at,
+            '2026-01-01 00:00:00+00'::timestamptz as gold_loaded_at
+        union all
+        select
+            '7093d9babdc6423c6501fbc99303d03e'::text, 'R250'::text, 'Chicago'::text, 'IL'::text,
+            'Chicago'::text, 'IL'::text, 'Chicago, IL to Chicago, IL'::text, true::boolean,
+            250::integer, 'Medium Haul'::text, 2.5000::numeric(10,4), 0.2500::numeric(10,4),
+            3::integer, 1000.00::numeric(12,2), '2026-01-01 00:00:00+00'::timestamptz,
+            '2026-01-01 00:00:00+00'::timestamptz
+        union all
+        select
+            '2af6e82e4ca3c31fc6cdba9484dae1b9'::text, 'R999'::text, 'Dallas'::text, 'TX'::text,
+            'Oklahoma City'::text, 'OK'::text, 'Dallas, TX to Oklahoma City, OK'::text,
+            false::boolean, 999::integer, 'Medium Haul'::text, 2.5000::numeric(10,4),
+            0.2500::numeric(10,4), 3::integer, 1000.00::numeric(12,2),
+            '2026-01-01 00:00:00+00'::timestamptz, '2026-01-01 00:00:00+00'::timestamptz
+        union all
+        select
+            'c90a656c8014dbe0730a74331615fa15'::text, 'R1000'::text, 'Los Angeles'::text, 'CA'::text,
+            'New York'::text, 'NY'::text, 'Los Angeles, CA to New York, NY'::text, false::boolean,
+            1000::integer, 'Long Haul'::text, 2.5000::numeric(10,4), 0.2500::numeric(10,4),
+            3::integer, 1000.00::numeric(12,2), '2026-01-01 00:00:00+00'::timestamptz,
+            '2026-01-01 00:00:00+00'::timestamptz
+        union all
+        select
+            '6bb61e3b7bce0931da574d19d1d82c88'::text, '-1'::text, 'Unknown'::text, NULL::text,
+            'Unknown'::text, NULL::text, 'Unknown'::text, NULL::boolean, NULL::integer,
+            'Unknown'::text, NULL::numeric(10,4), NULL::numeric(10,4), NULL::integer,
+            NULL::numeric(12,2), NULL::timestamptz, '2026-01-01 00:00:00+00'::timestamptz

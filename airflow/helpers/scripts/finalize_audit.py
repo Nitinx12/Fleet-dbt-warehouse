@@ -2,12 +2,51 @@
 
 from __future__ import annotations
 
+import math
+import os
+from datetime import timedelta
+
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 
 from utils.connection import get_postgres_engine
 
 from .redact import redact
+
+
+def stale_cleanup_enabled() -> bool:
+    """Return whether scheduled stale-batch cleanup is enabled."""
+    return os.getenv("FLEET_STALE_CLEANUP_ENABLED", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+
+def stale_batch_max_age() -> timedelta:
+    """Return the configured maximum age for a RUNNING batch."""
+    raw_hours = os.getenv("FLEET_STALE_BATCH_MAX_AGE_HOURS", "6")
+    try:
+        hours = float(raw_hours)
+    except ValueError as error:
+        raise ValueError("FLEET_STALE_BATCH_MAX_AGE_HOURS must be numeric") from error
+    if not math.isfinite(hours) or hours < 0:
+        raise ValueError(
+            "FLEET_STALE_BATCH_MAX_AGE_HOURS must be finite and non-negative"
+        )
+    return timedelta(hours=hours)
+
+
+def fail_stale_batches(max_age: timedelta | None = None) -> int:
+    """Fail batches older than max_age and return how many were failed."""
+    age = stale_batch_max_age() if max_age is None else max_age
+    with get_postgres_engine().begin() as connection:
+        return int(
+            connection.execute(
+                text("SELECT control.fail_stale_batches(:max_age)"),
+                {"max_age": age},
+            ).scalar_one()
+        )
 
 
 def start_batch(*args: object) -> int:

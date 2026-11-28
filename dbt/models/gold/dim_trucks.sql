@@ -11,11 +11,35 @@
 -- age_years is recomputed here so it stays correct for rows silver has not re-ingested.
 
 WITH trucks AS (
-    SELECT * FROM {{ ref('trucks') }}
+    SELECT
+        truck_id,
+        unit_number,
+        make,
+        model_year,
+        vin,
+        acquisition_date,
+        acquisition_mileage,
+        fuel_type,
+        tank_capacity_gallons,
+        status,
+        home_terminal,
+        silver_loaded_at
+    FROM {{ ref('trucks') }}
 ),
 derived AS (
     SELECT
-        *,
+        truck_id,
+        unit_number,
+        make,
+        model_year,
+        vin,
+        acquisition_date,
+        acquisition_mileage,
+        fuel_type,
+        tank_capacity_gallons,
+        status,
+        home_terminal,
+        silver_loaded_at,
         EXTRACT(YEAR FROM CURRENT_DATE)::INT - model_year           AS age_years_current
     FROM trucks
 ),
@@ -46,7 +70,25 @@ modelled AS (
         CURRENT_TIMESTAMP                                           AS gold_loaded_at
     FROM derived
 )
-SELECT * FROM modelled
+SELECT
+    truck_key,
+    truck_id,
+    unit_number,
+    make,
+    model_year,
+    vin,
+    acquisition_date,
+    acquisition_mileage,
+    fuel_type,
+    tank_capacity_gallons,
+    status,
+    is_available,
+    age_years,
+    age_band,
+    home_terminal,
+    silver_loaded_at,
+    gold_loaded_at
+FROM modelled
 
 UNION ALL
 

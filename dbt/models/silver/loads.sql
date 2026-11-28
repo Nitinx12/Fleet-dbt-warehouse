@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'load_id',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [{'columns': ['load_id'], 'unique': true}],
     tags                 = ['silver', 'incremental']
 ) }}
@@ -12,7 +12,21 @@
 -- Cast data types, standardise text, validate values, derive charge totals
 
 WITH source AS (
-    SELECT *
+    SELECT
+        load_id,
+        customer_id,
+        route_id,
+        load_date,
+        load_type,
+        weight_lbs,
+        pieces,
+        revenue,
+        fuel_surcharge,
+        accessorial_charges,
+        load_status,
+        booking_type,
+        loaded_at,
+        _ingested_at
     FROM {{ source('bronze', 'mysql__loads') }}
     {{ bronze_incremental_filter() }}
 ),

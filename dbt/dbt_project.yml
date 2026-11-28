@@ -8,12 +8,18 @@ models:
     silver:
       +schema: silver
       +materialized: table
+      +contract:
+          enforced: true
     gold:
       +schema: gold
       +materialized: table
+      +contract:
+          enforced: true
     marts:
       +schema: marts
       +materialized: table
+      +contract:
+          enforced: true
 
 vars:
   silver_lookback_hours: 24

@@ -16,6 +16,8 @@ __pycache__/
 .mypy_cache/
 .coverage
 .coverage.*
+coverage.xml
+htmlcov/
 
 # Project artifacts
 build/

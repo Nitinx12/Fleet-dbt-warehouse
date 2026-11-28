@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'fuel_purchase_id',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [{'columns': ['fuel_purchase_id'], 'unique': true}],
     tags                 = ['silver', 'incremental']
 ) }}
@@ -12,7 +12,20 @@
 -- Cast data types, standardise text, validate values, derive cost checks
 
 WITH source AS (
-    SELECT *
+    SELECT
+        fuel_purchase_id,
+        trip_id,
+        truck_id,
+        driver_id,
+        purchase_date,
+        location_city,
+        location_state,
+        gallons,
+        price_per_gallon,
+        total_cost,
+        fuel_card_number,
+        loaded_at,
+        _ingested_at
     FROM {{ source('bronze', 'mysql__fuel_purchases') }}
     {{ bronze_incremental_filter() }}
 ),

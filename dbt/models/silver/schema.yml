@@ -3,9 +3,6 @@ version: 2
 models:
   - name: customers
     description: "Cleaned and validated customer records from MySQL bronze."
-    config:
-      contract:
-        enforced: false
     meta:
       owner: data-engineering
       tier: silver
@@ -56,7 +53,7 @@ models:
           - not_in_future
       - name: annual_revenue_potential
         description: "Annual revenue potential."
-        data_type: numeric
+        data_type: numeric(14,2)
         tests:
           - non_negative
           - max_scale:
@@ -111,7 +108,7 @@ models:
         data_type: numeric
       - name: detention_minutes
         description: "Detention minutes."
-        data_type: numeric
+        data_type: numeric(10,2)
         tests:
           - non_negative
       - name: detention_hours
@@ -223,7 +220,7 @@ models:
               values: ['A', 'B', 'C']
       - name: years_experience
         description: "Years of experience."
-        data_type: numeric
+        data_type: numeric(4,1)
         tests:
           - non_negative
       - name: tenure_years
@@ -276,14 +273,14 @@ models:
           - is_us_state_code
       - name: latitude
         description: "Latitude in decimal degrees."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - within_range:
               min_value: -90
               max_value: 90
       - name: longitude
         description: "Longitude in decimal degrees."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - within_range:
               min_value: -180
@@ -359,17 +356,17 @@ models:
           - is_us_state_code
       - name: gallons
         description: "Gallons bought."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: price_per_gallon
         description: "Price per gallon."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: total_cost
         description: "Source total cost."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
@@ -449,19 +446,19 @@ models:
           - non_negative
       - name: revenue
         description: "Base revenue."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
               max_digits: 2
       - name: fuel_surcharge
         description: "Fuel surcharge."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: accessorial_charges
         description: "Accessorial charges."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
       - name: total_charges
@@ -519,31 +516,31 @@ models:
               values: ['Brake', 'Engine', 'Inspection', 'Preventive', 'Repair', 'Tire', 'Transmission']
       - name: odometer_reading
         description: "Odometer reading."
-        data_type: numeric
+        data_type: numeric(12,1)
         tests:
           - non_negative
       - name: labour_hours
         description: "Labour hours."
-        data_type: numeric
+        data_type: numeric(8,2)
         tests:
           - non_negative
       - name: labour_cost
         description: "Labour cost."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
               max_digits: 2
       - name: parts_cost
         description: "Parts cost."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
               max_digits: 2
       - name: total_cost
         description: "Total cost."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
@@ -571,7 +568,7 @@ models:
         data_type: text
       - name: downtime_hours
         description: "Downtime hours."
-        data_type: numeric
+        data_type: numeric(8,2)
         tests:
           - non_negative
       - name: service_description
@@ -628,12 +625,12 @@ models:
           - non_negative
       - name: base_rate_per_mile
         description: "Base rate per mile."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: fuel_surcharge_rate
         description: "Fuel surcharge rate per mile."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: typical_transit_days
@@ -709,14 +706,14 @@ models:
         data_type: boolean
       - name: vehicle_damage_cost
         description: "Vehicle damage cost."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
               max_digits: 2
       - name: cargo_damage_cost
         description: "Cargo damage cost."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
@@ -729,7 +726,7 @@ models:
               max_digits: 2
       - name: claim_amount
         description: "Claim amount."
-        data_type: numeric
+        data_type: numeric(12,2)
         tests:
           - non_negative
           - max_scale:
@@ -871,22 +868,22 @@ models:
           - non_negative
       - name: actual_duration_hours
         description: "Actual duration in hours."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: fuel_gallons_used
         description: "Fuel burnt in gallons."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: average_mpg
         description: "Source miles per gallon."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: idle_time_hours
         description: "Idle time in hours."
-        data_type: numeric
+        data_type: numeric(10,4)
         tests:
           - non_negative
       - name: calculated_mpg

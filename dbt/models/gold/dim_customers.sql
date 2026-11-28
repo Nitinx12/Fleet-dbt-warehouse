@@ -13,7 +13,17 @@
 -- Rebuilt as a table so contract_tenure_years never goes stale.
 
 WITH customers AS (
-    SELECT * FROM {{ ref('customers') }}
+    SELECT
+        customer_id,
+        customer_name,
+        customer_type,
+        credit_terms_days,
+        primary_freight_type,
+        account_status,
+        contract_start_date,
+        annual_revenue_potential,
+        silver_loaded_at
+    FROM {{ ref('customers') }}
 ),
 modelled AS (
     SELECT
@@ -36,13 +46,28 @@ modelled AS (
                                                                     AS contract_tenure_years,
         annual_revenue_potential,
         silver_loaded_at,
-        CURRENT_TIMESTAMP                                           AS gold_loaded_at
+        {{ gold_build_timestamp() }}                                AS gold_loaded_at
     FROM customers
 )
-SELECT * FROM modelled
+SELECT
+    customer_key,
+    customer_id,
+    customer_name,
+    customer_type,
+    credit_terms_days,
+    credit_terms_band,
+    primary_freight_type,
+    account_status,
+    is_active,
+    contract_start_date,
+    contract_tenure_years,
+    annual_revenue_potential,
+    silver_loaded_at,
+    gold_loaded_at
+FROM modelled
 
 UNION ALL
 
 SELECT
     {{ gold_unknown_key() }}, '-1', 'Unknown', 'Unknown', NULL, 'Unknown', 'Unknown', 'Unknown',
-    NULL, NULL, NULL, NULL, NULL, CURRENT_TIMESTAMP
+    NULL, NULL, NULL, NULL, NULL, {{ gold_build_timestamp() }}

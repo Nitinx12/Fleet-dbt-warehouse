@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'event_id',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [{'columns': ['event_id'], 'unique': true}],
     tags                 = ['silver', 'incremental']
 ) }}
@@ -12,7 +12,20 @@
 -- Cast types, standardise text, validate values, derive delay and detention metrics
 
 WITH source AS (
-    SELECT *
+    SELECT
+        event_id,
+        load_id,
+        trip_id,
+        facility_id,
+        event_type,
+        scheduled_datetime,
+        actual_datetime,
+        detention_minutes,
+        on_time_flag,
+        location_city,
+        location_state,
+        loaded_at,
+        _ingested_at
     FROM {{ source('bronze', 'mongo__delivery_events') }}
     {{ bronze_incremental_filter() }}
 ),

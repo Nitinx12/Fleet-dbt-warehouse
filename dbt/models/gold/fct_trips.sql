@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'trip_key',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [
         {'columns': ['trip_key'], 'unique': true},
         {'columns': ['dispatch_date_key']},
@@ -23,7 +23,22 @@
 
 WITH trips AS (
     SELECT
-        t.*,
+        t.trip_id,
+        t.load_id,
+        t.driver_id,
+        t.truck_id,
+        t.trailer_id,
+        t.dispatch_date,
+        t.trip_status,
+        t.actual_distance_miles,
+        t.actual_duration_hours,
+        t.fuel_gallons_used,
+        t.idle_time_hours,
+        t.average_mpg,
+        t.calculated_mpg,
+        t.is_mpg_consistent,
+        t.idle_share_of_duration,
+        t.silver_loaded_at,
         l.customer_id                                               AS load_customer_id,
         l.route_id                                                  AS load_route_id,
         GREATEST(t.silver_loaded_at, l.silver_loaded_at)            AS source_loaded_at

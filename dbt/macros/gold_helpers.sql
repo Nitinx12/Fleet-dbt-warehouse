@@ -15,6 +15,11 @@
 {%- endmacro %}
 
 
+{% macro gold_build_timestamp() -%}
+    CURRENT_TIMESTAMP
+{%- endmacro %}
+
+
 {# YYYYMMDD integer key into dim_date. NULL dates map to -1 (Unknown date). #}
 {% macro gold_date_key(column) -%}
     COALESCE(TO_CHAR(CAST({{ column }} AS DATE), 'YYYYMMDD')::INTEGER, -1)

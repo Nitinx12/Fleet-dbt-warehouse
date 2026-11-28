@@ -18,11 +18,16 @@ or `cleanup-ci.yml` workflow is tracked yet. All current work is listed under
 
 ### Changed
 
+- All 32 dbt models now enforce contracts, mart columns declare `data_type`, incremental models use `on_schema_change: fail`, and all relationships tests are error severity; 3 unit tests and 3 snapshots were added without rewiring fact/mart grain.
+- CI now enforces `COV_MIN=80` in `unit-tests`, checks committed dbt asset keys after `dbt-parse`, and builds dbt unit tests instead of excluding them.
+- Airflow dbt run tasks publish manifest-keyed assets; `fleet_batch_cleanup` fails stale batches only when `FLEET_STALE_CLEANUP_ENABLED=true` (default `false`, max age 6 hours). The weekly report DAG remains a skeleton.
 - Moved the Streamlit audit payload helper to `site/scripts/streamlit_state.py`; `app.py`, pytest, ruff, site fact collection and site checks now load it from there.
 - Moved site-only scripts under `site/scripts/`: `render_site.py`, `site_facts.py`, `check_site_numbers.py`, `site_numbers_allowlist.yml` and `site_lib/`; Makefile, tests and docs now call the new paths.
 
 ### Added
 
+- `make py-cov`, `py-cov-report`, `dbt-asset-keys`, `dbt-asset-keys-check`, `dbt-unit` and `pipeline-stats`; pytest-cov reports 84.36% coverage on `scripts` and `utils`.
+- Committed `airflow/assets/dbt_asset_keys.json` and the `fleet_batch_cleanup` DAG for opt-in stale-batch recovery; the `fleet_watchdog` DAG is implemented and observational.
 - Provable project-site numbers: generated facts with provenance, a strict
   HTML/JS checker, Streamlit fact injection, a standalone renderer, a
   zero-dependency browser smoke check and `site/SITE.md`.

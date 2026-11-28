@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import pendulum
-from airflow.sdk import DAG, TaskGroup, TriggerRule, get_current_context, task
+from airflow.sdk import DAG, Asset, TaskGroup, TriggerRule, get_current_context, task
 
 DAG_DIRECTORY = Path(__file__).resolve().parent
 AIRFLOW_DIRECTORY = DAG_DIRECTORY.parent
@@ -34,6 +34,7 @@ from helpers.scripts.commads import (
     build_stream_reconcile_command,
     run_command,
 )
+from helpers.scripts.dbt_assets import load_asset_keys
 from helpers.scripts.finalize_audit import finalize_batch, start_batch
 from helpers.scripts.notify import send_run_summary
 from helpers.scripts.prefilght import run_preflight
@@ -84,6 +85,11 @@ INGEST_AUDIT_TASKS = frozenset(
 )
 RECONCILE_TIMEOUT = timedelta(minutes=30)
 log = logging.getLogger(__name__)
+
+DBT_ASSETS = {
+    group: [Asset(name=key, uri=key) for key in keys]
+    for group, keys in load_asset_keys().items()
+}
 
 
 def _runtime_ids() -> tuple[str, str, Any]:
@@ -242,22 +248,24 @@ with DAG(
 
     ingest_barrier = ingest_done(batch)
     list(ingest_tasks.values()) >> ingest_barrier
-    silver_run = dbt_stage.override(task_id="silver_run")(
+    silver_run = dbt_stage.override(task_id="silver_run", outlets=DBT_ASSETS["silver"])(
         "run", SILVER_SELECTORS, batch
     )
     silver_test = dbt_stage.override(task_id="silver_test")(
         "test", SILVER_SELECTORS, batch
     )
-    gold_dims_run = dbt_stage.override(task_id="gold_dims_run")(
-        "run", GOLD_DIM_SELECTORS, batch
-    )
-    gold_facts_run = dbt_stage.override(task_id="gold_facts_run")(
-        "run", GOLD_FACT_SELECTORS, batch
-    )
+    gold_dims_run = dbt_stage.override(
+        task_id="gold_dims_run", outlets=DBT_ASSETS["gold_dim"]
+    )("run", GOLD_DIM_SELECTORS, batch)
+    gold_facts_run = dbt_stage.override(
+        task_id="gold_facts_run", outlets=DBT_ASSETS["gold_fact"]
+    )("run", GOLD_FACT_SELECTORS, batch)
     gold_test = dbt_stage.override(task_id="gold_test")(
         "test", GOLD_TEST_SELECTORS, batch, (MART_RECONCILE_TEST,)
     )
-    marts_run = dbt_stage.override(task_id="marts_run")("run", MARTS_SELECTORS, batch)
+    marts_run = dbt_stage.override(task_id="marts_run", outlets=DBT_ASSETS["mart"])(
+        "run", MARTS_SELECTORS, batch
+    )
     marts_test = dbt_stage.override(task_id="marts_test")(
         "test", MARTS_TEST_SELECTORS, batch
     )

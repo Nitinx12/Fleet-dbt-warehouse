@@ -40,12 +40,14 @@ This is the operational README: setup, commands, task flow, and troubleshooting.
 | Main DAG id | `fleet_daily_load` |
 | Weekly DAG id | `fleet_report_weekly` (deliberate skeleton) |
 | Watchdog DAG id | `fleet_watchdog` (15-minute stream health probe) |
+| Cleanup DAG id | `fleet_batch_cleanup` (opt-in 15-minute stale-batch check) |
 | DAGs at creation | paused (`AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true`) |
 
 > **Scope warning:** `fleet_report_weekly` still raises `NotImplementedError`
 > until its payload policy is approved. `fleet_watchdog` is observational: it
 > writes `audit.stream_health`, alerts on lag/freshness breaches and never
-> opens or closes `control.batch`.
+> opens or closes `control.batch`. `fleet_batch_cleanup` is opt-in and only
+> fails `RUNNING` batches older than six hours when enabled.
 
 ---
 
@@ -77,6 +79,8 @@ Never commit `.env`. The image ships without credentials or secrets.
 | `MYSQL_POOL_SLOTS`, `MONGO_POOL_SLOTS` | Pool sizes created by `init.sh` (defaults `4` / `3`) |
 | `DBT_TARGET` | dbt target used by `dbt_stage` tasks (default `dev`) |
 | `FLEET_WEEKLY_REPORT_SCHEDULE` | Optional override of the weekly cron (default `0 9 * * 1`) |
+| `FLEET_STALE_CLEANUP_ENABLED` | Allow `fleet_batch_cleanup` to fail stale batches (default `false`) |
+| `FLEET_STALE_BATCH_MAX_AGE_HOURS` | Maximum `RUNNING` batch age before cleanup (default `6`) |
 
 Generate a real Fernet key and put the value, unquoted, in `.env`:
 
@@ -130,8 +134,11 @@ airflow/
 ├── requirments-airflow.txt         # fab, celery, standard, redis providers
 ├── requirments-dev.txt             # pytest, ruff, jinja2, psycopg2, pendulum, Airflow
 ├── .gitignore
+├── assets/
+│   └── dbt_asset_keys.json         # committed manifest-keyed dbt asset outlets
 ├── dags/
 │   ├── fleet_dbt_daliy.py          # fleet_daily_load: ingest -> dbt -> publish
+│   ├── fleet_batch_cleanup.py      # opt-in stale-batch cleanup
 │   ├── fleet_report_weekly.py      # fleet_report_weekly (skeleton)
 │   └── fleet_watchdog.py           # fleet_watchdog (stream health probe)
 ├── helpers/
@@ -139,6 +146,7 @@ airflow/
 │   │   ├── prefilght.py            # env, connectivity and contract checks
 │   │   ├── commads.py              # argv builders + redacted subprocess runner
 │   │   ├── callbacks.py            # task/DAG failure and success hooks
+│   │   ├── dbt_assets.py           # load committed dbt asset keys
 │   │   ├── finalize_audit.py       # open/close control.batch rows
 │   │   ├── auidt_reader.py         # read control/audit state, assert ingest done
 │   │   ├── summary.py              # notification context builder
@@ -265,8 +273,8 @@ flowchart TB
 | `ingest_done` | `assert_ingestion_complete()` | Fails if any contract table has no successful audit row |
 | `silver_run` | `scripts/run_dbt.py run --select path:models/silver` | 60 min timeout |
 | `silver_test` | `scripts/run_dbt.py test --select path:models/silver` | `--indirect-selection cautious` |
-| `gold_dims_run` | `scripts/run_dbt.py run --select dim_*` | SCD2 dimensions from snapshots |
-| `gold_facts_run` | `scripts/run_dbt.py run --select fct_*` | Facts join the SCD2 version valid at event time |
+| `gold_dims_run` | `scripts/run_dbt.py run --select dim_*` | Current-state SCD1 dimensions; snapshots exist but are not wired |
+| `gold_facts_run` | `scripts/run_dbt.py run --select fct_*` | Facts join the current SCD1 dimension row |
 | `gold_test` | `scripts/run_dbt.py test --select dim_* fct_*` | Excludes `assert_marts_reconcile_to_facts` until marts exist |
 | `marts_run` | `scripts/run_dbt.py run --select mart_*` | |
 | `marts_test` | `scripts/run_dbt.py test --select mart_* assert_marts_reconcile_to_facts` | Reconciles marts to facts |
@@ -275,7 +283,10 @@ flowchart TB
 | `notify_summary` | `finalize_batch(..., "SUCCEEDED")` + `send_run_summary()` | Runs with `all_done` once both branches finish |
 
 DAG limits: `max_active_runs=1`, `catchup=False`, `dagrun_timeout=6h`,
-owner `fleet-data-eng`, tags `fleet` / `daily`.
+owner `fleet-data-eng`, tags `fleet` / `daily`. The dbt `run` tasks publish
+manifest-keyed assets loaded from `assets/dbt_asset_keys.json`; regenerate the
+map with `make dbt-asset-keys` and verify it with `make dbt-asset-keys-check`
+after `make dbt-parse ENV=ci`.
 
 ### Ingestion order
 
@@ -369,7 +380,8 @@ intended. Production operations additionally require `ENV=prod CONFIRM=yes`.
 | `prefilght.py` | `preflight` | Fail fast on missing env vars, dead connections or contract drift |
 | `commads.py` | every task | Construct exact `uv run --no-sync python scripts/...` argv; run with redacted output |
 | `callbacks.py` | task/DAG callbacks | On failure, close the batch and send an alert; on success, send the digest |
-| `finalize_audit.py` | `start_batch`, `notify_summary`, callbacks | Open and close `control.batch`, resolve open errors |
+| `dbt_assets.py` | `fleet_daily_load` dbt run tasks | Load committed manifest-keyed asset outlets |
+| `finalize_audit.py` | `start_batch`, `notify_summary`, callbacks, cleanup | Open and close `control.batch`, fail stale batches, resolve open errors |
 | `auidt_reader.py` | `ingest_done`, summaries | Read `control.batch` / `audit.task_run_log`, assert all sources landed |
 | `stream_health.py` | `fleet_watchdog` | Read the latest `audit.stream_health` watchdog row for breach alerts |
 | `summary.py` | notifications | Build the context dict for the Jinja templates |
@@ -399,9 +411,10 @@ batch end      ───────────────────►  con
 ```
 
 A failed task closes its batch through `finalize_audit.py` in the failure
-callback; `control.fail_stale_batches` is the safety net for crashed workers.
-Retry only transient connection errors — a contract or data-test failure stays
-broken until the data or logic is fixed.
+callback; `fleet_batch_cleanup` is the safety net for crashed workers when
+`FLEET_STALE_CLEANUP_ENABLED=true` (default `false`, max age 6 hours). Retry
+only transient connection errors — a contract or data-test failure stays broken
+until the data or logic is fixed.
 
 ---
 
@@ -414,17 +427,21 @@ make airflow-test
 # Repository quality gates
 make lint-fast
 make py-test
+make py-cov
 make contracts-check
+make dbt-parse ENV=ci && make dbt-asset-keys-check
 ```
 
-Direct pytest invocation, equivalent to `make airflow-test`:
+Direct pytest invocation collects all 44 Airflow tests, while `make airflow-test`
+runs the subset listed in the Makefile:
 
 ```bash
 PYTHONPATH=airflow uv run --no-sync pytest airflow/tests
 ```
 
 `PYTHONPATH=airflow` is required outside the image so `helpers.*` imports
-resolve; inside the containers the full path is set by the `Dockerfile`.
+resolve; inside the containers the full path is set by the `Dockerfile`. The
+root suite collects 186 tests, so the combined Python/Airflow total is 230.
 
 ---
 
@@ -440,6 +457,7 @@ resolve; inside the containers the full path is set by the `Dockerfile`.
 | Tasks fail to reach the warehouse | Use a container-reachable host, not `localhost`, in `.env` |
 | Contract or dbt test failure | Fix the contract/data logic; do not weaken the test or blindly retry |
 | Weekly task fails immediately | Expected: `fleet_report_weekly` is still a deliberate skeleton |
+| `fleet_batch_cleanup` does nothing | `FLEET_STALE_CLEANUP_ENABLED` defaults to `false`; check the flag and batch age |
 | Watchdog reports no health | Check `control.stream` is `ENABLED` and Kafka is reachable |
 | Stream breach alert received | Inspect `audit.stream_health` and replay/reset the speed layer; gold remains authoritative |
 | Metadata needs a clean reset | `docker compose ... down -v` deletes `airflow-metadata` and all run history — destructive |

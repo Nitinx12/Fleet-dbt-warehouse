@@ -22,9 +22,14 @@ publish job.
 | `dbt/models/silver/` | 12 staging models and `schema.yml`. |
 | `dbt/models/gold/` | 7 SCD1 dimensions (including `dim_date`), 6 incremental facts and `schema.yml`. |
 | `dbt/models/marts/` | 6 BI marts, one reconciliation table model and `schema_marts.yml`. |
+| `dbt/snapshots/` | `snap_customers`, `snap_drivers`, `snap_trucks` plus `schema.yml`. |
 | `dbt/macros/` | Cleaning, schema, incremental, gold and mart helper macros. |
 | `dbt/tests/generic/silver/` | 11 project-specific generic tests. |
 | `dbt/target/` | Generated manifest, compiled SQL and run artifacts; not committed. |
+
+Three dbt unit tests are declared in `dbt/models/gold/schema.yml` and
+`dbt/models/marts/schema_marts.yml`. Snapshots capture history, but no fact or
+mart was rewired to an SCD2 grain.
 
 `make help` is the authoritative command list. All dbt Make targets call
 `scripts/run_dbt.py`, which records invocations and artifacts in the audit
@@ -51,11 +56,12 @@ tables.
 |---|---:|---|---|
 | `silver` | 12 | Incremental, `delete+insert` | Rename, cast, dedupe, validate and normalise one bronze table per model. Use `bronze_incremental_filter()` and `silver_lookback_hours`. |
 | `gold` | 13 | Dimensions are tables; facts are incremental `delete+insert` | Business keys, Unknown members, SCD1 dimensions, facts, PII hashing/masking and watermarks. Facts use `gold_watermark()` with `gold_lookback_hours`. |
+| `snapshots` | 3 | `check` strategy snapshots | Customer, driver and truck history for future SCD2 work; not referenced by facts or marts. |
 | `marts` | 7 | 6 incremental marts plus one table model | Denormalised BI grains with `mart_key`, additive measures, guarded ratios and `mart_watermark()`. Only approved non-PII marts are published to Databricks. |
 
 `dim_date` is generated from `gold_date_start` and `gold_date_end`.
-Dimensions are SCD1: current values overwrite previous values; there is no SCD2
-history in the current project.
+Dimensions are SCD1: current values overwrite previous values. Snapshots hold
+period history, but there is no validity-date join in facts or marts.
 
 `assert_marts_reconcile_to_facts` lives under `models/marts/` and is a normal
 table model, not a dbt singular test. It returns rows where a mart and its fact
@@ -64,7 +70,9 @@ check.
 
 Every model and column should have a description and `meta` with `owner`,
 `tier`, `serve` and `contains_pii`. Primary keys carry `unique` and `not_null`;
-logical foreign keys carry `relationships` tests.
+logical foreign keys carry `relationships` tests at error severity. All 32
+models enforce contracts; mart columns declare `data_type` explicitly and
+incremental models use `on_schema_change: fail`.
 
 ## Macros
 
@@ -92,16 +100,18 @@ defined but unused.
 - `gold_date_start: '2015-01-01'` and `gold_date_end: '2035-12-31'` for
   `dim_date`.
 
-`profiles.yml` has `dev`, `ci` and `prod`. `dev` writes to
-`${DBT_DEV_SCHEMA:-dbt_dev}`; `ci` writes to the `${DBT_SCHEMA_PREFIX:-ci_}`
-prefix in `fleet_dev`; `prod` writes to `silver`. Never run `prod` without
-explicit approval, and use `ENV=dev` for local work.
+`profiles.yml` has `dev`, `ci` and `prod`. `ci` writes to the
+`${DBT_SCHEMA_PREFIX:-ci_}` prefix in `fleet_dev`. Outside CI, custom schemas
+are used verbatim (`silver`, `gold`, `marts`); `DBT_DEV_SCHEMA` only applies to
+nodes without a custom schema. Use a throwaway `PG_DBNAME` for local work and
+never run `prod` without explicit approval.
 
 ## Common commands
 
 ```bash
 make dbt-deps
 make dbt-parse ENV=dev
+make dbt-asset-keys-check
 make dbt-debug ENV=dev
 make dbt-compile ENV=dev SELECT="silver"
 
@@ -111,14 +121,17 @@ make dbt-gold ENV=dev
 make dbt-gold-tests ENV=dev
 make dbt-marts ENV=dev
 make dbt-marts-tests ENV=dev
+make dbt-snapshots ENV=dev
+make dbt-unit ENV=dev
 
 make dbt-test ENV=dev
 make dbt-build ENV=dev
 make dbt-docs ENV=dev
 
 make dbt-parse ENV=ci
+make dbt-asset-keys-check
 make load-fixtures ENV=ci
-make dbt-build ENV=ci EXCLUDE=unit_test
+make dbt-build ENV=ci
 ```
 
 `load-fixtures` requires `FIXTURE_LOAD=1` and refuses any `PG_DBNAME` outside
@@ -132,13 +145,15 @@ Production commands additionally require `ENV=prod CONFIRM=yes`.
 
 ## Current state and gotchas
 
-- The parsed manifest currently has 12 sources, 32 models and 383 tests:
-  348 at `error` severity and 35 at `warn` severity.
-- All 35 gold/mart `relationships` tests are `severity: warn`; silver
-  relationships use the default error severity.
-- No model has `contract.enforced: true` yet. Incremental models use
-  `on_schema_change: append_new_columns`.
-- There are no dbt unit tests or snapshots committed yet.
+- The parsed manifest has 12 sources, 32 models and 401 test nodes with 0 warn.
+  It includes 391 schema tests (138 silver, 202 gold, 51 marts) and 3 unit tests.
+- All 32 models enforce contracts, mart columns declare `data_type` explicitly,
+  incremental models use `on_schema_change: fail`, and all relationships tests
+  are error severity.
+- Three snapshots capture customers, drivers and trucks; facts and marts still
+  use current-state SCD1 dimensions.
+- `make dbt-asset-keys-check` compares committed Airflow asset keys with the
+  parsed manifest; regenerate them with `make dbt-asset-keys`.
 - `contracts-check` is an index/name check, not a full column-contract gate.
-- Airflow runs dbt in separate `run` then `test` stages and does not derive
-  asset keys from the dbt manifest yet.
+- Airflow runs dbt in separate `run` then `test` stages and publishes
+  manifest-keyed assets from `airflow/assets/dbt_asset_keys.json`.

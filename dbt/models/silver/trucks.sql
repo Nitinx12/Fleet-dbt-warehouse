@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'truck_id',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [{'columns': ['truck_id'], 'unique': true}],
     tags                 = ['silver', 'incremental']
 ) }}
@@ -12,7 +12,20 @@
 -- Cast data types, standardise text, validate values, derive age and availability
 
 WITH source AS (
-    SELECT *
+    SELECT
+        truck_id,
+        unit_number,
+        make,
+        model_year,
+        vin,
+        acquisition_date,
+        acquisition_mileage,
+        fuel_type,
+        tank_capacity_gallons,
+        status,
+        home_terminal,
+        loaded_at,
+        _ingested_at
     FROM {{ source('bronze', 'mysql__trucks') }}
     {{ bronze_incremental_filter() }}
 ),

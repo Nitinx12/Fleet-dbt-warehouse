@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'driver_id',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [{'columns': ['driver_id'], 'unique': true}],
     tags                 = ['silver', 'incremental']
 ) }}
@@ -13,7 +13,21 @@
 -- Derive full name, age, tenure and employment flags
 
 WITH source AS (
-    SELECT *
+    SELECT
+        driver_id,
+        first_name,
+        last_name,
+        hire_date,
+        termination_date,
+        license_number,
+        license_state,
+        date_of_birth,
+        home_terminal,
+        employment_status,
+        cdl_class,
+        years_experience,
+        loaded_at,
+        _ingested_at
     FROM {{ source('bronze', 'mysql__drivers') }}
     {{ bronze_incremental_filter() }}
 ),

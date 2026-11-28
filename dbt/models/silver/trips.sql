@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'trip_id',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [{'columns': ['trip_id'], 'unique': true}],
     tags                 = ['silver', 'incremental']
 ) }}
@@ -12,7 +12,21 @@
 -- Cast data types, validate values, derive MPG and idle metrics
 
 WITH source AS (
-    SELECT *
+    SELECT
+        trip_id,
+        load_id,
+        driver_id,
+        truck_id,
+        trailer_id,
+        dispatch_date,
+        actual_distance_miles,
+        actual_duration_hours,
+        fuel_gallons_used,
+        average_mpg,
+        idle_time_hours,
+        trip_status,
+        loaded_at,
+        _ingested_at
     FROM {{ source('bronze', 'mysql__trips') }}
     {{ bronze_incremental_filter() }}
 ),

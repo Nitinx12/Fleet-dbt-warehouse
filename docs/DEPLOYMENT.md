@@ -44,7 +44,7 @@ flowchart TD
     PROD -. unhealthy .-> ROLL
 ```
 
-`.github/workflows/ci.yml` has nine jobs: `lint`, `unit-tests`, `contracts`, `dbt-parse`, `airflow-test`, `stream-tests`, `integration`, `image-build`, and `stream-image-build`. `.github/workflows/leaks.yml` runs Gitleaks on PRs, pushes to `main`, a weekly schedule, and manual dispatch. `.github/workflows/deploy.yml` resolves a 40-character commit SHA to GHCR digests for the Airflow and stream images and never deploys `latest`.
+`.github/workflows/ci.yml` has nine jobs: `lint`, `unit-tests`, `contracts`, `dbt-parse`, `airflow-test`, `stream-tests`, `integration`, `image-build`, and `stream-image-build`. `unit-tests` enforces `COV_MIN=80` with pytest-cov, `dbt-parse` checks committed asset keys, and the fixture build no longer excludes dbt unit tests. `.github/workflows/leaks.yml` runs Gitleaks on PRs, pushes to `main`, a weekly schedule, and manual dispatch. `.github/workflows/deploy.yml` resolves a 40-character commit SHA to GHCR digests for the Airflow and stream images and never deploys `latest`.
 
 ## Local setup and verification
 
@@ -52,13 +52,13 @@ flowchart TD
 make demo
 ```
 
-`make demo` is the zero-credential path: it checks placeholders, validates contracts, bootstraps `audit`/`control`, lands the 12 sample payloads, and builds 32 models plus 383 dbt tests in `ci_demo_*` schemas on local `fleet_dev`. Docker is not required.
+`make demo` is the zero-credential path: it checks placeholders, validates contracts, bootstraps `audit`/`control`, lands the 12 sample payloads, and builds 32 models plus the dbt test suite (401 manifest nodes, 0 warn, including 3 unit tests) in `ci_demo_*` schemas on local `fleet_dev`. Docker is not required.
 
-For a full local installation, use `make help`, `make install`, `make env-check`, `make lint-fast`, `make py-test`, and `make contracts-check`. Start the optional Airflow UI with `make airflow-up` after supplying a real local config; never commit or modify `.env`.
+For a full local installation, use `make help`, `make install`, `make env-check`, `make lint-fast`, `make py-test`, `make py-cov`, and `make contracts-check`. `make pipeline-stats ENV=dev` reports typical run time and the largest loaded table read-only. Start the optional Airflow UI with `make airflow-up` after supplying a real local config; never commit or modify `.env`.
 
 ## Runtime topology
 
-Airflow Compose services are `airflow-init`, `airflow-api-server`, `airflow-scheduler`, `airflow-dag-processor`, `airflow-worker`, `airflow-metadata`, and `redis`. The worker runs repository scripts: ingestion → dbt → publication. Connections and pools are prepared by `airflow/scripts/init.sh`; DAGs are paused at creation until an operator unpauses `fleet_daily_load`.
+Airflow Compose services are `airflow-init`, `airflow-api-server`, `airflow-scheduler`, `airflow-dag-processor`, `airflow-worker`, `airflow-metadata`, and `redis`. The worker runs repository scripts: ingestion → dbt → publication. The separate `fleet_batch_cleanup` DAG calls `control.fail_stale_batches()` only when `FLEET_STALE_CLEANUP_ENABLED=true` (default `false`, max age 6 hours). Connections and pools are prepared by `airflow/scripts/init.sh`; DAGs are paused at creation until an operator unpauses `fleet_daily_load`.
 
 ## Required secrets
 
@@ -93,8 +93,9 @@ The workflow maps `STAGING_SSH_KEY`/`PRODUCTION_SSH_KEY` into the `SSH_PRIVATE_K
 
 - Only `ci.yml`, `deploy.yml`, and `leaks.yml` exist; release, cleanup, nightly, and GitHub Pages workflows are not tracked.
 - `make ci` is a local alias for `verify`; GitHub Actions is the real pipeline.
-- No coverage gate, dbt unit tests, or snapshots are configured.
-- Airflow assets are not derived from the dbt manifest.
+- `fleet_report_weekly` is still a skeleton; watchdog and opt-in stale-batch cleanup are implemented.
+- There is no production data rollback beyond code redeploy and no scheduled backup/restore with a tested restore.
+- CI uses Python 3.12 while the image uses Python 3.13.
 - The committed devcontainer references are broken; use `make airflow-up` instead.
 
 Related: [architecture guide](ARCHITECTURE.md), [dbt guide](DBT.md), [testing guide](TESTING.md), [decision records](adr/), [screenshot plan](SCREENSHOTS.md).

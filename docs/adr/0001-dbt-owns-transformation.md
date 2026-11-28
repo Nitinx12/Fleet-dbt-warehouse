@@ -5,7 +5,7 @@ Audience: Contributors changing ingestion, dbt models, or warehouse layers.
 # 0001 — dbt owns transformation
 
 ## Context
-The daily pipeline lands 12 source tables (9 MySQL, 3 MongoDB) into Postgres bronze. dbt builds 32 models across silver, gold, and marts and carries 383 dbt tests. SQL in ingestion, stored procedures, or the publish job would split lineage and test ownership across runtimes.
+The daily pipeline lands 12 source tables (9 MySQL, 3 MongoDB) into Postgres bronze. dbt builds 32 models across silver, gold, and marts and carries 391 schema tests plus 3 unit tests. SQL in ingestion, stored procedures, or the publish job would split lineage and test ownership across runtimes.
 
 ## Decision
 dbt reads bronze through `source()` and writes silver, gold, and marts. Python extracts and lands rows, publishes approved marts, and records audit evidence; it does not change values. Bronze is read-only to dbt, and only the publisher writes the Databricks mart copy.

@@ -10,11 +10,31 @@
 -- One current row per trailer (Type 1) plus an Unknown member.
 
 WITH trailers AS (
-    SELECT * FROM {{ ref('trailers') }}
+    SELECT
+        trailer_id,
+        trailer_number,
+        trailer_type,
+        length_feet,
+        model_year,
+        vin,
+        acquisition_date,
+        status,
+        current_location,
+        silver_loaded_at
+    FROM {{ ref('trailers') }}
 ),
 derived AS (
     SELECT
-        *,
+        trailer_id,
+        trailer_number,
+        trailer_type,
+        length_feet,
+        model_year,
+        vin,
+        acquisition_date,
+        status,
+        current_location,
+        silver_loaded_at,
         EXTRACT(YEAR FROM CURRENT_DATE)::INT - model_year           AS age_years_current
     FROM trailers
 ),
@@ -43,7 +63,23 @@ modelled AS (
         CURRENT_TIMESTAMP                                           AS gold_loaded_at
     FROM derived
 )
-SELECT * FROM modelled
+SELECT
+    trailer_key,
+    trailer_id,
+    trailer_number,
+    trailer_type,
+    length_feet,
+    model_year,
+    vin,
+    acquisition_date,
+    status,
+    is_available,
+    age_years,
+    age_band,
+    current_location,
+    silver_loaded_at,
+    gold_loaded_at
+FROM modelled
 
 UNION ALL
 

@@ -10,6 +10,8 @@
 
 Configuration: `ENV=dev|ci|prod` (default `dev`), `SELECT=<dbt selector>`, `EXCLUDE=<resource type>`, `CONFIRM=yes`, `V=1`, `AIRFLOW_DAG_ID=fleet_daily_load`, `AIRFLOW_RUN_ID=<run id>`.
 
+Coverage and statistics targets also accept `COV_MIN=80`, `COV_REPORT=reports/coverage.xml`, `PIPELINE`, `PIPELINE_STATS_DAYS`, `PIPELINE_STATS_LIMIT` and `PIPELINE_STATS_FORMAT`.
+
 ```text
 Airflow:
   airflow-dag-clear    Clear one DAG run; requires AIRFLOW_RUN_ID and CONFIRM=yes.
@@ -59,6 +61,8 @@ Quality:
   format               Alias for fmt.
   lint                 Alias for lint-fast.
   lint-fast            Run Ruff lint and formatting checks.
+  py-cov               Run Python tests with the COV_MIN coverage gate.
+  py-cov-report        Report coverage without enforcing the gate.
   py-integration       Run tests against a throwaway Postgres database.
   py-smoke             Run post-build liveness checks.
   py-test              Run the Python test suite.
@@ -67,6 +71,7 @@ Quality:
   verify               Run all non-destructive local quality checks.
 
 Reports:
+  pipeline-stats       Report typical run time and largest loaded table (read-only).
   report               Build the analytics report into reports/img and reports/findings.
   report-clean         Remove generated report images and findings.
 
@@ -74,6 +79,12 @@ Setup:
   check-tools          Verify the base command-line tools are available.
   install              Create or update .venv from uv.lock.
   setup                Alias for install.
+
+Site:
+  site-browser-smoke   Run the zero-dependency browser smoke check.
+  site-check           Check every number on index.html against facts.
+  site-facts           Regenerate site/facts.json from repository sources.
+  site-render          Render the standalone site into site/build/site.html.
 
 Streaming:
   stream-build         Build the local stream image.
@@ -93,6 +104,8 @@ Streamlit:
 
 dbt:
   build                Alias for dbt-build.
+  dbt-asset-keys       Regenerate Airflow dbt asset keys from the parsed manifest.
+  dbt-asset-keys-check Check Airflow dbt asset keys against the parsed manifest.
   dbt-build            Build dbt resources in ENV; optionally set SELECT.
   dbt-compile          Compile dbt SQL; optionally set SELECT.
   dbt-debug            Validate dbt connectivity for ENV.
@@ -110,4 +123,5 @@ dbt:
   dbt-silver-tests     Test silver models in ENV.
   dbt-snapshots        Run dbt snapshots in ENV.
   dbt-test             Test all dbt resources in ENV; optionally set SELECT.
+  dbt-unit             Run dbt unit tests in ENV.
 ```

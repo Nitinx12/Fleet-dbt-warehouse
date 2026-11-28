@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'maintenance_key',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [
         {'columns': ['maintenance_key'], 'unique': true},
         {'columns': ['maintenance_date_key']},
@@ -17,7 +17,23 @@
 -- Non-additive: labour_cost_per_hour, odometer_reading.
 
 WITH maintenance AS (
-    SELECT *
+    SELECT
+        maintenance_id,
+        truck_id,
+        maintenance_date,
+        maintenance_type,
+        facility_location,
+        service_description,
+        odometer_reading,
+        labour_hours,
+        labour_cost,
+        parts_cost,
+        total_cost,
+        calculated_total_cost,
+        is_total_cost_consistent,
+        labour_cost_per_hour,
+        downtime_hours,
+        silver_loaded_at
     FROM {{ ref('maintenance_records') }}
     {% if is_incremental() %}
     WHERE silver_loaded_at > {{ gold_watermark() }}

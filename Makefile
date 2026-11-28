@@ -20,6 +20,9 @@ SELECT ?=
 EXCLUDE ?=
 CONFIRM ?=
 V ?= 0
+COV_MIN ?= 80
+COV_REPORT ?= reports/coverage.xml
+PYTEST_COV_ARGS = --cov=scripts --cov=utils --cov-report=term-missing:skip-covered --cov-report=xml:"$(COV_REPORT)" --cov-fail-under="$(COV_MIN)"
 DB_USER ?= postgres
 DB_NAME ?= fleet_warehouse
 PG_HOST ?= localhost
@@ -141,7 +144,7 @@ check-version: check-tools check-venv
 	$(Q)actual="$$("$(UV)" run --no-sync python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')"; expected="$$(tr -d '\r\n' < "$(PYTHON_VERSION_FILE)")"; if [ "$$actual" != "$$expected" ]; then printf '%s\n' "warning: Python $$actual is installed; $(PYTHON_VERSION_FILE) pins $$expected." >&2; fi
 
 ## Quality
-.PHONY: lint-fast lint fmt format py-test py-unit py-integration py-smoke test check ci verify
+.PHONY: lint-fast lint fmt format py-test py-cov py-cov-report py-unit py-integration py-smoke test check ci verify
 lint-fast: check-version ## Run Ruff lint and formatting checks.
 	$(Q)printf '%s\n' "==> Running Ruff checks"
 	$(Q)"$(UV)" run --no-sync ruff check .
@@ -159,6 +162,14 @@ format: fmt ## Alias for fmt.
 py-test: check-version ## Run the Python test suite.
 	$(Q)printf '%s\n' "==> Running Python tests"
 	$(Q)"$(UV)" run --no-sync pytest
+
+py-cov: check-version ## Run Python tests with the COV_MIN coverage gate.
+	$(Q)printf '%s\n' "==> Running Python tests with coverage >= $(COV_MIN)%"
+	$(Q)"$(UV)" run --no-sync pytest tests $(PYTEST_COV_ARGS)
+
+py-cov-report: check-version ## Report coverage without enforcing the gate.
+	$(Q)printf '%s\n' "==> Reporting coverage; no gate enforced"
+	$(Q)"$(UV)" run --no-sync pytest tests --cov=scripts --cov=utils --cov-report=term-missing:skip-covered --cov-report=xml:"$(COV_REPORT)"
 
 py-unit: check-version ## Run fast isolated unit tests.
 	$(Q)"$(UV)" run --no-sync pytest tests/unit
@@ -365,7 +376,7 @@ publish-marts: check-version ## Incrementally publish approved Postgres marts to
 	$(Q)"$(UV)" run --no-sync python scripts/publish_marts.py
 
 ## dbt
-.PHONY: dbt-debug dbt-deps dbt-parse dbt-compile dbt-seed dbt-silver dbt-silver-tests dbt-gold dbt-gold-tests dbt-marts dbt-marts-tests dbt-snapshots dbt-build dbt-test dbt-run dbt-docs dbt-full-refresh build
+.PHONY: dbt-debug dbt-deps dbt-parse dbt-asset-keys dbt-asset-keys-check dbt-compile dbt-seed dbt-silver dbt-silver-tests dbt-gold dbt-gold-tests dbt-marts dbt-marts-tests dbt-snapshots dbt-unit dbt-build dbt-test dbt-run dbt-docs dbt-full-refresh build
 dbt-debug: check-version ## Validate dbt connectivity for ENV.
 	$(Q)$(call require_environment)
 	$(Q)$(call confirm_production)
@@ -377,6 +388,12 @@ dbt-deps: check-version ## Install dbt packages from dbt/package-lock.yml.
 dbt-parse: check-version ## Parse the dbt project without querying the warehouse.
 	$(Q)$(call require_environment)
 	$(Q)$(DBT) parse --target "$(ENV)"
+
+dbt-asset-keys: check-version ## Regenerate Airflow dbt asset keys from the parsed manifest.
+	$(Q)"$(UV)" run --no-sync python scripts/generate_dbt_asset_keys.py --write
+
+dbt-asset-keys-check: check-version ## Check Airflow dbt asset keys against the parsed manifest.
+	$(Q)"$(UV)" run --no-sync python scripts/generate_dbt_asset_keys.py --check
 
 dbt-compile: check-version ## Compile dbt SQL; optionally set SELECT.
 	$(Q)$(call require_environment)
@@ -423,6 +440,11 @@ dbt-snapshots: check-version ## Run dbt snapshots in ENV.
 	$(Q)$(call confirm_production)
 	$(Q)$(DBT) snapshot --target "$(ENV)" $(DBT_SELECT)
 
+dbt-unit: check-version ## Run dbt unit tests in ENV.
+	$(Q)$(call require_environment)
+	$(Q)$(call confirm_production)
+	$(Q)$(DBT) test --target "$(ENV)" --select test_type:unit
+
 dbt-build: check-version ## Build dbt resources in ENV; optionally set SELECT.
 	$(Q)$(call require_environment)
 	$(Q)$(call confirm_production)
@@ -464,7 +486,13 @@ deploy-smoke: check-tools ## Run read-only post-deploy smoke checks.
 	$(Q)bash scripts/deploy.sh smoke
 
 ## Reports
-.PHONY: report report-clean
+.PHONY: report report-clean pipeline-stats
+PIPELINE ?= fleet_daily
+PIPELINE_STATS_DAYS ?= 30
+PIPELINE_STATS_LIMIT ?= 20
+PIPELINE_STATS_FORMAT ?= text
+PIPELINE_STATS_ARGS = --pipeline "$(PIPELINE)" --days "$(PIPELINE_STATS_DAYS)" --limit "$(PIPELINE_STATS_LIMIT)" --format "$(PIPELINE_STATS_FORMAT)"
+
 report: check-venv ## Build the analytics report into reports/img and reports/findings.
 	$(Q)printf '%s\n' "==> Building analytics report"
 	$(Q)"$(UV)" run --no-sync python -m reports.scripts.build_all
@@ -472,6 +500,12 @@ report: check-venv ## Build the analytics report into reports/img and reports/fi
 report-clean: ## Remove generated report images and findings.
 	$(Q)printf '%s\n' "==> Cleaning report artifacts"
 	$(Q)rm -f -- reports/img/*.png reports/findings/*.json
+
+pipeline-stats: check-version ## Report typical run time and largest loaded table (read-only).
+	$(Q)$(call require_environment)
+	$(Q)$(call confirm_production)
+	$(Q)printf '%s\n' "==> Reading pipeline statistics for ENV=$(ENV)"
+	$(Q)ENV="$(ENV)" CONFIRM="$(CONFIRM)" "$(UV)" run --no-sync python scripts/pipeline_stats.py $(PIPELINE_STATS_ARGS)
 
 ## Clean
 .PHONY: clean distclean

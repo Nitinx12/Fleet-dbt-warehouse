@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'customer_id',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [{'columns': ['customer_id'], 'unique': true}],
     tags                 = ['silver', 'incremental']
 ) }}
@@ -12,7 +12,17 @@
 -- Cast data types and standardise columns
 
 WITH source AS (
-    SELECT *
+    SELECT
+        customer_id,
+        customer_name,
+        customer_type,
+        credit_terms_days,
+        primary_freight_type,
+        account_status,
+        contract_start_date,
+        annual_revenue_potential,
+        loaded_at,
+        _ingested_at
     FROM {{ source('bronze', 'mysql__customers') }}
     {{ bronze_incremental_filter() }}
 ),

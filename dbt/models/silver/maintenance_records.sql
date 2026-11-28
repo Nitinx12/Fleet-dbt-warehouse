@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'maintenance_id',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [{'columns': ['maintenance_id'], 'unique': true}],
     tags                 = ['silver', 'incremental']
 ) }}
@@ -12,7 +12,21 @@
 -- Cast types, standardise text, validate values, derive cost metrics
 
 WITH source AS (
-    SELECT *
+    SELECT
+        maintenance_id,
+        truck_id,
+        maintenance_date,
+        maintenance_type,
+        odometer_reading,
+        labor_hours,
+        labor_cost,
+        parts_cost,
+        total_cost,
+        facility_location,
+        downtime_hours,
+        service_description,
+        loaded_at,
+        _ingested_at
     FROM {{ source('bronze', 'mongo__maintenance_records') }}
     {{ bronze_incremental_filter() }}
 ),

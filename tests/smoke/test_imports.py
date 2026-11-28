@@ -8,6 +8,8 @@ import pytest
 
 _MODULES = (
     "scripts.ingestion",
+    "scripts.generate_dbt_asset_keys",
+    "scripts.pipeline_stats",
     "scripts.publish_marts",
     "scripts.run_dbt",
     "scripts.run_notebooks",

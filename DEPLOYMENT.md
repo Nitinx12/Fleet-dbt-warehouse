@@ -134,7 +134,7 @@ Take a backup before any release that changes schema, bumps `AIRFLOW_VERSION`, o
 - Retry only transient connection failures; never retry a contract or dbt data-test failure.
 - Failed tasks write `audit.error_log` through SQL triggers; failed batches emit `pg_notify('pipeline_failure', …)`.
 - Airflow failure templates instruct operators to clear the failed task so the same `control.batch` and run id are reused.
-- `control.fail_stale_batches()` exists but is not scheduled; call it manually if a batch is stuck, then investigate the root cause.
+- `fleet_batch_cleanup` runs every 15 minutes and calls `control.fail_stale_batches()` only when `FLEET_STALE_CLEANUP_ENABLED=true` (default `false`); `FLEET_STALE_BATCH_MAX_AGE_HOURS` defaults to 6. Call the function manually if a batch is stuck, then investigate the root cause.
 
 ### 3.6 Verification checklist after a deploy
 
@@ -187,8 +187,11 @@ All dbt targets call `scripts/run_dbt.py`, which records the invocation and dbt 
 ```bash
 make CONFIRM=yes db-init-audit
 make PG_DBNAME=fleet_dev FIXTURE_LOAD=1 load-fixtures ENV=ci
-make dbt-build ENV=ci EXCLUDE=unit_test
+make dbt-parse ENV=ci && make dbt-asset-keys-check
+make dbt-build ENV=ci
 ```
+
+`make py-cov COV_MIN=80` enforces the coverage gate before release; `make py-cov-report` reports coverage without failing. Run `make pipeline-stats ENV=dev` for read-only median/p95 run time and the largest loaded table from `audit.*` and `sql/metadata/09_list_table_sizes.sql`.
 
 ---
 
@@ -237,7 +240,9 @@ flowchart TD
 | Concurrency | `ci-<workflow>-<ref>`, cancels in-progress runs. |
 | Python | `setup-uv` with Python 3.12 and cache; `make install` runs `uv sync --frozen`. **TODO:** the image runs Python 3.13, so tests and production use different interpreters. Align both (see section 14). |
 | Jobs | `lint` (10m), `unit-tests` (10m), `contracts` (10m), `dbt-parse` (10m), `airflow-test` (10m), `stream-tests` (15m), `integration` (25m), `image-build` (35m), `stream-image-build` (35m). |
-| Integration | Service `postgres:16`, `make py-integration`, `make CONFIRM=yes db-init-audit`, `make dbt-deps`, `make load-fixtures ENV=ci`, `make dbt-build ENV=ci EXCLUDE=unit_test`. |
+| Coverage | `unit-tests` runs `make py-cov COV_MIN=80` after `make py-unit`; measured TOTAL is 84.36% on `scripts` and `utils`. |
+| dbt assets | `dbt-parse` runs `make dbt-parse ENV=ci` followed by `make dbt-asset-keys-check` against `airflow/assets/dbt_asset_keys.json`. |
+| Integration | Service `postgres:16`, `make py-integration`, `make CONFIRM=yes db-init-audit`, `make dbt-deps`, `make load-fixtures ENV=ci`, `make dbt-build ENV=ci` (dbt unit tests are no longer excluded). |
 | Stream tests | `make install` then `make stream-test` in an isolated `uv` environment with the locked `kafka` and `spark` groups; no broker is started. |
 | Image | Builds `airflow/Dockerfile` from repo root with `AIRFLOW_VERSION=3.3.2`, `PYTHON_VERSION=3.13`, `GIT_SHA`. |
 | Stream image | Builds `kafka/Dockerfile` from repo root with Python 3.12 and `GIT_SHA`, tags `sha-<commit>-stream`, reusing the commit SHA but not the Airflow tag. |
@@ -376,6 +381,8 @@ All configuration is environment-based; `.env` is ignored, `.env.example` holds 
 | Airflow | `AIRFLOW__CORE__FERNET_KEY`, `AIRFLOW__API__BASE_URL`, `AIRFLOW_DB_PASSWORD`, `AIRFLOW_ADMIN_USERNAME/PASSWORD/EMAIL`, `AIRFLOW_UID`, `AIRFLOW_PORT`, `AIRFLOW_IMAGE` | Compose, `init.sh` |
 | Alerting | `SMTP_*`, `ALERT_WEBHOOK_URL`, `ALERT_*` | Airflow notification helpers |
 | Fixture / tuning | `FIXTURE_LOAD`, `PUBLISH_*`, `DATABRICKS_MAX_ATTEMPTS`, pool slots | Fixture loader, publisher, Airflow pools |
+| Stale cleanup | `FLEET_STALE_CLEANUP_ENABLED` (default `false`), `FLEET_STALE_BATCH_MAX_AGE_HOURS` (default `6`) | `fleet_batch_cleanup` calls `control.fail_stale_batches` only when enabled |
+| Coverage / stats | `COV_MIN` (default `80`), `COV_REPORT`, `PIPELINE`, `PIPELINE_STATS_DAYS`, `PIPELINE_STATS_LIMIT`, `PIPELINE_STATS_FORMAT` | `make py-cov`, `make py-cov-report`, `make pipeline-stats` |
 
 GitHub secrets by environment:
 
@@ -438,7 +445,7 @@ To decide and document (**TODO**):
 | Conventional Commit + 72-char subject | `.githooks/commit-msg` | Blocks malformed commit messages. |
 | `compileall` + contract JSON validation | `.githooks/pre-push` | Blocks broken Python or malformed contract JSON. |
 | Optional pre-commit secret scan | `helpers/protect_env.sh --install` | Blocks `.env`, key files and secret-like staged diffs; not installed by default. |
-| CI quality jobs | `.github/workflows/ci.yml` | Blocks merge on lint, test, contract, parse, DAG or image smoke failure. |
+| CI quality jobs | `.github/workflows/ci.yml` | Blocks merge on lint, test, coverage, contract, parse, asset-key, DAG or image smoke failure. |
 | GitHub environments | `deploy.yml` | Staging automatic; production requires reviewers. |
 | Makefile confirmations | `Makefile` | `ENV=prod`, destructive targets, full refresh and deploy need `CONFIRM=yes`. |
 | Immutable image tag | `ci.yml`, `deploy.yml` | Deploy by `sha-<commit>` resolved to a digest; no `latest`. |
@@ -476,5 +483,5 @@ Fix these in the repo, then delete the entry and its TODO marker above. Ordered 
 | 11 | The airflow requirements file is misspelled in the repo (`requirments-airflow.txt`). | Rename it and update `airflow/Dockerfile` and any references. |
 | 12 | Staging/production `DBT_TARGET`, database names and schema prefixes are undocumented (section 2). | Fill in the environments table. |
 | 13 | `make ci` is only a local alias for `verify` (lint + pytest); GitHub Actions is the real pipeline. | Rename the alias or document it in `make help`. |
-| 14 | No coverage gate; no dbt unit tests or snapshots committed yet. | Add a coverage threshold; add dbt unit tests. |
-| 15 | Airflow assets are not derived from the dbt manifest; scheduling is cron and task dependencies. `asset keys`, stale-batch cleanup and weekly/watchdog DAG bodies remain future work. | Track as roadmap, not deployment blockers. |
+| 14 | Snapshots exist for customers, drivers and trucks, but facts and marts still use current-state SCD1 dimensions; the weekly report DAG remains a skeleton. | Approve payload policy and implement `fleet_report_weekly`; wire SCD2 only as a separate dimension change. |
+| 15 | Scheduling is still cron and task dependencies; manifest-keyed asset outlets publish lineage but do not trigger downstream DAGs. | Keep asset keys in sync with `make dbt-asset-keys-check`; treat event-driven scheduling as roadmap, not a deployment blocker. |

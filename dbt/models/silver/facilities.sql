@@ -2,7 +2,7 @@
     materialized         = 'incremental',
     incremental_strategy = 'delete+insert',
     unique_key           = 'facility_id',
-    on_schema_change     = 'append_new_columns',
+    on_schema_change     = 'fail',
     indexes              = [{'columns': ['facility_id'], 'unique': true}],
     tags                 = ['silver', 'incremental']
 ) }}
@@ -12,7 +12,18 @@
 -- Cast data types and standardise text
 
 WITH source AS (
-    SELECT *
+    SELECT
+        facility_id,
+        facility_name,
+        facility_type,
+        city,
+        state,
+        latitude,
+        longitude,
+        dock_doors,
+        operating_hours,
+        loaded_at,
+        _ingested_at
     FROM {{ source('bronze', 'mysql__facilities') }}
     {{ bronze_incremental_filter() }}
 ),

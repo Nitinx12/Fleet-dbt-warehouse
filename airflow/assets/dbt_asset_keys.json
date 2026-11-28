@@ -1,0 +1,41 @@
+{
+  "gold_dim": [
+    "model.fleet_dbt.dim_customers",
+    "model.fleet_dbt.dim_date",
+    "model.fleet_dbt.dim_drivers",
+    "model.fleet_dbt.dim_facilities",
+    "model.fleet_dbt.dim_routes",
+    "model.fleet_dbt.dim_trailers",
+    "model.fleet_dbt.dim_trucks"
+  ],
+  "gold_fact": [
+    "model.fleet_dbt.fct_delivery_events",
+    "model.fleet_dbt.fct_fuel_purchases",
+    "model.fleet_dbt.fct_loads",
+    "model.fleet_dbt.fct_maintenance",
+    "model.fleet_dbt.fct_safety_incidents",
+    "model.fleet_dbt.fct_trips"
+  ],
+  "mart": [
+    "model.fleet_dbt.mart_customer_service_monthly",
+    "model.fleet_dbt.mart_delivery_performance_daily",
+    "model.fleet_dbt.mart_driver_scorecard_monthly",
+    "model.fleet_dbt.mart_equipment_utilization_daily",
+    "model.fleet_dbt.mart_sales_daily",
+    "model.fleet_dbt.mart_truck_cost_monthly"
+  ],
+  "silver": [
+    "model.fleet_dbt.customers",
+    "model.fleet_dbt.delivery_events",
+    "model.fleet_dbt.drivers",
+    "model.fleet_dbt.facilities",
+    "model.fleet_dbt.fuel_purchases",
+    "model.fleet_dbt.loads",
+    "model.fleet_dbt.maintenance_records",
+    "model.fleet_dbt.routes",
+    "model.fleet_dbt.safety_incidents",
+    "model.fleet_dbt.trailers",
+    "model.fleet_dbt.trips",
+    "model.fleet_dbt.trucks"
+  ]
+}

@@ -1,0 +1,188 @@
+version: 2
+
+snapshots:
+  - name: snap_customers
+    description: "SCD2 history of customer attributes from silver."
+    meta:
+      owner: fleet-data-eng
+      tier: snapshots
+      serve: false
+      contains_pii: false
+    columns:
+      - name: customer_id
+        description: "Natural customer identifier."
+        data_type: text
+        tests:
+          - not_null
+      - name: customer_name
+        description: "Customer display name."
+        data_type: text
+      - name: customer_type
+        description: "Spot, Contract, Dedicated or Unknown."
+        data_type: text
+      - name: credit_terms_days
+        description: "Allowed credit term in days."
+        data_type: integer
+      - name: primary_freight_type
+        description: "Primary freight type."
+        data_type: text
+      - name: account_status
+        description: "Active, Inactive or Unknown."
+        data_type: text
+      - name: contract_start_date
+        description: "Contract start date."
+        data_type: date
+      - name: annual_revenue_potential
+        description: "Annual revenue potential."
+        data_type: numeric(14,2)
+      - name: silver_loaded_at
+        description: "Timestamp the silver row was loaded (UTC)."
+        data_type: timestamp with time zone
+      - name: dbt_scd_id
+        description: "Snapshot surrogate key."
+        data_type: text
+        tests:
+          - unique
+          - not_null
+      - name: dbt_updated_at
+        description: "Timestamp the source row was last observed (UTC)."
+        data_type: timestamp with time zone
+      - name: dbt_valid_from
+        description: "Start of row validity (UTC)."
+        data_type: timestamp with time zone
+      - name: dbt_valid_to
+        description: "End of row validity, NULL for current rows (UTC)."
+        data_type: timestamp with time zone
+
+  - name: snap_drivers
+    description: "SCD2 history of non-PII driver attributes from silver."
+    meta:
+      owner: fleet-data-eng
+      tier: snapshots
+      serve: false
+      contains_pii: false
+    columns:
+      - name: driver_id
+        description: "Natural driver identifier."
+        data_type: text
+        tests:
+          - not_null
+      - name: hire_date
+        description: "Driver hire date."
+        data_type: date
+      - name: termination_date
+        description: "Driver termination date."
+        data_type: date
+      - name: license_state
+        description: "State that issued the commercial licence."
+        data_type: text
+      - name: home_terminal
+        description: "Home terminal city."
+        data_type: text
+      - name: employment_status
+        description: "Current employment status."
+        data_type: text
+      - name: cdl_class
+        description: "Commercial licence class."
+        data_type: text
+      - name: years_experience
+        description: "Years of driving experience."
+        data_type: numeric(4,1)
+      - name: is_active
+        description: "TRUE when employment status is Active."
+        data_type: boolean
+      - name: is_employment_consistent
+        description: "TRUE when status and termination date agree."
+        data_type: boolean
+      - name: tenure_years
+        description: "Years with the current employer."
+        data_type: numeric
+      - name: age_band
+        description: "Coarse age band derived in silver; raw date of birth is excluded."
+        data_type: text
+      - name: silver_loaded_at
+        description: "Timestamp the silver row was loaded (UTC)."
+        data_type: timestamp with time zone
+      - name: dbt_scd_id
+        description: "Snapshot surrogate key."
+        data_type: text
+        tests:
+          - unique
+          - not_null
+      - name: dbt_updated_at
+        description: "Timestamp the source row was last observed (UTC)."
+        data_type: timestamp with time zone
+      - name: dbt_valid_from
+        description: "Start of row validity (UTC)."
+        data_type: timestamp with time zone
+      - name: dbt_valid_to
+        description: "End of row validity, NULL for current rows (UTC)."
+        data_type: timestamp with time zone
+
+  - name: snap_trucks
+    description: "SCD2 history of truck attributes from silver."
+    meta:
+      owner: fleet-data-eng
+      tier: snapshots
+      serve: false
+      contains_pii: false
+    columns:
+      - name: truck_id
+        description: "Natural truck identifier."
+        data_type: text
+        tests:
+          - not_null
+      - name: unit_number
+        description: "Fleet unit number."
+        data_type: integer
+      - name: make
+        description: "Truck manufacturer."
+        data_type: text
+      - name: model_year
+        description: "Truck model year."
+        data_type: integer
+      - name: vin
+        description: "Vehicle identification number."
+        data_type: text
+      - name: acquisition_date
+        description: "Acquisition date."
+        data_type: date
+      - name: acquisition_mileage
+        description: "Odometer reading at acquisition."
+        data_type: integer
+      - name: fuel_type
+        description: "Fuel type."
+        data_type: text
+      - name: tank_capacity_gallons
+        description: "Fuel tank capacity in gallons."
+        data_type: integer
+      - name: status
+        description: "Active, Maintenance, Inactive or Unknown."
+        data_type: text
+      - name: home_terminal
+        description: "Home terminal city."
+        data_type: text
+      - name: is_available
+        description: "TRUE when status is Active."
+        data_type: boolean
+      - name: age_years
+        description: "Truck age in years at the last silver build."
+        data_type: integer
+      - name: silver_loaded_at
+        description: "Timestamp the silver row was loaded (UTC)."
+        data_type: timestamp with time zone
+      - name: dbt_scd_id
+        description: "Snapshot surrogate key."
+        data_type: text
+        tests:
+          - unique
+          - not_null
+      - name: dbt_updated_at
+        description: "Timestamp the source row was last observed (UTC)."
+        data_type: timestamp with time zone
+      - name: dbt_valid_from
+        description: "Start of row validity (UTC)."
+        data_type: timestamp with time zone
+      - name: dbt_valid_to
+        description: "End of row validity, NULL for current rows (UTC)."
+        data_type: timestamp with time zone
