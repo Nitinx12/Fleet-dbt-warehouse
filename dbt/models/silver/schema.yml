@@ -40,6 +40,9 @@ models:
       - name: primary_freight_type
         description: "Primary freight type."
         data_type: text
+        tests:
+          - accepted_values:
+              values: ['Automotive', 'Consumer Goods', 'Electronics', 'Food/Beverage', 'General', 'Retail']
       - name: account_status
         description: "Account status."
         data_type: text
@@ -91,6 +94,9 @@ models:
       - name: event_type
         description: "Normalised event type."
         data_type: text
+        tests:
+          - accepted_values:
+              values: ['DELIVERY', 'PICKUP']
       - name: scheduled_datetime
         description: "Scheduled time (UTC)."
         data_type: timestamp without time zone
@@ -508,6 +514,9 @@ models:
       - name: maintenance_type
         description: "Maintenance type."
         data_type: text
+        tests:
+          - accepted_values:
+              values: ['Brake', 'Engine', 'Inspection', 'Preventive', 'Repair', 'Tire', 'Transmission']
       - name: odometer_reading
         description: "Odometer reading."
         data_type: numeric
@@ -679,6 +688,9 @@ models:
       - name: incident_type
         description: "Incident type."
         data_type: text
+        tests:
+          - accepted_values:
+              values: ['Accident', 'Customer Complaint', 'Dot Violation', 'Equipment Damage', 'Moving Violation']
       - name: location_city
         description: "City."
         data_type: text

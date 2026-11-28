@@ -117,6 +117,9 @@ models:
       - name: primary_freight_type
         description: "Primary freight category from the source; Unknown when missing."
         data_type: text
+        tests:
+          - accepted_values:
+              values: ['Automotive', 'Consumer Goods', 'Electronics', 'Food/Beverage', 'General', 'Retail', 'Unknown']
       - name: account_status
         description: "Active or Inactive; Unknown on the Unknown member."
         data_type: text
@@ -801,6 +804,9 @@ models:
       - name: event_type
         description: "PICKUP or DELIVERY; Unknown when missing."
         data_type: text
+        tests:
+          - accepted_values:
+              values: ['DELIVERY', 'PICKUP', 'Unknown']
       - name: scheduled_datetime
         description: "Scheduled event time (UTC)."
         data_type: timestamp without time zone
@@ -963,6 +969,9 @@ models:
       - name: maintenance_type
         description: "Service category; Unknown when missing."
         data_type: text
+        tests:
+          - accepted_values:
+              values: ['Brake', 'Engine', 'Inspection', 'Preventive', 'Repair', 'Tire', 'Transmission', 'Unknown']
       - name: facility_location
         description: "City where the work was done; Unknown when missing."
         data_type: text
@@ -1069,6 +1078,9 @@ models:
       - name: incident_type
         description: "Incident category; Unknown when missing."
         data_type: text
+        tests:
+          - accepted_values:
+              values: ['Accident', 'Customer Complaint', 'Dot Violation', 'Equipment Damage', 'Moving Violation', 'Unknown']
       - name: location_city
         description: "City of the incident; NULL when unknown."
         data_type: text
